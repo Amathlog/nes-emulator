@@ -1,0 +1,6 @@
+
+class Bus
+{
+    public:
+    Bus();
+};
