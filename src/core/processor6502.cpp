@@ -75,61 +75,132 @@ void Processor6502::Clock()
 /////////////////////////////////////////////
 uint8_t Processor6502::IMP()
 {
+    m_fetched = m_A;
     return 0;
 }
 
 uint8_t Processor6502::IMM()
 {
+    m_absAddress = m_PC++;
     return 0;
 } 
 
 uint8_t Processor6502::ZP0()
 {
+    m_absAddress = Read(m_PC++);
+    m_absAddress &= 0x00FF;
     return 0;
 }
 
 uint8_t Processor6502::ZPX()
 {
+    m_absAddress = Read(m_PC++) + m_X;
+    m_absAddress &= 0x00FF;
     return 0;
 }
 
 uint8_t Processor6502::ZPY()
 {
+    m_absAddress = Read(m_PC++) + m_Y;
+    m_absAddress &= 0x00FF;
     return 0;
 }
 
 uint8_t Processor6502::REL()
 {
+    m_relAddress = Read(m_PC++);
+    // If the highest bit of the first byte is set, it means it is a negative one
+    if (m_relAddress & 0x80)
+        m_relAddress |= 0xFF00;
+
     return 0;
 } 
 
 uint8_t Processor6502::ABS()
 {
+    uint16_t low = Read(m_PC++);
+    uint16_t high = Read(m_PC++);
+
+    m_absAddress = (high << 8) | low;
+
     return 0;
 }
 
 uint8_t Processor6502::ABX()
 {
+    uint16_t low = Read(m_PC++);
+    uint16_t high = Read(m_PC++);
+
+    m_absAddress = ((high << 8) | low) + m_X;
+
+    // If the high bytes are different, it means we changed pages.
+    // It introduces an extra cycle.
+    if ((m_absAddress & 0xFF00) != (high << 8))
+        return 1;
+
     return 0;
 }
 
 uint8_t Processor6502::ABY()
 {
+    uint16_t low = Read(m_PC++);
+    uint16_t high = Read(m_PC++);
+
+    m_absAddress = ((high << 8) | low) + m_Y;
+
+    // If the high bytes are different, it means we changed pages.
+    // It introduces an extra cycle.
+    if ((m_absAddress & 0xFF00) != (high << 8))
+        return 1;
+
     return 0;
 }
 
 uint8_t Processor6502::IND()
 {
+    uint16_t lowPtr = Read(m_PC++);
+    uint16_t highPtr = Read(m_PC++);
+
+    uint16_t ptr = ((highPtr << 8) | lowPtr);
+
+    uint16_t low = Read(ptr);
+
+    // cf. https://wiki.nesdev.org/w/index.php?title=CPU_addressing_modes
+    // if lowPtr == 255, lowPtr + 1 should be 256 (0x0100) and highPtr should be incremented
+    // by one. But in reality, we stay on the same page. so we read the first byte at 0x(highPtr)FF
+    // and read the second byte at 0x(highPtr)00.
+    ptr = lowPtr == 0xFF ? (highPtr << 8) : ptr + 1;
+    uint16_t high = Read(ptr + 1);
+
+    m_absAddress = ((high << 8) | low); 
     return 0;
 } 
 
 uint8_t Processor6502::IZX()
 {
+    uint16_t ptr = Read(m_PC++);
+
+    uint16_t low = Read((ptr + m_X) & 0x00FF);
+    uint16_t high = Read((ptr + m_X + 1) & 0x00FF);
+
+    m_absAddress = ((high << 8) | low); 
     return 0;
 }
 
 uint8_t Processor6502::IZY()
 {
+    uint16_t ptr = Read(m_PC++);
+
+    uint16_t low = Read(ptr & 0x00FF);
+    uint16_t high = Read((ptr + 1) & 0x00FF);
+
+    m_absAddress = ((high << 8) | low) + m_Y;
+
+    // If the high bytes are different, it means we changed pages.
+    // It introduces an extra cycle.
+    if ((m_absAddress & 0xFF00) != (high << 8))
+        return 1;
+
     return 0;
 }
 
