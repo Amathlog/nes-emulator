@@ -74,9 +74,9 @@ namespace NesEmulator
     private:
         // Helpers
         uint8_t Fetch();
-        void SetFlagIfNegOrZero(uint8_t value);
+        inline void SetFlagIfNegOrZero(uint8_t value);
         uint8_t GeneralAddition();
-        void Interrupt(uint8_t requestSoftware);
+        void Interrupt(uint8_t requestSoftware, uint16_t jumpAddressLocation);
 
         void PushDataToStack(uint8_t data);
         void PushAddrToStack(uint16_t addr);

@@ -105,12 +105,16 @@ void Processor6502::Reset()
 void Processor6502::IRQ()
 {
     if (m_status.I == 0)
-        Interrupt(0);
+    {
+        Interrupt(0, 0xFFFE);
+        m_cycles = 7;
+    }
 }
 
 void Processor6502::NMI()
 {
-    Interrupt(0);
+    Interrupt(0, 0xFFFA);
+    m_cycles = 8;
 }
 
 
@@ -268,7 +272,7 @@ uint8_t Processor6502::Branch(uint8_t flag, uint8_t isSet)
     return 0;
 }
 
-void Processor6502::SetFlagIfNegOrZero(uint8_t value)
+inline void Processor6502::SetFlagIfNegOrZero(uint8_t value)
 {
     m_status.Z = (uint8_t)(value == 0);
     m_status.N = (value & 0x80) >> 7;
@@ -330,9 +334,9 @@ uint16_t Processor6502::PopAddrFromStack()
     return (high << 8) | low;
 }
 
-void Processor6502::Interrupt(uint8_t requestSoftware)
+void Processor6502::Interrupt(uint8_t requestSoftware, uint16_t jumpAddressLocation)
 {
-    // Write the PC to the stack. First push the high, then the low
+    // Write the PC to the stack.
     PushAddrToStack(m_PC);
 
     // Set the internal flags. 
@@ -344,6 +348,14 @@ void Processor6502::Interrupt(uint8_t requestSoftware)
 
     // Then push the status flag to the stack
     PushDataToStack(m_status.flags);
+
+    // Re-set the B status to 0
+    m_status.B = 0;
+
+    // And finally jump to a known location
+    uint8_t low = Read(jumpAddressLocation);
+    uint8_t high = Read(jumpAddressLocation + 1);
+    m_PC = (high << 8) | low;
 }
 
 ////////////////////////////////////////////////
@@ -430,7 +442,8 @@ uint8_t Processor6502::BPL()
 
 uint8_t Processor6502::BRK()
 {
-    Interrupt(1);
+    m_PC += 2;
+    Interrupt(1, 0xFFFE);
     return 0;
 }
 
@@ -475,7 +488,7 @@ uint8_t Processor6502::CMP()
     uint8_t temp = m_A - m_fetched;
 
     SetFlagIfNegOrZero(temp);
-    m_status.C = ((m_A & 0x80) ^ (m_fetched & 0x80)) >> 7;
+    m_status.C = m_A >= m_fetched;
 
     return 1;
 } 
@@ -487,7 +500,7 @@ uint8_t Processor6502::CPX()
     uint8_t temp = m_X - m_fetched;
 
     SetFlagIfNegOrZero(temp);
-    m_status.C = ((m_X & 0x80) ^ (m_fetched & 0x80)) >> 7;
+    m_status.C = m_X >= m_fetched;
 
     return 0;
 }
@@ -499,7 +512,7 @@ uint8_t Processor6502::CPY()
     uint8_t temp = m_Y - m_fetched;
 
     SetFlagIfNegOrZero(temp);
-    m_status.C = ((m_Y & 0x80) ^ (m_fetched & 0x80)) >> 7;
+    m_status.C = m_Y >= m_fetched;
 
     return 0;
 }
@@ -569,10 +582,7 @@ uint8_t Processor6502::INY()
 
 uint8_t Processor6502::JMP()
 {
-    uint16_t low = Read(m_PC + 1);
-    uint16_t high = Read(m_PC + 2);
-
-    m_PC = (high << 8) | low;
+    m_PC = m_absAddress;
     return 0;
 }
 
@@ -633,7 +643,19 @@ uint8_t Processor6502::LSR()
 
 uint8_t Processor6502::NOP()
 {
-    return 0;
+    // Not all NOPs are equal. Placeholders to support illegal opcodes in
+    // the future.
+	switch (m_opcode) {
+	case 0x1C:
+	case 0x3C:
+	case 0x5C:
+	case 0x7C:
+	case 0xDC:
+	case 0xFC:
+		return 1;
+		break;
+	}
+	return 0;
 } 
 
 uint8_t Processor6502::ORA()
@@ -654,7 +676,11 @@ uint8_t Processor6502::PHA()
 
 uint8_t Processor6502::PHP()
 {
+    m_status.B = 1;
+    m_status.U = 1;
     PushDataToStack(m_status.flags);
+    m_status.B = 0;
+    m_status.U = 0;
     return 0;
 }
 
