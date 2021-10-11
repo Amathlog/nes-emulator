@@ -56,8 +56,7 @@ void Processor6502::Clock()
         // Execute op
         uint8_t additional_cyles_op = (this->*m_opCodeMapper[m_opcode].operate)();
 
-        // TODO: Why is it a `&` and not a `+`?
-        m_cycles += (additional_cyles_addr &additional_cyles_op);
+        m_cycles += (additional_cyles_addr & additional_cyles_op);
 
 #if LOGGING == 1
         std::cout << "Executing op " << m_opCodeMapper[m_opcode].name << std::endl;
@@ -67,6 +66,51 @@ void Processor6502::Clock()
     }
 
     --m_cycles;
+}
+
+uint8_t Processor6502::Fetch()
+{
+    if (m_opCodeMapper[m_opcode].addrmode != &Processor6502::IMP)
+        m_fetched = Read(m_absAddress);
+
+    return m_fetched;
+}
+
+void Processor6502::Reset()
+{
+    // Reset the CPU to a known state
+    m_absAddress = 0xFFFC;
+    uint8_t low = Read(m_absAddress);
+    uint8_t high = Read(m_absAddress + 1);
+
+    m_PC = (high << 8) | low;
+
+    m_A = 0;
+    m_X = 0;
+    m_Y = 0;
+    m_SP = 0xFD;
+    m_fetched = 0x00;
+
+    uint8_t savedU = m_status.U;
+    m_status.flags = 0x00;
+    m_status.U = savedU;
+
+    m_relAddress = 0x0000;
+    m_absAddress = 0x0000;
+
+    // Reset takes time
+    m_cycles = 8;
+}
+
+void Processor6502::IRQ()
+{
+    if (m_status.I == 0)
+        Interrupt(0);
+}
+
+void Processor6502::NMI()
+{
+    Interrupt(0);
 }
 
 
@@ -204,172 +248,386 @@ uint8_t Processor6502::IZY()
     return 0;
 }
 
+////////////////////////////////////////////////
+// Helpers
+////////////////////////////////////////////////
+
+uint8_t Processor6502::Branch(uint8_t flag, uint8_t isSet)
+{
+    if (flag == isSet)
+    {
+        m_cycles++;
+        m_absAddress = m_PC + m_relAddress;
+
+        if ((m_absAddress & 0xFF00) != (m_PC & 0xFF00))
+            m_cycles++;
+
+        m_PC = m_absAddress;
+    }
+
+    return 0;
+}
+
+void Processor6502::SetFlagIfNegOrZero(uint8_t value)
+{
+    m_status.Z = (uint8_t)(value == 0);
+    m_status.N = (value & 0x80) >> 7;
+}
+
+uint8_t Processor6502::GeneralAddition()
+{
+    uint16_t temp = (uint16_t)m_A + (uint16_t)m_fetched + (uint16_t)m_status.C;
+
+    // Overflow check
+    // Overflow if the sign of accumulator and memory are the same
+    // but the sign of the accumulator and the result is different.
+    uint8_t signA = (m_A & 0x80) >> 7;
+    uint8_t signFetched = (m_fetched & 0x80) >> 7;
+    uint8_t signR = ((uint8_t)temp & 0x80) >> 7;
+
+    m_status.V = (signA ^ signR) & ~(signA ^ signFetched);
+
+    // Carry check
+    m_status.C = temp > 255u;
+
+    m_A = (uint8_t)(temp & 0x00FF);
+
+    SetFlagIfNegOrZero(m_A);
+
+    return 1;
+}
+
+void Processor6502::PushDataToStack(uint8_t data)
+{
+    Write(STACK_LOCATION + m_SP, data);
+    m_SP--;
+}
+
+void Processor6502::PushAddrToStack(uint16_t addr)
+{
+    // First push high, then low
+    Write(STACK_LOCATION + m_SP, (uint8_t)((addr >> 8) & 0x00FF));
+    m_SP--;
+
+    Write(STACK_LOCATION + m_SP, (uint8_t)(addr & 0x00FF));
+    m_SP--;
+}
+
+uint8_t Processor6502::PopDataFromStack()
+{
+    m_SP++;
+    return Read(STACK_LOCATION + m_SP);
+}
+
+uint16_t Processor6502::PopAddrFromStack()
+{
+    m_SP++;
+    uint8_t high = Read(STACK_LOCATION + m_SP);
+
+    m_SP++;
+    uint8_t low = Read(STACK_LOCATION + m_SP);
+
+    return (high << 8) | low;
+}
+
+void Processor6502::Interrupt(uint8_t requestSoftware)
+{
+    // Write the PC to the stack. First push the high, then the low
+    PushAddrToStack(m_PC);
+
+    // Set the internal flags. 
+    // For the B flag, it should be set to 0 if the interrupt comes from hardware
+    // and 1 if it comes from software
+    m_status.B = requestSoftware;
+    m_status.U = 1;
+    m_status.I = 1;
+
+    // Then push the status flag to the stack
+    PushDataToStack(m_status.flags);
+}
 
 ////////////////////////////////////////////////
 // Opcodes
 ////////////////////////////////////////////////
+
 uint8_t Processor6502::ADC()
 {
-    return 0;
+    Fetch();
+    return GeneralAddition();
 }
 
 uint8_t Processor6502::AND()
 {
-    return 0;
+    Fetch();
+
+    m_A &= m_fetched;
+
+    SetFlagIfNegOrZero(m_A);
+
+    return 1;
 } 
 
 uint8_t Processor6502::ASL()
 {
+    Fetch();
+
+    m_status.C = (m_fetched & 0x80) >> 7;
+
+    uint8_t temp = m_fetched << 1;
+
+    SetFlagIfNegOrZero(temp);
+
+    // Depending on the addr mode, we need to write this value to the accumulator or in memory
+    if (m_opCodeMapper[m_opcode].addrmode == &Processor6502::IMP)
+        m_A = temp;
+    else
+        Write(m_absAddress, temp);
+
     return 0;
 }
 
 uint8_t Processor6502::BCC()
 {
-    return 0;
+    return Branch(m_status.C, 0);
 }
 
 uint8_t Processor6502::BCS()
 {
-    return 0;
+    return Branch(m_status.C, 1);
 }
 
 uint8_t Processor6502::BEQ()
 {
-    return 0;
+    return Branch(m_status.Z, 1);
 } 
 
 uint8_t Processor6502::BIT()
 {
+    Fetch();
+
+    uint8_t temp = m_A & m_fetched;
+
+    SetFlagIfNegOrZero(temp);
+    m_status.V = (temp & 0x40) >> 6;
+
     return 0;
 }
 
 uint8_t Processor6502::BMI()
 {
-    return 0;
+    return Branch(m_status.N, 1);
 }
 
 uint8_t Processor6502::BNE()
 {
-    return 0;
+    return Branch(m_status.Z, 0);
 }
 
 uint8_t Processor6502::BPL()
 {
-    return 0;
+    return Branch(m_status.N, 0);
 } 
 
 uint8_t Processor6502::BRK()
 {
+    Interrupt(1);
     return 0;
 }
 
 uint8_t Processor6502::BVC()
 {
-    return 0;
+    return Branch(m_status.V, 0);
 }
 
 uint8_t Processor6502::BVS()
 {
-    return 0;
+    return Branch(m_status.V, 1);
 }
 
 uint8_t Processor6502::CLC()
 {
+    m_status.C = 0;
     return 0;
 } 
 
 uint8_t Processor6502::CLD()
 {
+    m_status.D = 0;
     return 0;
 }
 
 uint8_t Processor6502::CLI()
 {
+    m_status.I = 0;
     return 0;
 }
 
 uint8_t Processor6502::CLV()
 {
+    m_status.V = 0;
     return 0;
 }
 
 uint8_t Processor6502::CMP()
 {
-    return 0;
+    Fetch();
+
+    uint8_t temp = m_A - m_fetched;
+
+    SetFlagIfNegOrZero(temp);
+    m_status.C = ((m_A & 0x80) ^ (m_fetched & 0x80)) >> 7;
+
+    return 1;
 } 
 
 uint8_t Processor6502::CPX()
 {
+    Fetch();
+
+    uint8_t temp = m_X - m_fetched;
+
+    SetFlagIfNegOrZero(temp);
+    m_status.C = ((m_X & 0x80) ^ (m_fetched & 0x80)) >> 7;
+
     return 0;
 }
 
 uint8_t Processor6502::CPY()
 {
+    Fetch();
+
+    uint8_t temp = m_Y - m_fetched;
+
+    SetFlagIfNegOrZero(temp);
+    m_status.C = ((m_Y & 0x80) ^ (m_fetched & 0x80)) >> 7;
+
     return 0;
 }
 
 uint8_t Processor6502::DEC()
 {
+    Fetch();
+
+    uint8_t temp = m_fetched - 1;
+    Write(m_absAddress, temp);
+
+    SetFlagIfNegOrZero(temp);
+
     return 0;
 }
 
 uint8_t Processor6502::DEX()
 {
+    m_X--;
+    SetFlagIfNegOrZero(m_X);
     return 0;
 } 
 
 uint8_t Processor6502::DEY()
 {
+    m_Y--;
+    SetFlagIfNegOrZero(m_Y);
     return 0;
 }
 
 uint8_t Processor6502::EOR()
 {
-    return 0;
+    Fetch();
+
+    m_A ^= m_fetched;
+
+    SetFlagIfNegOrZero(m_A);
+
+    return 1;
 }
 
 uint8_t Processor6502::INC()
 {
-    return 0;
+    Fetch();
+
+    uint8_t temp = m_fetched + 1;
+    Write(m_absAddress, temp);
+
+    SetFlagIfNegOrZero(temp);
+
+    return 1;
 }
 
 uint8_t Processor6502::INX()
 {
+    m_X++;
+    SetFlagIfNegOrZero(m_X);
     return 0;
 } 
 
 uint8_t Processor6502::INY()
 {
+    m_Y++;
+    SetFlagIfNegOrZero(m_Y);
     return 0;
 }
 
 uint8_t Processor6502::JMP()
 {
+    uint16_t low = Read(m_PC + 1);
+    uint16_t high = Read(m_PC + 2);
+
+    m_PC = (high << 8) | low;
     return 0;
 }
 
 uint8_t Processor6502::JSR()
 {
-    return 0;
+    PushAddrToStack(m_PC + 2);
+    return JMP();
 }
 
 uint8_t Processor6502::LDA()
 {
-    return 0;
+    Fetch();
+
+    m_A = m_fetched;
+    SetFlagIfNegOrZero(m_A);
+
+    return 1;
 } 
 
 uint8_t Processor6502::LDX()
 {
-    return 0;
+    Fetch();
+
+    m_X = m_fetched;
+    SetFlagIfNegOrZero(m_X);
+
+    return 1;
 }
 
 uint8_t Processor6502::LDY()
 {
-    return 0;
+    Fetch();
+
+    m_Y = m_fetched;
+    SetFlagIfNegOrZero(m_Y);
+
+    return 1;
 }
 
 uint8_t Processor6502::LSR()
 {
+    Fetch();
+
+    m_status.C = m_fetched & 0x01;
+
+    uint8_t temp = m_fetched >> 1;
+
+    SetFlagIfNegOrZero(temp);
+
+    // Depending on the addr mode, we need to write this value to the accumulator or in memory
+    if (m_opCodeMapper[m_opcode].addrmode == &Processor6502::IMP)
+        m_A = temp;
+    else
+        Write(m_absAddress, temp);
+
     return 0;
 }
 
@@ -380,111 +638,174 @@ uint8_t Processor6502::NOP()
 
 uint8_t Processor6502::ORA()
 {
-    return 0;
+    Fetch();
+
+    m_A |= m_fetched;
+    SetFlagIfNegOrZero(m_A);
+
+    return 1;
 }
 
 uint8_t Processor6502::PHA()
 {
+    PushDataToStack(m_A);
     return 0;
 }
 
 uint8_t Processor6502::PHP()
 {
+    PushDataToStack(m_status.flags);
     return 0;
 }
 
 uint8_t Processor6502::PLA()
 {
+    m_A = PopDataFromStack();
+    SetFlagIfNegOrZero(m_A);
     return 0;
 } 
 
 uint8_t Processor6502::PLP()
 {
+    uint8_t savedU = m_status.U;
+    m_status.flags = PopDataFromStack();
+    m_status.U = savedU;
     return 0;
 }
 
 uint8_t Processor6502::ROL()
 {
+    Fetch();
+
+    m_status.C = (m_fetched & 0x80) >> 7;
+
+    uint8_t temp = m_fetched << 1 | m_status.C;
+
+    SetFlagIfNegOrZero(temp);
+
+    // Depending on the addr mode, we need to write this value to the accumulator or in memory
+    if (m_opCodeMapper[m_opcode].addrmode == &Processor6502::IMP)
+        m_A = temp;
+    else
+        Write(m_absAddress, temp);
+
     return 0;
 }
 
 uint8_t Processor6502::ROR()
 {
+    Fetch();
+
+    m_status.C = m_fetched & 0x01;
+
+    uint8_t temp = (m_fetched >> 1) | m_status.C;
+
+    SetFlagIfNegOrZero(temp);
+
+    // Depending on the addr mode, we need to write this value to the accumulator or in memory
+    if (m_opCodeMapper[m_opcode].addrmode == &Processor6502::IMP)
+        m_A = temp;
+    else
+        Write(m_absAddress, temp);
+
     return 0;
 }
 
 uint8_t Processor6502::RTI()
 {
+    uint8_t savedU = m_status.U;
+    m_status.flags = PopDataFromStack();
+    m_status.U = savedU;
+
+    m_PC = PopAddrFromStack();
     return 0;
 } 
 
 uint8_t Processor6502::RTS()
 {
+    m_PC = PopAddrFromStack();
+    m_PC++;
     return 0;
 }
 
 uint8_t Processor6502::SBC()
 {
-    return 0;
+    // Substraction is an addition with -fetched
+    Fetch();
+    m_fetched = ~(m_fetched);
+
+    return GeneralAddition();
 }
 
 uint8_t Processor6502::SEC()
 {
+    m_status.C = 1;
     return 0;
 }
 
 uint8_t Processor6502::SED()
 {
+    m_status.D = 1;
     return 0;
 } 
 
 uint8_t Processor6502::SEI()
 {
+    m_status.I = 1;
     return 0;
 }
 
 uint8_t Processor6502::STA()
 {
+    Write(m_absAddress, m_A);
     return 0;
 }
 
 uint8_t Processor6502::STX()
 {
+    Write(m_absAddress, m_X);
     return 0;
 }
 
 uint8_t Processor6502::STY()
 {
+    Write(m_absAddress, m_Y);
     return 0;
 } 
 
 uint8_t Processor6502::TAX()
 {
+    m_X = m_A;
     return 0;
 }
 
 uint8_t Processor6502::TAY()
 {
+    m_Y = m_A;
     return 0;
 }
 
 uint8_t Processor6502::TSX()
 {
+    m_X = m_SP;
     return 0;
 }
 
 uint8_t Processor6502::TXA()
 {
+    m_A = m_X;
     return 0;
 } 
 
 uint8_t Processor6502::TXS()
 {
+    m_SP = m_X;
     return 0;
 }
 
 uint8_t Processor6502::TYA()
 {
+    m_A = m_Y;
     return 0;
 }
 

@@ -4,6 +4,9 @@
 #include <string>
 #include <vector>
 
+// Stack: LIFO, top down, 8 bit range, 0x0100 - 0x01FF
+constexpr uint16_t STACK_LOCATION = 0x1000;
+
 namespace NesEmulator
 {
     class Bus;
@@ -65,9 +68,22 @@ namespace NesEmulator
         void IRQ();
         void NMI();
 
-        uint8_t Fetch();
+        uint8_t Branch(uint8_t flag, uint8_t isSet);
+
 
     private:
+        // Helpers
+        uint8_t Fetch();
+        void SetFlagIfNegOrZero(uint8_t value);
+        uint8_t GeneralAddition();
+        void Interrupt(uint8_t requestSoftware);
+
+        void PushDataToStack(uint8_t data);
+        void PushAddrToStack(uint16_t addr);
+
+        uint8_t PopDataFromStack();
+        uint16_t PopAddrFromStack();
+
         void ResetFlags() { m_status.flags = 0; }
         void Write(uint16_t address, uint8_t data);
         uint8_t Read(uint16_t address);
