@@ -1,8 +1,12 @@
-#include <iostream>
-#include <core/bus.h>
+#include <QApplication>
+#include <QPushButton>
 
-int main(int, char**) {
-    NesEmulator::Bus bus;
-    bus.GetCPU().Clock();
-    std::cout << "Hello, world!\n";
+int main(int argc, char **argv)
+{
+    QApplication app (argc, argv);
+
+    QPushButton button ("Hello world !");
+    button.show();
+
+    return app.exec();
 }
