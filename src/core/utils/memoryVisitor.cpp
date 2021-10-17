@@ -15,8 +15,19 @@ MemoryReadVisitor::MemoryReadVisitor(const uint8_t* data, std::size_t size)
 
 void MemoryReadVisitor::Read(uint8_t* data, std::size_t size)
 {
+    Peek(data, size);
+    m_ptr += size;
+}
+
+void MemoryReadVisitor::Peek(uint8_t* data, std::size_t size)
+{
     assert(size <= Remaining());
     memcpy(data, m_data + m_ptr, size);
+}
+
+void MemoryReadVisitor::Advance(std::size_t size)
+{
+    assert(size <= Remaining());
     m_ptr += size;
 }
 
