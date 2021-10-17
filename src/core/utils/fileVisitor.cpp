@@ -2,6 +2,7 @@
 #include <cstring>
 #include <cassert>
 #include <limits>
+#include <iostream>
 
 using NesEmulator::Utils::FileReadVisitor;
 using NesEmulator::Utils::FileWriteVisitor;
@@ -9,7 +10,7 @@ using NesEmulator::Utils::FileWriteVisitor;
 template <typename T>
 void Open(T& stream, const std::string& filename)
 {
-    stream.open(filename, ios::binary);
+    stream.open(filename, std::ios::binary);
 }
 
 template <typename T>
@@ -29,9 +30,13 @@ FileReadVisitor::FileReadVisitor(const std::string& file)
     if (m_file.is_open())
     {
         m_file.ignore( std::numeric_limits<std::streamsize>::max() );
-        m_size = file.gcount();
+        m_size = m_file.gcount();
         m_file.clear();   //  Since ignore will have set eof.
         m_file.seekg( 0, std::ios_base::beg );
+    }
+    else
+    {
+        std::cerr << "Failed to open file " << file << std::endl; 
     }
 }
 
@@ -43,7 +48,22 @@ FileReadVisitor::~FileReadVisitor()
 void FileReadVisitor::Read(uint8_t* data, std::size_t size)
 {
     assert(size <= Remaining());
-    m_file.read(data, size);
+    m_file.read(reinterpret_cast<char*>(data), size);
+    m_ptr += size;
+}
+
+void FileReadVisitor::Peek(uint8_t* data, std::size_t size)
+{
+    assert(size <= Remaining());
+    m_file.read(reinterpret_cast<char*>(data), size);
+    // Go back in the stream
+    m_file.seekg(std::streamoff(-static_cast<ssize_t>(size)), std::ios_base::cur);
+}
+
+void FileReadVisitor::Advance(std::size_t size)
+{
+    assert(size <= Remaining());
+    m_file.seekg(size, std::ios_base::cur);
     m_ptr += size;
 }
 
@@ -55,7 +75,7 @@ std::size_t FileReadVisitor::Remaining() const
 FileWriteVisitor::FileWriteVisitor(const std::string& file)
     : m_ptr(0)
 {
-    Open(file);
+    Open(m_file, file);
 }
 
 FileWriteVisitor::~FileWriteVisitor()
@@ -66,7 +86,7 @@ FileWriteVisitor::~FileWriteVisitor()
 void FileWriteVisitor::Write(const uint8_t* data, std::size_t size)
 {
     assert(m_file.is_open());
-    m_file.write(data, size);
+    m_file.write(reinterpret_cast<const char*>(data), size);
     m_ptr += size;
 }
 

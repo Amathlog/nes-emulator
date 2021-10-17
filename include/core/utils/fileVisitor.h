@@ -14,7 +14,9 @@ public:
     ~FileReadVisitor();
 
     void Read(uint8_t* data, std::size_t size) override;
+    void Peek(uint8_t* data, std::size_t size) override;
     std::size_t Remaining() const override;
+    void Advance(std::size_t size) override;
 
 private:
     std::ifstream m_file;
