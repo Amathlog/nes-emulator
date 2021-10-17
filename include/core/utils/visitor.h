@@ -9,6 +9,8 @@ namespace NesEmulator
         class IReadVisitor
         {
         public:
+            virtual ~IReadVisitor() = default;
+
             virtual void Read(uint8_t* data, std::size_t size) = 0;
 
             template<typename T>
@@ -20,7 +22,7 @@ namespace NesEmulator
             template<typename T>
             void ReadAll(T* data)
             {
-                Read(T, Remaining() / sizeof(T));
+                Read(data, Remaining() / sizeof(T));
             }
             
             virtual std::size_t Remaining() const = 0;
@@ -29,7 +31,21 @@ namespace NesEmulator
         class IWriteVisitor
         {
         public:
-            virtual void Write(uint8_t* data, std::size_t size) = 0;
+            virtual ~IWriteVisitor() = default;
+
+            virtual void Write(const uint8_t* data, std::size_t size) = 0;
+
+            template <typename T>
+            void Write(const T* data, std::size_t size)
+            {
+                Write(reinterpret_cast<const uint8_t*>(data), size / sizeof(T));
+            }
+
+            template <typename Container>
+            void WriteAll(const Container& data)
+            {
+                Write(data.get(), data.size());
+            }
 
             virtual std::size_t Written() const = 0;
         };
