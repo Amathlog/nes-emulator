@@ -70,6 +70,17 @@ namespace NesEmulator
 
         uint8_t Branch(uint8_t flag, uint8_t isSet);
 
+        // Mapping between opcodes and functions
+        struct Instruction
+        {
+            std::string name;
+            uint8_t(Processor6502::*operate)(void) = nullptr;
+            uint8_t(Processor6502::*addrmode)(void) = nullptr;
+            uint8_t cycles = 0x00;
+        };
+
+        const std::vector<Instruction>& GetOpCodeMapper() { return m_opCodeMapper; }
+
 
     private:
         // Helpers
@@ -109,15 +120,6 @@ namespace NesEmulator
         uint8_t m_cycles = 0x00;
 
         Status m_status;
-
-        // Mapping between opcodes and functions
-        struct Instruction
-        {
-            std::string name;
-            uint8_t(Processor6502::*operate)(void) = nullptr;
-            uint8_t(Processor6502::*addrmode)(void) = nullptr;
-            uint8_t cycles = 0x00;
-        };
 
         std::vector<Instruction> m_opCodeMapper;
     };
