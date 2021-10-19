@@ -5,14 +5,14 @@
 
 namespace NesEmulator
 {
-    std::unique_ptr<IMapper> CreateMapper(uint8_t mapperId)
+    std::unique_ptr<IMapper> CreateMapper(uint8_t mapperId, uint8_t nbPrgBanks, uint8_t nbChrBanks)
     {
         switch(mapperId)
         {
         case 0:
-            return std::make_unique<Mapper_000>();
+            return std::make_unique<Mapper_000>(nbPrgBanks, nbChrBanks);
         default:
-            return std::unique_ptr<IMapper>();
+            return nullptr;
         }
     }
 }
