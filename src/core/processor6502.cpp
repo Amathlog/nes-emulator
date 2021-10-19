@@ -34,12 +34,12 @@ Processor6502::Processor6502()
 
 void Processor6502::Write(uint16_t address, uint8_t data)
 {
-    m_bus->Write(address, data);
+    m_bus->WriteCPU(address, data);
 }
 
 uint8_t Processor6502::Read(uint16_t address)
 {
-    return m_bus->Read(address);
+    return m_bus->ReadCPU(address);
 }
 
 void Processor6502::Clock()

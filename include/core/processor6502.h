@@ -63,6 +63,9 @@ namespace NesEmulator
         // Illegal instruction
         uint8_t XXX();
 
+        // To force a PC
+        void ForceSetPC(uint16_t pc) { m_PC = pc; };
+
         void Clock();
         void Reset();
         void IRQ();

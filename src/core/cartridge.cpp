@@ -4,6 +4,7 @@
 #include <core/constants.h>
 #include <cassert>
 #include <cstring>
+#include <iostream>
 
 using NesEmulator::Cartridge;
 using NesEmulator::Utils::IReadVisitor;
@@ -36,18 +37,69 @@ Cartridge::Cartridge(IReadVisitor& visitor)
     if ((header.flag6 & 0x04) == 0x04)
         visitor.Advance(NesEmulator::Cst::ROM_TRAINER_SIZE);
 
-    m_prgData.resize(header.prgRomSize * NesEmulator::Cst::ROM_PRG_CHUNK_SIZE);
+    m_nbPrgBanks = header.prgRomSize;
+    m_prgData.resize(m_nbPrgBanks * NesEmulator::Cst::ROM_PRG_CHUNK_SIZE);
     visitor.Read(m_prgData.data(), m_prgData.size());
 
     if (header.chrRomSize > 0)
     {
-        m_chrData.resize(header.chrRomSize * NesEmulator::Cst::ROM_CHR_CHUNK_SIZE);
+        m_nbChrBanks = header.chrRomSize;
+        m_chrData.resize(m_nbChrBanks * NesEmulator::Cst::ROM_CHR_CHUNK_SIZE);
         visitor.Read(m_chrData.data(), m_chrData.size());
     }
 
     // Setup the mapper
     uint8_t mapperId = (header.flag7 & 0xF0) | ((header.flag6 & 0xF0) >> 4);
-    m_mapper = NesEmulator::CreateMapper(mapperId);
+    m_mapper = NesEmulator::CreateMapper(mapperId, m_nbPrgBanks, m_nbChrBanks);
     
     assert(m_mapper.get() != nullptr && "Invalid mapper id, unsupported");
+
+    // Allocate 8kB of prgRam
+    m_prgRam.resize(0x2000);
+}
+
+bool Cartridge::ReadCPU(uint16_t address, uint8_t& data)
+{
+    uint32_t mappedAddress = 0;
+    if (m_mapper->MapReadCPU(address, mappedAddress))
+    {
+        if (address >= 0x6000 && address <= 0x7FFF)
+            data = m_prgRam[mappedAddress];
+        else
+            data = m_prgData[mappedAddress];
+    }
+
+    return false;
+}
+
+bool Cartridge::WriteCPU(uint16_t addr, uint8_t data)
+{
+    uint32_t mappedAddress = 0;
+    if (m_mapper->MapWriteCPU(addr, mappedAddress))
+    {
+        m_prgRam[mappedAddress] = data;
+    }
+    
+    return false;
+}
+
+bool Cartridge::WritePPU(uint16_t addr, uint8_t data)
+{
+    // uint32_t mappedAddress = 0;
+    // if (m_mapper->MapWritePPU(addr, mappedAddress))
+    // {
+    //     m_chrData[mappedAddress] = data;
+    // }
+    return false;
+}
+
+bool Cartridge::ReadPPU(uint16_t addr, uint8_t& data)
+{
+    uint32_t mappedAddress = 0;
+    if (m_mapper->MapReadPPU(addr, mappedAddress))
+    {
+        data = m_chrData[mappedAddress];
+    }
+
+    return false;
 }
