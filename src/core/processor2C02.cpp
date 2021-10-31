@@ -83,6 +83,15 @@ uint8_t Processor2C02::ReadPPU(uint16_t addr)
 void Processor2C02::Clock()
 {
     // TODO
+    // For now some random noise is added at each clock.
+    static unsigned i = 0, j = 0;
+    m_screen[i][j] = rand() % 2 == 0 ? 0x30 : 0x0f;
+    j++;
+    if (j == GetWidth())
+    {
+        j = 0;
+        i = (i + 1) % GetHeight();
+    }
 }
 
 void Processor2C02::Reset()
