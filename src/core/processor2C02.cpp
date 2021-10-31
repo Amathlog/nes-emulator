@@ -1,7 +1,14 @@
 #include <core/processor2C02.h>
 #include <core/cartridge.h>
+#include <cstring>
+#include <cstdlib>
 
 using NesEmulator::Processor2C02;
+
+Processor2C02::Processor2C02()
+{
+    Reset();
+}
 
 uint8_t Processor2C02::ReadCPU(uint16_t addr)
 {
@@ -76,4 +83,22 @@ uint8_t Processor2C02::ReadPPU(uint16_t addr)
 void Processor2C02::Clock()
 {
     // TODO
+}
+
+void Processor2C02::Reset()
+{
+    memset(m_screen, 0, GetWidth()*GetHeight());
+    m_namedTables.fill({0});
+    m_paletteTable.fill({0});
+}
+
+void Processor2C02::RandomizeScreen()
+{
+    for(int i = 0; i < GetWidth(); ++i)
+    {
+        for (int j = 0; j < GetHeight(); ++j)
+        {
+            m_screen[i][j] = rand() % 2 == 0 ? 0x30 : 0x0f;
+        }
+    }
 }
