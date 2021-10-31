@@ -65,7 +65,7 @@ void Processor6502::Clock()
         //m_status.U = 1;
     }
 
-    --m_cycles;
+    m_opComplete =  (--m_cycles == 0);
 }
 
 uint8_t Processor6502::Fetch()

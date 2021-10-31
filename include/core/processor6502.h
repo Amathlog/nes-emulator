@@ -64,7 +64,15 @@ namespace NesEmulator
         uint8_t XXX();
 
         // To force a PC
-        void ForceSetPC(uint16_t pc) { m_PC = pc; };
+        void ForceSetPC(uint16_t pc) { m_PC = pc; }
+
+        // Getters
+        uint16_t GetPC() const { return m_PC; }
+        uint8_t GetSP() const { return m_SP; }
+        uint8_t GetA() const { return m_A; }
+        uint8_t GetX() const { return m_X; }
+        uint8_t GetY() const { return m_Y; }
+
 
         void Clock();
         void Reset();
@@ -83,6 +91,7 @@ namespace NesEmulator
         };
 
         const std::vector<Instruction>& GetOpCodeMapper() { return m_opCodeMapper; }
+        bool IsOpComplete() const { return m_opComplete; };
 
 
     private:
@@ -125,5 +134,6 @@ namespace NesEmulator
         Status m_status;
 
         std::vector<Instruction> m_opCodeMapper;
+        bool m_opComplete = true;
     };
 }
