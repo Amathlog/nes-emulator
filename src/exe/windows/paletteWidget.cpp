@@ -27,7 +27,7 @@ PaletteWidget::PaletteWidget(NesEmulator::Bus& bus, QWidget* parent)
     connect(m_switchPaletteButton.get(), &QPushButton::released, this, &PaletteWidget::SwitchPalette);
     m_mainLayout->addWidget(m_switchPaletteButton.get());
 
-    m_scene = std::make_unique<QGraphicsScene>(0, 0, 256, 256);
+    m_scene = std::make_unique<QGraphicsScene>(0, 0, 266, 256);
     m_graphicView = std::make_unique<QGraphicsView>(m_scene.get());
 
     unsigned i = 0;
@@ -82,6 +82,6 @@ void PaletteWidget::Update()
     {
         m_bus.GetPPU().FillFromPatternTable(i, m_currentSelectedPalette, m_namedTableImages[i]->bits());
         m_namedTablePixmaps[i]->setPixmap(QPixmap::fromImage(*m_namedTableImages[i]));
-        m_namedTablePixmaps[i]->setOffset(128 * i, 40);
+        m_namedTablePixmaps[i]->setOffset(138 * i, 40);
     }
 }
