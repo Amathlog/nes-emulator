@@ -33,3 +33,6 @@
 
 # Build stuff
 build/
+
+# Cache
+.cache/**
