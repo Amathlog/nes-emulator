@@ -111,3 +111,13 @@ void Processor2C02::RandomizeScreen()
         }
     }
 }
+
+uint8_t Processor2C02::GetColorFromPaletteRam(uint8_t n, uint8_t i) const
+{
+    return n * 4 + i;
+}
+
+void Processor2C02::FillFromPatternTable(uint8_t index, uint8_t /*selectedPalette*/, uint8_t* buffer) const
+{
+    memcpy(buffer, m_namedTables[index].data(), m_namedTables[index].size());
+}

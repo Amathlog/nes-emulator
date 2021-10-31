@@ -1,5 +1,6 @@
 #pragma once
 
+#include <exe/windows/paletteWidget.h>
 #include <QMainWindow>
 #include <QtWidgets>
 #include <core/bus.h>
@@ -50,6 +51,7 @@ namespace NesEmulatorExe
 
         std::unique_ptr<QTimer> m_renderingTimer;
         std::unique_ptr<DisassemblyWidget> m_disassemblyWidget;
+        std::unique_ptr<PaletteWidget> m_paletteWidget;
 
         unsigned m_framerate;
         Mode m_mode = Mode::NORMAL;
