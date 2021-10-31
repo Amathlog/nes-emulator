@@ -32,6 +32,7 @@ namespace NesEmulatorExe
         void HandleButton();
         void UpdateImage();
         void Step();
+        void Break();
 
     private:
         void CreatePalette();
@@ -44,7 +45,9 @@ namespace NesEmulatorExe
         std::unique_ptr<QGraphicsView> m_graphicView;
         std::unique_ptr<QPushButton> m_helloButton;
         std::unique_ptr<QPushButton> m_stepButton;
+        std::unique_ptr<QPushButton> m_breakButton;
         QGraphicsPixmapItem* m_imagePixmap = nullptr;
+
         std::unique_ptr<QTimer> m_renderingTimer;
         std::unique_ptr<DisassemblyWidget> m_disassemblyWidget;
 
