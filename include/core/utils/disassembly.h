@@ -1,6 +1,9 @@
 #pragma once
 
 #include <cstdint>
+#include <string>
+#include <vector>
+#include <core/utils/busVisitor.h>
 
 namespace NesEmulator
 {
@@ -8,6 +11,6 @@ namespace NesEmulator
     {
         class IReadVisitor;
         
-        void Disassemble(IReadVisitor& visitor, std::size_t startOffset = 0, std::size_t stopOffset = 0);
+        std::vector<std::string> Disassemble(BusReadVisitor& busVisitor, uint16_t wantedPC, uint16_t& indexOfWantedPC);
     }
 }

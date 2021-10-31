@@ -4,41 +4,38 @@
 #include <string>
 #include <iostream>
 #include <sstream>
-#include <iomanip>
 #include <cassert>
+#include <core/utils/utils.h>
 
 using NesEmulator::Utils::IReadVisitor;
 using NesEmulator::Processor6502;
+using NesEmulator::Utils::Hex;
 
-template <typename Stream>
-void Hex(Stream& s, uint16_t v, uint8_t n, const char* prefix="", const char* suffix="")
+std::vector<std::string> NesEmulator::Utils::Disassemble(BusReadVisitor& busVisitor, uint16_t wantedPC, uint16_t& indexOfWantedPC)
 {
-    s << std::internal << std::setfill('0');
-    s << prefix << std::hex << std::uppercase << std::setw(n) << (int)v << suffix;
-}
-
-void NesEmulator::Utils::Disassemble(IReadVisitor& visitor, std::size_t startOffset /* = 0 */, std::size_t stopOffset /* = 0 */)
-{
-    std::stringstream res;
-    //auto& res = std::cout;
+    std::vector<std::string> res;
     // Dummy cpu
     Processor6502 dummyCPU;
     auto opCodeMapper = dummyCPU.GetOpCodeMapper();
 
-    assert(visitor.Remaining() >= startOffset + stopOffset);
-    visitor.Advance(startOffset);
-
-    std::size_t stopRemaining = stopOffset != 0 ? visitor.Remaining() - stopOffset : 0;
-
-    while (visitor.Remaining() >= stopRemaining)
+    while (busVisitor.Remaining() > 0)
     {
+        std::stringstream newValue;
+        uint16_t currentPC = busVisitor.GetCurrentPtr();
+
+        Hex(newValue, currentPC, 4, "0x", " ");
+
+        if (currentPC == wantedPC)
+            indexOfWantedPC = (uint16_t)res.size();
+
         // First read the first byte, it's the opcode
         uint8_t opCode;
-        visitor.Read(&opCode, 1);
+        busVisitor.Read(&opCode, 1);
+        currentPC++;
 
         const Processor6502::Instruction& instruction = opCodeMapper[opCode];
 
-        res << instruction.name << " ";
+        newValue << instruction.name << " ";
 
         uint16_t operand = 0;
 
@@ -53,15 +50,23 @@ void NesEmulator::Utils::Disassemble(IReadVisitor& visitor, std::size_t startOff
                  instruction.addrmode == &Processor6502::IND
                 )
         {
+            if (busVisitor.Remaining() < 2)
+                break;
+
             // 2 bytes to read, it's an address
-            visitor.Read(&operand, 1);
+            busVisitor.Read(&operand, 1);
+            currentPC += 2;
         }
         else
         {
+            if (busVisitor.Remaining() < 1)
+                break;
+
             // 1 byte to read
             uint8_t data;
-            visitor.Read(&data, 1);
+            busVisitor.Read(&data, 1);
             operand = data;
+            currentPC++;
         }
 
         // Depending on the addr mode, we output something different
@@ -71,51 +76,52 @@ void NesEmulator::Utils::Disassemble(IReadVisitor& visitor, std::size_t startOff
         }
         else if (instruction.addrmode == &Processor6502::IMM)
         {
-            Hex(res, operand, 2, "#");
+            Hex(newValue, operand, 2, "#");
         }
         else if (instruction.addrmode == &Processor6502::ZP0)
         {
-            Hex(res, operand, 2, "$");
+            Hex(newValue, operand, 2, "$");
         }
         else if (instruction.addrmode == &Processor6502::ZPX)
         {
-            Hex(res, operand, 2, "$", ",X");
+            Hex(newValue, operand, 2, "$", ",X");
         }
         else if (instruction.addrmode == &Processor6502::ZPY)
         {
-            Hex(res, operand, 2, "$", ",Y");
+            Hex(newValue, operand, 2, "$", ",Y");
         }
         else if (instruction.addrmode == &Processor6502::REL)
         {
-            Hex(res, operand, 2, "PC,$");
+            operand = currentPC + (int8_t)(operand);
+            Hex(newValue, operand, 4, "$[", "]");
         }
         else if (instruction.addrmode == &Processor6502::ABS)
         {
-            Hex(res, operand, 4, "$");
+            Hex(newValue, operand, 4, "$");
         }
         else if (instruction.addrmode == &Processor6502::ABX)
         {
-            Hex(res, operand, 4, "$", ",X");
+            Hex(newValue, operand, 4, "$", ",X");
         }
         else if (instruction.addrmode == &Processor6502::ABY)
         {
-            Hex(res, operand, 4, "$", ",Y");
+            Hex(newValue, operand, 4, "$", ",Y");
         }
         else if (instruction.addrmode == &Processor6502::IND)
         {
-            Hex(res, operand, 4, "($", ")");
+            Hex(newValue, operand, 4, "($", ")");
         }
         else if (instruction.addrmode == &Processor6502::IZX)
         {
-            Hex(res, operand, 2, "($", ",X)");
+            Hex(newValue, operand, 2, "($", ",X)");
         }
         else if (instruction.addrmode == &Processor6502::IZY)
         {
-            Hex(res, operand, 2, "($", "),Y");           
+            Hex(newValue, operand, 2, "($", "),Y");           
         }
 
-        res << std::endl;
+        res.push_back(newValue.str());
     }
 
-    std::cout << res.str();
+    return res;
 }
