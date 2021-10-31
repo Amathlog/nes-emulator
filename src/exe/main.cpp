@@ -7,6 +7,7 @@
 #include <core/cartridge.h>
 #include <core/utils/disassembly.h>
 #include <filesystem>
+#include <exe/windows/mainWindow.h>
 
 namespace fs = std::filesystem;
 
@@ -21,23 +22,21 @@ int main(int argc, char **argv)
     NesEmulator::Bus bus;
     bus.InsertCartridge(cartridge);
     bus.Reset();
-    bus.GetCPU().ForceSetPC(0xc000);
+    bus.GetCPU().ForceSetPC(0xc004);
 
-    for (int i = 0; i < 100; ++i)
-    {
-        bus.Clock();
-    }
+    // for (int i = 0; i < 100; ++i)
+    // {
+    //     bus.Clock();
+    // }
 
     // NesEmulator::Utils::MemoryReadVisitor prgData(cartridge.GetPrgData().data(), cartridge.GetPrgData().size());
 
     // NesEmulator::Utils::Disassemble(prgData, 0, 0x57);
 
-    // QApplication app (argc, argv);
+    QApplication app (argc, argv);
 
-    // QPushButton button ("Hello world !");
-    // button.show();
+    NesEmulatorExe::MainWindow mainWindow(bus);
+    mainWindow.show();
 
-    // return app.exec();
-
-    return 0;
+    return app.exec();
 }
