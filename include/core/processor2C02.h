@@ -1,5 +1,6 @@
 #pragma once
 
+#include "core/processor2C02Registers.h"
 #include <cstdint>
 #include <array>
 #include <memory>
@@ -31,8 +32,8 @@ namespace NesEmulator
         bool IsFrameComplete() const { return m_isFrameComplete; }
 
         void RandomizeScreen();
-        uint8_t GetColorFromPaletteRam(uint8_t n, uint8_t i) const;
-        void FillFromPatternTable(uint8_t index, uint8_t selectedPalette, uint8_t* buffer) const;
+        uint8_t GetColorFromPaletteRam(uint8_t n, uint8_t i);
+        void FillFromPatternTable(uint8_t index, uint8_t selectedPalette, uint8_t* buffer);
         
     private:
         std::shared_ptr<Cartridge> m_cartridge;
@@ -43,5 +44,7 @@ namespace NesEmulator
 
         uint8_t m_screen[256][240];
         bool m_isFrameComplete = false;
+
+        PPURegisters m_registers;
     };
 }
