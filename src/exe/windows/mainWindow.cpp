@@ -32,11 +32,16 @@ MainWindow::MainWindow(NesEmulator::Bus& bus, Mode mode, QWidget* parent)
     connect(m_helloButton.get(), &QPushButton::released, this, &MainWindow::HandleButton);
 
     m_stepButton = std::make_unique<QPushButton>("Step");
+    m_stepButton->setEnabled(m_mode == Mode::STEP);
     connect(m_stepButton.get(), &QPushButton::released, this, &MainWindow::Step);
+
+    m_breakButton = std::make_unique<QPushButton>("Break");
+    connect(m_breakButton.get(), &QPushButton::released, this, &MainWindow::Break);
 
     m_mainLayout->addWidget(m_graphicView.get());
 
     m_buttonLayout->addWidget(m_helloButton.get());
+    m_buttonLayout->addWidget(m_breakButton.get());
     m_buttonLayout->addWidget(m_stepButton.get());
 
     m_mainLayout->addLayout(m_buttonLayout.get());
@@ -77,6 +82,15 @@ void MainWindow::UpdateImage()
 {
     memcpy(m_renderedImage->bits(), m_bus.GetPPU().GetScreen(), m_bus.GetPPU().GetWidth()*m_bus.GetPPU().GetHeight());
     m_imagePixmap->setPixmap(QPixmap::fromImage(*m_renderedImage));
+    if (m_mode == Mode::NORMAL)
+    {
+        // Run 29781 clocks
+        for (unsigned i = 0; i < 29781; ++i)
+        {
+            m_bus.Clock();
+        }
+        m_disassemblyWidget->Update();
+    }
 }
 
 void MainWindow::Step()
@@ -89,6 +103,21 @@ void MainWindow::Step()
     } while (!m_bus.GetCPU().IsOpComplete());
 
     m_disassemblyWidget->Update();
+}
+
+void MainWindow::Break()
+{
+    switch (m_mode)
+    {
+    case Mode::NORMAL:
+        m_mode = Mode::STEP;
+        break;
+    case Mode::STEP:
+        m_mode = Mode::NORMAL;
+    default:
+        break;
+    }
+    m_stepButton->setEnabled(m_mode == Mode::STEP);
 }
 
 void MainWindow::SetFramerate(unsigned framerate)
