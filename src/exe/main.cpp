@@ -35,7 +35,9 @@ int main(int argc, char **argv)
 
     QApplication app (argc, argv);
 
-    NesEmulatorExe::MainWindow mainWindow(bus);
+    NesEmulatorExe::Mode mode = NesEmulatorExe::Mode::STEP;
+
+    NesEmulatorExe::MainWindow mainWindow(bus, mode);
     mainWindow.show();
 
     return app.exec();

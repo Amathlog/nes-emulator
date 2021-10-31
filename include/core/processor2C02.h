@@ -31,6 +31,8 @@ namespace NesEmulator
         bool IsFrameComplete() const { return m_isFrameComplete; }
 
         void RandomizeScreen();
+        uint8_t GetColorFromPaletteRam(uint8_t n, uint8_t i) const;
+        void FillFromPatternTable(uint8_t index, uint8_t selectedPalette, uint8_t* buffer) const;
         
     private:
         std::shared_ptr<Cartridge> m_cartridge;
