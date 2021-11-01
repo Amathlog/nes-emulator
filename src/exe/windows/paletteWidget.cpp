@@ -4,18 +4,9 @@
 #include <memory>
 #include <qpushbutton.h>
 #include <cstring>
+#include <exe/utils.h>
 
 using NesEmulatorExe::PaletteWidget;
-
-void CreatePalette(QImage* image)
-{
-    image->setColorCount(NesEmulator::Palette::paletteSize);
-
-    for (uint8_t i = 0; i < NesEmulator::Palette::paletteSize; ++i)
-    {
-        image->setColor(i, NesEmulator::Palette::GetRGBColor(i));
-    }
-}
 
 PaletteWidget::PaletteWidget(NesEmulator::Bus& bus, QWidget* parent)
     : QWidget(parent)
@@ -34,7 +25,7 @@ PaletteWidget::PaletteWidget(NesEmulator::Bus& bus, QWidget* parent)
     for (auto& paletteImage : m_paletteImages)
     {
         paletteImage = std::make_unique<QImage>(20, 10, QImage::Format::Format_Indexed8);
-        CreatePalette(paletteImage.get());
+        NesEmulatorExe::CreatePalette(paletteImage.get());
         m_palettePixmaps[i++] = m_scene->addPixmap(QPixmap::fromImage(*paletteImage));
     }
 
@@ -42,7 +33,7 @@ PaletteWidget::PaletteWidget(NesEmulator::Bus& bus, QWidget* parent)
     for (auto& namedTableImage : m_namedTableImages)
     {
         namedTableImage = std::make_unique<QImage>(128, 128, QImage::Format::Format_Indexed8);
-        CreatePalette(namedTableImage.get());
+        NesEmulatorExe::CreatePalette(namedTableImage.get());
         m_namedTablePixmaps[i++] = m_scene->addPixmap(QPixmap::fromImage(*namedTableImage));
     }
 
