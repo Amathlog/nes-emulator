@@ -46,5 +46,8 @@ namespace NesEmulator
         bool m_isFrameComplete = false;
 
         PPURegisters m_registers;
+
+        int16_t m_scanlines = 0;
+        int16_t m_cycles = 0;
     };
 }

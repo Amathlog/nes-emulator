@@ -17,28 +17,28 @@ uint8_t Processor2C02::ReadCPU(uint16_t addr)
     switch(addr)
     {
     case 0:
-        data = m_registers.ctrl.flags;
+        // Can't read from Ctrl register
         break;
     case 1:
-        data = m_registers.mask.flags;
+        // Can't read from Mask register
         break;
     case 2:
         data = m_registers.status.flags;
         break;
     case 3:
-        data = m_registers.oamaddr;
+        // Can't read from OAMAddress register
         break;
     case 4:
         data = m_registers.oamdata;
         break;
     case 5:
-        data = m_registers.scroll;
+        // Can't read from Scroll register
         break;
     case 6:
-        data = m_registers.addr;
+        // Can't read from Addr register
         break;
     case 7:
-        data = m_registers.data;
+        data = ReadPPU(m_registers.fullAddress);
         break;
     }
 
@@ -57,7 +57,7 @@ void Processor2C02::WriteCPU(uint16_t addr, uint8_t data)
         m_registers.mask.flags = data;
         break;
     case 2:
-        m_registers.status.flags = data;
+        // Can't write to Status register
         break;
     case 3:
         m_registers.oamaddr = data;
@@ -69,10 +69,19 @@ void Processor2C02::WriteCPU(uint16_t addr, uint8_t data)
         m_registers.scroll = data;
         break;
     case 6:
-        m_registers.addr = data;
+        if (m_registers.addr == 0)
+        {
+            m_registers.fullAddress = (m_registers.fullAddress & 0xFF00) | data;
+            m_registers.addr = 1;
+        }
+        else 
+        {
+            m_registers.fullAddress = (m_registers.fullAddress & 0x00FF) | (data << 8);
+            m_registers.addr = 0;
+        }
         break;
     case 7:
-        m_registers.data = data;
+        WritePPU(m_registers.fullAddress, data);
         break;
     }
 }
@@ -141,13 +150,33 @@ void Processor2C02::Clock()
 {
     // TODO
     // For now some random noise is added at each clock.
-    static unsigned i = 0, j = 0;
-    m_screen[i][j] = rand() % 2 == 0 ? 0x30 : 0x0f;
-    j++;
-    if (j == GetWidth())
+//     static unsigned i = 0, j = 0;
+//     m_screen[i][j] = rand() % 2 == 0 ? 0x30 : 0x0f;
+//     j++;
+//     if (j == GetWidth())
+//     {
+//         j = 0;
+//         i = (i + 1) % GetHeight();
+//     }
+    m_cycles++;
+    if (m_cycles >= 341)
     {
-        j = 0;
-        i = (i + 1) % GetHeight();
+        m_cycles = 0;
+        m_scanlines++;
+        if (m_scanlines >= 261)
+        {
+            m_registers.status.verticalBlankStarted = 0;
+            m_scanlines = -1;
+            m_isFrameComplete = true;
+        }
+        else if (m_scanlines == 241)
+        {
+            m_registers.status.verticalBlankStarted = 1;
+        }
+        else if (m_scanlines == 0) 
+        {
+            m_isFrameComplete = false;
+        }
     }
 }
 

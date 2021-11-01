@@ -35,7 +35,7 @@ void Bus::WriteCPU(uint16_t address, uint8_t data)
     else if (address >= Cst::PPU_REG_START_ADDR && address <= Cst::PPU_REG_END_ADDR)
     {
         // Mirroring.
-        m_cpuRam[address % Cst::PPU_REG_SIZE] = data;
+        m_ppu.WriteCPU(address % Cst::PPU_REG_SIZE, data);
     }
 }
 
@@ -54,7 +54,7 @@ uint8_t Bus::ReadCPU(uint16_t address)
     else if (address >= Cst::PPU_REG_START_ADDR && address <= Cst::PPU_REG_END_ADDR)
     {
         // Mirroring.
-        data = m_cpuRam[address % Cst::PPU_REG_SIZE];
+        data = m_ppu.ReadCPU(address % Cst::PPU_REG_SIZE);
     }
 
     return data;
