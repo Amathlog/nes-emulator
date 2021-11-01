@@ -1,3 +1,4 @@
+#include "core/constants.h"
 #include <core/processor2C02.h>
 #include <core/cartridge.h>
 #include <cstdint>
@@ -38,8 +39,19 @@ uint8_t Processor2C02::ReadCPU(uint16_t addr)
         // Can't read from Addr register
         break;
     case 7:
-        data = ReadPPU(m_registers.fullAddress);
+    {
+        // delay read
+        data = m_registers.data;
+        m_registers.data = ReadPPU(m_registers.fullAddress);
+
+        // Note: In case of reading to the palette ram, there is no delay
+        // Therefore skip the delay if we are in this range (with mirroring)
+        uint16_t tempAddr = m_registers.fullAddress &= Cst::PPU_MASK_MIRROR;
+        if (tempAddr >= Cst::PPU_START_PALETTE && tempAddr <= Cst::PPU_END_PALETTE)
+            data = m_registers.data;
+
         break;
+    }
     }
 
     return data;
@@ -88,21 +100,21 @@ void Processor2C02::WriteCPU(uint16_t addr, uint8_t data)
 
 void Processor2C02::WritePPU(uint16_t addr, uint8_t data)
 {
-    addr &= 0x3FFF;
+    addr &= Cst::PPU_MASK_MIRROR;
     if (m_cartridge->WritePPU(addr, data))
     {
         // Nothing to do
     }
-    else if(addr >= 0x000 && addr <= 0x1F00)
+    else if(addr >= Cst::PPU_START_CHR_ROM && addr <= Cst::PPU_END_CHR_ROM)
     {
         m_namedTables[(addr & 0x1000) >> 12][addr & 0x0FFF] = data;
     }
-    else if (addr >= 0x2000 && addr <= 0x3EFF)
+    else if (addr >= Cst::PPU_START_VRAM && addr <= Cst::PPU_END_VRAM)
     {
         addr &= 0x0007;
         WriteCPU(addr, data);
     }
-    else if (addr >= 0x3F00 && addr <= 0x3FFF)
+    else if (addr >= Cst::PPU_START_PALETTE && addr <= Cst::PPU_END_PALETTE)
     {
         addr &= 0x001F;
         // Mirroring, to review
@@ -118,21 +130,21 @@ void Processor2C02::WritePPU(uint16_t addr, uint8_t data)
 uint8_t Processor2C02::ReadPPU(uint16_t addr)
 {
     uint8_t data = 0;
-    addr &= 0x3FFF;
+    addr &= Cst::PPU_MASK_MIRROR;
     if (m_cartridge->ReadPPU(addr, data))
     {
         // Nothing to do
     }
-    else if(addr >= 0x000 && addr <= 0x1F00)
+    else if(addr >= Cst::PPU_START_CHR_ROM && addr <= Cst::PPU_END_CHR_ROM)
     {
         data = m_namedTables[(addr & 0x1000) >> 12][addr & 0x0FFF];
     }
-    else if (addr >= 0x2000 && addr <= 0x3EFF)
+    else if (addr >= Cst::PPU_START_VRAM && addr <= Cst::PPU_END_VRAM)
     {
         addr &= 0x0007;
         data = ReadCPU(addr);
     }
-    else if (addr >= 0x3F00 && addr <= 0x3FFF)
+    else if (addr >= Cst::PPU_START_PALETTE && addr <= Cst::PPU_END_PALETTE)
     {
         addr &= 0x001F;
         // Mirroring, to review
