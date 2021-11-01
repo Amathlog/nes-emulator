@@ -34,5 +34,18 @@ namespace Cst
     constexpr uint8_t PPU_NB_NAMED_TABLES = 0x02;
     constexpr uint16_t PPU_NAMED_TABLES_SIZE = 0x0400;
     constexpr uint8_t PPU_PALETTE_SIZE = 0x20;
+
+    constexpr uint16_t PPU_START_CHR_ROM = 0x0000;
+    constexpr uint16_t PPU_END_CHR_ROM = 0x1FFF;
+    constexpr uint16_t PPUT_CHR_ROM_SIZE = PPU_END_CHR_ROM - PPU_START_CHR_ROM;
+
+    constexpr uint16_t PPU_START_VRAM = 0x2000;
+    constexpr uint16_t PPU_END_VRAM = 0x3EFF;
+    constexpr uint16_t PPUT_VRAM_SIZE = PPU_END_VRAM - PPU_START_VRAM;
+
+    constexpr uint16_t PPU_START_PALETTE = 0x3F00;
+    constexpr uint16_t PPU_END_PALETTE = 0x3FFF;
+
+    constexpr uint16_t PPU_MASK_MIRROR = 0x3FFF;
 }
 }

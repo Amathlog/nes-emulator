@@ -77,6 +77,7 @@ struct PPURegisters
     uint8_t scroll;                 // 0x2005
     uint8_t addr;                   // 0x2006
     uint16_t fullAddress;
+    uint8_t data;                   // 0x2007
 
     void Reset()
     {
@@ -88,6 +89,7 @@ struct PPURegisters
         scroll = 0;
         addr = 0;
         fullAddress = 0;
+        data = 0;
     }
 };
 
