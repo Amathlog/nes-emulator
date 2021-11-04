@@ -223,6 +223,11 @@ void Processor2C02::Clock()
     else if (m_scanlines == 241 && m_cycles == 1)
     {
         m_registers.status.verticalBlankStarted = 1;
+        if (m_registers.ctrl.generateNMIWhenVBI)
+            m_nmi = true;
+    }
+    else if (m_scanlines == -1 && m_cycles == 1) {
+        m_registers.status.verticalBlankStarted = 0;
     }
 }
 
