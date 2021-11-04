@@ -23,6 +23,7 @@ int main(int argc, char **argv)
     NesEmulator::Bus bus;
     bus.InsertCartridge(cartridge);
     bus.Reset();
+    bus.GetCPU().SetPC(0xc000);
 
     QApplication app (argc, argv);
 

@@ -39,7 +39,7 @@ void Processor6502::SetPC(uint16_t pc)
     // Little verification to catch when PC goes wild
     if (pc < 0x8000)
     {
-        assert(false && "PC went wild");
+        // assert(false && "PC went wild");
     }
     m_PC = pc;
 }
