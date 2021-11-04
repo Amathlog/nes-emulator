@@ -118,9 +118,8 @@ void Processor2C02::WritePPU(uint16_t addr, uint8_t data)
     else if (addr >= Cst::PPU_START_VRAM && addr <= Cst::PPU_END_VRAM)
     {
         addr &= 0x0FFF;
-        // if (m_cartridge->GetMirroring() == Mirroring::VERTICAL)
+        if (m_cartridge->GetMirroring() == Mirroring::VERTICAL)
         {
-            // Vertical
             if (addr >= 0x0000 && addr <= 0x03FF)
                 m_namedTables[0][addr & 0x03FF] = data;
             if (addr >= 0x0400 && addr <= 0x07FF)
@@ -130,10 +129,17 @@ void Processor2C02::WritePPU(uint16_t addr, uint8_t data)
             if (addr >= 0x0C00 && addr <= 0x0FFF)
                 m_namedTables[1][addr & 0x03FF] = data;
         }
-        // else 
-        // {
-        
-        // }
+        else 
+        {
+            if (addr >= 0x0000 && addr <= 0x03FF)
+                m_namedTables[0][addr & 0x03FF] = data;
+            if (addr >= 0x0400 && addr <= 0x07FF)
+                m_namedTables[0][addr & 0x03FF] = data;
+            if (addr >= 0x0800 && addr <= 0x0BFF)
+                m_namedTables[1][addr & 0x03FF] = data;
+            if (addr >= 0x0C00 && addr <= 0x0FFF)
+                m_namedTables[1][addr & 0x03FF] = data;
+        }
     }
     else if (addr >= Cst::PPU_START_PALETTE && addr <= Cst::PPU_END_PALETTE)
     {
@@ -163,9 +169,8 @@ uint8_t Processor2C02::ReadPPU(uint16_t addr)
     else if (addr >= Cst::PPU_START_VRAM && addr <= Cst::PPU_END_VRAM)
     {
         addr &= 0x0FFF;
-        // if (m_cartridge->GetMirroring() == Mirroring::VERTICAL)
+        if (m_cartridge->GetMirroring() == Mirroring::VERTICAL)
         {
-            // Vertical
             if (addr >= 0x0000 && addr <= 0x03FF)
                 data = m_namedTables[0][addr & 0x03FF];
             if (addr >= 0x0400 && addr <= 0x07FF)
@@ -175,9 +180,17 @@ uint8_t Processor2C02::ReadPPU(uint16_t addr)
             if (addr >= 0x0C00 && addr <= 0x0FFF)
                 data = m_namedTables[1][addr & 0x03FF];
         }
-        // else 
-        // {
-        // }
+        else 
+        {
+            if (addr >= 0x0000 && addr <= 0x03FF)
+                data = m_namedTables[0][addr & 0x03FF];
+            if (addr >= 0x0400 && addr <= 0x07FF)
+                data = m_namedTables[0][addr & 0x03FF];
+            if (addr >= 0x0800 && addr <= 0x0BFF)
+                data = m_namedTables[1][addr & 0x03FF];
+            if (addr >= 0x0C00 && addr <= 0x0FFF)
+                data = m_namedTables[1][addr & 0x03FF];
+        }
     }
     else if (addr >= Cst::PPU_START_PALETTE && addr <= Cst::PPU_END_PALETTE)
     {
@@ -281,6 +294,45 @@ void Processor2C02::FillFromPatternTable(uint8_t index, uint8_t selectedPalette,
                     uint16_t x = tileX * 8 + (7 - col);
                     uint16_t y = tileY * 8 + row;
                     uint16_t value = y * 128 + x;
+                    uint8_t pixelColor = GetColorFromPaletteRam(selectedPalette, pixelValue);
+                    buffer[value] = pixelColor;
+                }
+            }
+        }
+    }
+}
+
+void Processor2C02::FillFromNameTable(uint8_t index, uint8_t selectedPalette, uint8_t* buffer)
+{
+    for (uint16_t y = 0; y < 30; ++y)
+    {
+        for (uint16_t x = 0; x < 32; ++x)
+        {
+            uint16_t position = y * 32 + x;
+            uint8_t tileID = m_namedTables[index][position];
+
+            uint8_t tileY = (tileID >> 4) & 0x0F;
+            uint8_t tileX = tileID & 0x0F;
+
+            uint16_t offset = tileY * 256 + tileX * 16;
+
+            for (uint8_t row = 0; row < 8; ++row)
+            {
+                uint16_t addr = index * 0x1000 + offset + row;
+                // It seems in the rom, it stores 64 bits of lowPixel and then 64 bits of
+                // highPixel. Therefore, we need to offset our read for high by 8 bytes.
+                uint8_t lowPixel = ReadPPU(addr);
+                uint8_t highPixel = ReadPPU(addr + 8);
+
+                for (uint8_t col = 0; col < 8; ++col)
+                {
+                    uint8_t pixelValue = ((highPixel & 0x01) << 1) | (lowPixel & 0x01);
+                    lowPixel >>= 1;
+                    highPixel >>= 1;
+
+                    uint16_t x_pixel = x * 8 + (7 - col);
+                    uint16_t y_pixel = y * 8 + row;
+                    uint16_t value = y_pixel * 256 + x_pixel;
                     uint8_t pixelColor = GetColorFromPaletteRam(selectedPalette, pixelValue);
                     buffer[value] = pixelColor;
                 }

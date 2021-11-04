@@ -6,6 +6,11 @@
 #include <iostream>
 #include <cstring>
 #include <memory>
+#include <qboxlayout.h>
+#include <qlayout.h>
+#include <qlineedit.h>
+#include <qpushbutton.h>
+#include <string>
 
 using NesEmulatorExe::MainWindow;
 using NesEmulatorExe::DisassemblyWidget;
@@ -16,13 +21,9 @@ constexpr unsigned DEFAULT_FRAMERATE = 60;
 MainWindow::MainWindow(NesEmulator::Bus& bus, Mode mode, QWidget* parent)
     : QWidget(parent)
     , m_bus(bus)
-    , m_mode(mode)
 {
     m_mainLayout = std::make_unique<QHBoxLayout>(this);
     m_buttonLayout = std::make_unique<QVBoxLayout>();
-    
-    m_helloButton = std::make_unique<QPushButton>("Hello");
-    connect(m_helloButton.get(), &QPushButton::released, this, &MainWindow::HandleButton);
 
     m_stepButton = std::make_unique<QPushButton>("Step");
     m_stepButton->setEnabled(m_mode == Mode::STEP);
@@ -35,9 +36,24 @@ MainWindow::MainWindow(NesEmulator::Bus& bus, Mode mode, QWidget* parent)
 
     m_mainLayout->addWidget(m_renderWidget.get());
 
-    m_buttonLayout->addWidget(m_helloButton.get());
+    m_resetButton = std::make_unique<QPushButton>("Reset");
+    connect(m_resetButton.get(), &QPushButton::released, this, &MainWindow::Reset);
+
+    m_buttonLayout->addWidget(m_resetButton.get());
     m_buttonLayout->addWidget(m_breakButton.get());
     m_buttonLayout->addWidget(m_stepButton.get());
+
+    // Run to
+    m_runToLayout = std::make_unique<QHBoxLayout>();
+    m_hexPrefix = std::make_unique<QLabel>("0x");
+    m_pcEdit = std::make_unique<QLineEdit>();
+    m_runToButton = std::make_unique<QPushButton>("Run to");
+    connect(m_runToButton.get(), &QPushButton::released, this, &MainWindow::SetRunTo);
+
+    m_runToLayout->addWidget(m_hexPrefix.get());
+    m_runToLayout->addWidget(m_pcEdit.get());
+    m_runToLayout->addWidget(m_runToButton.get());
+    m_buttonLayout->addLayout(m_runToLayout.get());
 
     m_mainLayout->addLayout(m_buttonLayout.get());
 
@@ -51,6 +67,8 @@ MainWindow::MainWindow(NesEmulator::Bus& bus, Mode mode, QWidget* parent)
     connect(m_renderingTimer.get(), &QTimer::timeout, this, &MainWindow::Update);
 
     SetFramerate(DEFAULT_FRAMERATE);
+
+    SetMode(mode);
 }
 
 void MainWindow::HandleButton()
@@ -67,6 +85,11 @@ void MainWindow::Update()
         for (unsigned i = 0; i < 29781; ++i)
         {
             m_bus.Clock();
+            if (m_breakAddress <= 0xFFFF && m_bus.GetCPU().GetPC() == (uint16_t)m_breakAddress)
+            {
+                SetMode(Mode::STEP);
+                break;
+            }
         }
         m_disassemblyWidget->Update();
         m_paletteWidget->Update();
@@ -92,14 +115,14 @@ void MainWindow::Break()
     switch (m_mode)
     {
     case Mode::NORMAL:
-        m_mode = Mode::STEP;
+        SetMode(Mode::STEP);
         break;
     case Mode::STEP:
-        m_mode = Mode::NORMAL;
+        SetMode(Mode::NORMAL);
     default:
         break;
     }
-    m_stepButton->setEnabled(m_mode == Mode::STEP);
+    m_breakAddress = 1 << 24;
 }
 
 void MainWindow::SetFramerate(unsigned framerate)
@@ -108,4 +131,27 @@ void MainWindow::SetFramerate(unsigned framerate)
     m_renderingTimer->stop();
     m_renderingTimer->setInterval(m_mode == Mode::UNLIMITED ? 0 : 1000 / framerate);
     m_renderingTimer->start();
+}
+
+void MainWindow::SetRunTo()
+{
+    std::string addrString = m_pcEdit->text().toStdString();
+    uint16_t addr = (uint16_t)(std::stoi(addrString, nullptr, 16) & 0x0000FFFF);
+    m_breakAddress = addr;
+    SetMode(Mode::NORMAL);
+}
+
+void MainWindow::SetMode(Mode mode)
+{
+    m_stepButton->setEnabled(mode == Mode::STEP);
+    m_breakButton->setText(mode == Mode::STEP ? "Continue" : "Break");
+    m_mode = mode;
+}
+
+void MainWindow::Reset()
+{
+    m_bus.Reset();
+    m_renderWidget->Update();
+    m_disassemblyWidget->Update();
+    m_paletteWidget->Update();
 }

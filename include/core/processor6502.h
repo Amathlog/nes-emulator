@@ -5,7 +5,7 @@
 #include <vector>
 
 // Stack: LIFO, top down, 8 bit range, 0x0100 - 0x01FF
-constexpr uint16_t STACK_LOCATION = 0x1000;
+constexpr uint16_t STACK_LOCATION = 0x0100;
 
 namespace NesEmulator
 {
@@ -64,7 +64,7 @@ namespace NesEmulator
         uint8_t XXX();
 
         // To force a PC
-        void ForceSetPC(uint16_t pc) { m_PC = pc; }
+        void SetPC(uint16_t pc);
 
         // Getters
         uint16_t GetPC() const { return m_PC; }
@@ -108,8 +108,8 @@ namespace NesEmulator
         uint16_t PopAddrFromStack();
 
         void ResetFlags() { m_status.flags = 0; }
-        void Write(uint16_t address, uint8_t data);
-        uint8_t Read(uint16_t address);
+        void Write(uint16_t address, uint8_t data, bool gardingStack = false);
+        uint8_t Read(uint16_t address, bool gardingStack = false);
 
         // Bus pointer
         Bus* m_bus = nullptr;

@@ -48,7 +48,7 @@ uint8_t Bus::ReadCPU(uint16_t address)
     }
     else if (address >= Cst::RAM_START_ADDR && address <= Cst::RAM_END_ADDR)
     {
-        // Mirroring. Map to 0x0000 to 0x0800
+        // Mirroring. Map to 0x0000 to 0x07FF
         data = m_cpuRam[address % Cst::RAM_SIZE];
     }
     else if (address >= Cst::PPU_REG_START_ADDR && address <= Cst::PPU_REG_END_ADDR)
