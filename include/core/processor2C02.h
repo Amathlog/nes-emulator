@@ -31,6 +31,9 @@ namespace NesEmulator
         constexpr unsigned GetHeight() const { return 240u; }
         bool IsFrameComplete() const { return m_isFrameComplete; }
 
+        int16_t GetScanlines() const { return m_scanlines; }
+        int16_t GetCycles() const { return m_cycles; }
+
         void RandomizeScreen();
         uint8_t GetColorFromPaletteRam(uint8_t n, uint8_t i);
         void FillFromPatternTable(uint8_t index, uint8_t selectedPalette, uint8_t* buffer);

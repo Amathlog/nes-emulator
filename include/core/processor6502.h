@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
 #include <string>
 #include <vector>
@@ -92,6 +93,7 @@ namespace NesEmulator
 
         const std::vector<Instruction>& GetOpCodeMapper() { return m_opCodeMapper; }
         bool IsOpComplete() const { return m_opComplete; };
+        std::size_t GetNbOfTotalCycles() const { return m_numberOfCycles; }
 
 
     private:
@@ -132,6 +134,7 @@ namespace NesEmulator
         uint8_t m_cycles = 0x00;
 
         Status m_status;
+        std::size_t m_numberOfCycles = 0;
 
         std::vector<Instruction> m_opCodeMapper;
         bool m_opComplete = true;
