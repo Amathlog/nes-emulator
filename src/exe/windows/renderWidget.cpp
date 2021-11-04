@@ -1,4 +1,5 @@
 #include "core/bus.h"
+#include <cstdint>
 #include <exe/windows/renderWidget.h>
 #include <memory>
 #include <qboxlayout.h>
@@ -32,6 +33,8 @@ RenderWidget::RenderWidget(NesEmulator::Bus& bus, QWidget* parent)
 
 void RenderWidget::Update()
 {
-    memcpy(m_renderedImage->bits(), m_bus.GetPPU().GetScreen(), m_bus.GetPPU().GetWidth()*m_bus.GetPPU().GetHeight());
+    // memcpy(m_renderedImage->bits(), m_bus.GetPPU().GetScreen(), m_bus.GetPPU().GetWidth()*m_bus.GetPPU().GetHeight());
+    // Cheating here, only displaying the tile for a namedtable
+    m_bus.GetPPU().FillFromNameTable(0, 0, m_renderedImage->bits());
     m_imagePixmap->setPixmap(QPixmap::fromImage(*m_renderedImage));
 }

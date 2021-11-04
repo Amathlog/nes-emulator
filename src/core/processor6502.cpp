@@ -1,7 +1,9 @@
+#include "core/constants.h"
 #include <core/processor6502.h>
 #include <core/bus.h>
 
 #include <iostream>
+#include <cassert>
 
 #define LOGGING 0
 
@@ -32,13 +34,34 @@ Processor6502::Processor6502()
     };
 }
 
-void Processor6502::Write(uint16_t address, uint8_t data)
+void Processor6502::SetPC(uint16_t pc)
 {
+    // Little verification to catch when PC goes wild
+    if (pc < 0x8000)
+    {
+        assert(false && "PC went wild");
+    }
+    m_PC = pc;
+}
+
+void Processor6502::Write(uint16_t address, uint8_t data, bool gardingStack)
+{
+    uint16_t mirroredAddr = address % Cst::RAM_SIZE;
+    if(!((mirroredAddr >= STACK_LOCATION + m_SP && mirroredAddr <= 0x01ff) ^ !gardingStack))
+    {
+        // assert(false && "Accessing the stack directly, forbidden");
+    }
+
     m_bus->WriteCPU(address, data);
 }
 
-uint8_t Processor6502::Read(uint16_t address)
+uint8_t Processor6502::Read(uint16_t address, bool gardingStack)
 {
+    uint16_t mirroredAddr = address % Cst::RAM_SIZE;
+    if(!((mirroredAddr >= STACK_LOCATION + m_SP && mirroredAddr <= 0x01ff) ^ !gardingStack))
+    {
+        // assert(false && "Accessing the stack directly, forbidden");
+    }
     return m_bus->ReadCPU(address);
 }
 
@@ -83,7 +106,7 @@ void Processor6502::Reset()
     uint8_t low = Read(m_absAddress);
     uint8_t high = Read(m_absAddress + 1);
 
-    m_PC = (high << 8) | low;
+    SetPC((high << 8) | low);
 
     m_A = 0;
     m_X = 0;
@@ -218,7 +241,7 @@ uint8_t Processor6502::IND()
     // by one. But in reality, we stay on the same page. so we read the first byte at 0x(highPtr)FF
     // and read the second byte at 0x(highPtr)00.
     ptr = lowPtr == 0xFF ? (highPtr << 8) : ptr + 1;
-    uint16_t high = Read(ptr + 1);
+    uint16_t high = Read(ptr);
 
     m_absAddress = ((high << 8) | low); 
     return 0;
@@ -266,7 +289,7 @@ uint8_t Processor6502::Branch(uint8_t flag, uint8_t isSet)
         if ((m_absAddress & 0xFF00) != (m_PC & 0xFF00))
             m_cycles++;
 
-        m_PC = m_absAddress;
+        SetPC(m_absAddress);
     }
 
     return 0;
@@ -303,33 +326,33 @@ uint8_t Processor6502::GeneralAddition()
 
 void Processor6502::PushDataToStack(uint8_t data)
 {
-    Write(STACK_LOCATION + m_SP, data);
+    Write(STACK_LOCATION + m_SP, data, true);
     m_SP--;
 }
 
 void Processor6502::PushAddrToStack(uint16_t addr)
 {
     // First push high, then low
-    Write(STACK_LOCATION + m_SP, (uint8_t)((addr >> 8) & 0x00FF));
+    Write(STACK_LOCATION + m_SP, (uint8_t)((addr >> 8) & 0x00FF), true);
     m_SP--;
 
-    Write(STACK_LOCATION + m_SP, (uint8_t)(addr & 0x00FF));
+    Write(STACK_LOCATION + m_SP, (uint8_t)(addr & 0x00FF), true);
     m_SP--;
 }
 
 uint8_t Processor6502::PopDataFromStack()
 {
     m_SP++;
-    return Read(STACK_LOCATION + m_SP);
+    return Read(STACK_LOCATION + m_SP, true);
 }
 
 uint16_t Processor6502::PopAddrFromStack()
 {
     m_SP++;
-    uint8_t high = Read(STACK_LOCATION + m_SP);
+    uint8_t low = Read(STACK_LOCATION + m_SP, true);
 
     m_SP++;
-    uint8_t low = Read(STACK_LOCATION + m_SP);
+    uint8_t high = Read(STACK_LOCATION + m_SP, true);
 
     return (high << 8) | low;
 }
@@ -355,7 +378,7 @@ void Processor6502::Interrupt(uint8_t requestSoftware, uint16_t jumpAddressLocat
     // And finally jump to a known location
     uint8_t low = Read(jumpAddressLocation);
     uint8_t high = Read(jumpAddressLocation + 1);
-    m_PC = (high << 8) | low;
+    SetPC((high << 8) | low);
 }
 
 ////////////////////////////////////////////////
@@ -587,13 +610,19 @@ uint8_t Processor6502::INY()
 
 uint8_t Processor6502::JMP()
 {
-    m_PC = m_absAddress;
+    SetPC(m_absAddress);
     return 0;
 }
 
 uint8_t Processor6502::JSR()
 {
-    PushAddrToStack(m_PC + 2);
+    // We need to push PC + 2
+    // Since our mode is absolute, it means we already incremented PC
+    // by 3 (opcode + address = 3 bytes)
+    // So decrement it.
+    m_PC--;
+
+    PushAddrToStack(m_PC);
     return JMP();
 }
 
@@ -748,13 +777,13 @@ uint8_t Processor6502::RTI()
     m_status.flags = PopDataFromStack();
     m_status.U = savedU;
 
-    m_PC = PopAddrFromStack();
+    SetPC(PopAddrFromStack());
     return 0;
 } 
 
 uint8_t Processor6502::RTS()
 {
-    m_PC = PopAddrFromStack();
+    SetPC(PopAddrFromStack());
     m_PC++;
     return 0;
 }
