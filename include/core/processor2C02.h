@@ -34,6 +34,9 @@ namespace NesEmulator
         void RandomizeScreen();
         uint8_t GetColorFromPaletteRam(uint8_t n, uint8_t i);
         void FillFromPatternTable(uint8_t index, uint8_t selectedPalette, uint8_t* buffer);
+
+        bool IsNMISet() const { return m_nmi; }
+        void ResetNMI() { m_nmi = false; }
         
     private:
         std::shared_ptr<Cartridge> m_cartridge;
@@ -44,6 +47,7 @@ namespace NesEmulator
 
         uint8_t m_screen[256][240];
         bool m_isFrameComplete = false;
+        bool m_nmi = false;
 
         PPURegisters m_registers;
 

@@ -67,6 +67,12 @@ void Bus::Clock()
     if (m_clockCounter % 3 == 0)
         m_cpu.Clock();
 
+    if (m_ppu.IsNMISet())
+    {
+        m_ppu.ResetNMI();
+        m_cpu.NMI();
+    }
+
     m_clockCounter++;
 }
 
