@@ -304,7 +304,7 @@ void Processor2C02::FillFromPatternTable(uint8_t index, uint8_t selectedPalette,
     }
 }
 
-void Processor2C02::FillFromNameTable(uint8_t index, uint8_t selectedPalette, uint8_t* buffer)
+void Processor2C02::FillFromNameTable(uint8_t index, uint8_t selectedPalette, uint8_t* buffer, bool switchIndexes)
 {
     for (uint16_t y = 0; y < 30; ++y)
     {
@@ -320,7 +320,8 @@ void Processor2C02::FillFromNameTable(uint8_t index, uint8_t selectedPalette, ui
 
             for (uint8_t row = 0; row < 8; ++row)
             {
-                uint16_t addr = index * 0x1000 + offset + row;
+                uint16_t addrNameTable = (switchIndexes ? (index + 1) % 2 : index) * 0x1000;
+                uint16_t addr = addrNameTable * 0x1000 + offset + row;
                 // It seems in the rom, it stores 64 bits of lowPixel and then 64 bits of
                 // highPixel. Therefore, we need to offset our read for high by 8 bytes.
                 uint8_t lowPixel = ReadPPU(addr);

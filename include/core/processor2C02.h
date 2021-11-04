@@ -38,7 +38,7 @@ namespace NesEmulator
         uint8_t GetColorFromPaletteRam(uint8_t n, uint8_t i);
         void FillFromPatternTable(uint8_t index, uint8_t selectedPalette, uint8_t* buffer);
 
-        void FillFromNameTable(uint8_t index, uint8_t selectedPalette, uint8_t* buffer);
+        void FillFromNameTable(uint8_t index, uint8_t selectedPalette, uint8_t* buffer, bool switchIndexes = false);
 
         bool IsNMISet() const { return m_nmi; }
         void ResetNMI() { m_nmi = false; }
