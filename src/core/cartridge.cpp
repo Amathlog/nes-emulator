@@ -37,6 +37,9 @@ Cartridge::Cartridge(IReadVisitor& visitor)
     if ((header.flag6 & 0x04) == 0x04)
         visitor.Advance(NesEmulator::Cst::ROM_TRAINER_SIZE);
 
+    // Mirorring is the less significant bit of the flag6
+    m_mirorring = (header.flag6 & 0x01) ? Mirroring::VERTICAL : Mirroring::HORIZONTAL;
+
     m_nbPrgBanks = header.prgRomSize;
     m_prgData.resize(m_nbPrgBanks * NesEmulator::Cst::ROM_PRG_CHUNK_SIZE);
     visitor.Read(m_prgData.data(), m_prgData.size());
@@ -99,6 +102,11 @@ bool Cartridge::ReadPPU(uint16_t addr, uint8_t& data)
     if (m_mapper->MapReadPPU(addr, mappedAddress))
     {
         data = m_chrData[mappedAddress];
+        if (data != 0)
+        {
+            data = data;
+        }
+        return true;
     }
 
     return false;
