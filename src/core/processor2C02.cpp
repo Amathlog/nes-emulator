@@ -250,6 +250,8 @@ void Processor2C02::Reset()
     m_namedTables.fill({0});
     m_paletteTable.fill({0});
     m_registers.Reset();
+    m_scanlines = 0;
+    m_cycles = 0;
 }
 
 void Processor2C02::RandomizeScreen()

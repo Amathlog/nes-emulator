@@ -13,7 +13,7 @@ Processor6502::Processor6502()
 {
     using a = Processor6502;
 
-    m_opCodeMapper = 
+    m_opCodeMapper =
     {
         { "BRK", &a::BRK, &a::IMM, 7 },{ "ORA", &a::ORA, &a::IZX, 6 },{ "???", &a::XXX, &a::IMP, 2 },{ "???", &a::XXX, &a::IZX, 8 },{ "NOP", &a::NOP, &a::ZP0, 3 },{ "ORA", &a::ORA, &a::ZP0, 3 },{ "ASL", &a::ASL, &a::ZP0, 5 },{ "???", &a::XXX, &a::ZP0, 5 },{ "PHP", &a::PHP, &a::IMP, 3 },{ "ORA", &a::ORA, &a::IMM, 2 },{ "ASL", &a::ASL, &a::IMP, 2 },{ "???", &a::XXX, &a::IMM, 2 },{ "NOP", &a::NOP, &a::ABS, 4 },{ "ORA", &a::ORA, &a::ABS, 4 },{ "ASL", &a::ASL, &a::ABS, 6 },{ "???", &a::XXX, &a::ABS, 6 },
 		{ "BPL", &a::BPL, &a::REL, 2 },{ "ORA", &a::ORA, &a::IZY, 5 },{ "???", &a::XXX, &a::IMP, 2 },{ "???", &a::XXX, &a::IZY, 8 },{ "NOP", &a::NOP, &a::ZPX, 4 },{ "ORA", &a::ORA, &a::ZPX, 4 },{ "ASL", &a::ASL, &a::ZPX, 6 },{ "???", &a::XXX, &a::ZPX, 6 },{ "CLC", &a::CLC, &a::IMP, 2 },{ "ORA", &a::ORA, &a::ABY, 4 },{ "NOP", &a::NOP, &a::IMP, 2 },{ "???", &a::XXX, &a::ABY, 7 },{ "NOP", &a::NOP, &a::ABX, 4 },{ "ORA", &a::ORA, &a::ABX, 4 },{ "ASL", &a::ASL, &a::ABX, 7 },{ "???", &a::XXX, &a::ABX, 7 },
@@ -69,11 +69,11 @@ void Processor6502::Clock()
 {
     if (m_cycles == 0)
     {
-        //m_status.U = 1;
+        m_status.U = 1;
 
         m_opcode = Read(m_PC++);
         m_cycles = m_opCodeMapper[m_opcode].cycles;
-        
+
         // Execute address mode
         uint8_t additional_cyles_addr = (this->*m_opCodeMapper[m_opcode].addrmode)();
         // Execute op
@@ -85,10 +85,11 @@ void Processor6502::Clock()
         std::cout << "Executing op " << m_opCodeMapper[m_opcode].name << std::endl;
 #endif
 
-        //m_status.U = 1;
+        m_status.U = 1;
     }
 
     m_opComplete =  (--m_cycles == 0);
+    m_numberOfCycles++;
 }
 
 uint8_t Processor6502::Fetch()
@@ -122,7 +123,8 @@ void Processor6502::Reset()
     m_absAddress = 0x0000;
 
     // Reset takes time
-    m_cycles = 8;
+    m_cycles = 7;
+    m_opComplete = false;
 }
 
 void Processor6502::IRQ()
@@ -137,7 +139,7 @@ void Processor6502::IRQ()
 void Processor6502::NMI()
 {
     Interrupt(0, 0xFFFA);
-    m_cycles = 8;
+    m_cycles = 7;
 }
 
 
@@ -154,7 +156,7 @@ uint8_t Processor6502::IMM()
 {
     m_absAddress = m_PC++;
     return 0;
-} 
+}
 
 uint8_t Processor6502::ZP0()
 {
@@ -185,7 +187,7 @@ uint8_t Processor6502::REL()
         m_relAddress |= 0xFF00;
 
     return 0;
-} 
+}
 
 uint8_t Processor6502::ABS()
 {
@@ -243,9 +245,9 @@ uint8_t Processor6502::IND()
     ptr = lowPtr == 0xFF ? (highPtr << 8) : ptr + 1;
     uint16_t high = Read(ptr);
 
-    m_absAddress = ((high << 8) | low); 
+    m_absAddress = ((high << 8) | low);
     return 0;
-} 
+}
 
 uint8_t Processor6502::IZX()
 {
@@ -254,7 +256,7 @@ uint8_t Processor6502::IZX()
     uint16_t low = Read((ptr + m_X) & 0x00FF);
     uint16_t high = Read((ptr + m_X + 1) & 0x00FF);
 
-    m_absAddress = ((high << 8) | low); 
+    m_absAddress = ((high << 8) | low);
     return 0;
 }
 
@@ -362,7 +364,7 @@ void Processor6502::Interrupt(uint8_t requestSoftware, uint16_t jumpAddressLocat
     // Write the PC to the stack.
     PushAddrToStack(m_PC);
 
-    // Set the internal flags. 
+    // Set the internal flags.
     // For the B flag, it should be set to 0 if the interrupt comes from hardware
     // and 1 if it comes from software
     m_status.B = requestSoftware;
@@ -400,7 +402,7 @@ uint8_t Processor6502::AND()
     SetFlagIfNegOrZero(m_A);
 
     return 1;
-} 
+}
 
 uint8_t Processor6502::ASL()
 {
@@ -434,7 +436,7 @@ uint8_t Processor6502::BCS()
 uint8_t Processor6502::BEQ()
 {
     return Branch(m_status.Z, 1);
-} 
+}
 
 uint8_t Processor6502::BIT()
 {
@@ -461,13 +463,13 @@ uint8_t Processor6502::BNE()
 uint8_t Processor6502::BPL()
 {
     return Branch(m_status.N, 0);
-} 
+}
 
 uint8_t Processor6502::BRK()
 {
     // We need to push PC+2 because there is a spacing where we can provide
     // a reason for the break.
-    // Because we set the BRK address mode to Immediate, the PC is already 
+    // Because we set the BRK address mode to Immediate, the PC is already
     // incremented by one. We can read the reason with "Fetch", it will be in m_fetched afterwards.
     // So we only increment by one here.
     m_PC++;
@@ -489,7 +491,7 @@ uint8_t Processor6502::CLC()
 {
     m_status.C = 0;
     return 0;
-} 
+}
 
 uint8_t Processor6502::CLD()
 {
@@ -519,7 +521,7 @@ uint8_t Processor6502::CMP()
     m_status.C = m_A >= m_fetched;
 
     return 1;
-} 
+}
 
 uint8_t Processor6502::CPX()
 {
@@ -562,7 +564,7 @@ uint8_t Processor6502::DEX()
     m_X--;
     SetFlagIfNegOrZero(m_X);
     return 0;
-} 
+}
 
 uint8_t Processor6502::DEY()
 {
@@ -599,7 +601,7 @@ uint8_t Processor6502::INX()
     m_X++;
     SetFlagIfNegOrZero(m_X);
     return 0;
-} 
+}
 
 uint8_t Processor6502::INY()
 {
@@ -634,7 +636,7 @@ uint8_t Processor6502::LDA()
     SetFlagIfNegOrZero(m_A);
 
     return 1;
-} 
+}
 
 uint8_t Processor6502::LDX()
 {
@@ -690,7 +692,7 @@ uint8_t Processor6502::NOP()
 		break;
 	}
 	return 0;
-} 
+}
 
 uint8_t Processor6502::ORA()
 {
@@ -723,7 +725,7 @@ uint8_t Processor6502::PLA()
     m_A = PopDataFromStack();
     SetFlagIfNegOrZero(m_A);
     return 0;
-} 
+}
 
 uint8_t Processor6502::PLP()
 {
@@ -779,7 +781,7 @@ uint8_t Processor6502::RTI()
 
     SetPC(PopAddrFromStack());
     return 0;
-} 
+}
 
 uint8_t Processor6502::RTS()
 {
@@ -807,7 +809,7 @@ uint8_t Processor6502::SED()
 {
     m_status.D = 1;
     return 0;
-} 
+}
 
 uint8_t Processor6502::SEI()
 {
@@ -831,7 +833,7 @@ uint8_t Processor6502::STY()
 {
     Write(m_absAddress, m_Y);
     return 0;
-} 
+}
 
 uint8_t Processor6502::TAX()
 {
@@ -855,7 +857,7 @@ uint8_t Processor6502::TXA()
 {
     m_A = m_X;
     return 0;
-} 
+}
 
 uint8_t Processor6502::TXS()
 {
