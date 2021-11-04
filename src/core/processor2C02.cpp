@@ -24,7 +24,11 @@ uint8_t Processor2C02::ReadCPU(uint16_t addr)
         // Can't read from Mask register
         break;
     case 2:
-        data = m_registers.status.flags;
+        // HACK: Uncomment if you want to force the verticalBlank state
+        // m_registers.status.verticalBlankStarted = 1;
+        data = (m_registers.status.flags & 0xE0) | (m_registers.data & 0x1F);
+        m_registers.status.verticalBlankStarted = 0;
+        m_registers.addr = 0;
         break;
     case 3:
         // Can't read from OAMAddress register
@@ -50,6 +54,8 @@ uint8_t Processor2C02::ReadCPU(uint16_t addr)
         if (tempAddr >= Cst::PPU_START_PALETTE && tempAddr <= Cst::PPU_END_PALETTE)
             data = m_registers.data;
 
+        m_registers.fullAddress += (m_registers.ctrl.VRAMAddressIncrement ? 32 : 1);
+
         break;
     }
     }
@@ -59,7 +65,6 @@ uint8_t Processor2C02::ReadCPU(uint16_t addr)
 
 void Processor2C02::WriteCPU(uint16_t addr, uint8_t data)
 {
-    data = 0;
     switch(addr)
     {
     case 0:
@@ -83,17 +88,18 @@ void Processor2C02::WriteCPU(uint16_t addr, uint8_t data)
     case 6:
         if (m_registers.addr == 0)
         {
-            m_registers.fullAddress = (m_registers.fullAddress & 0xFF00) | data;
+            m_registers.fullAddress = (m_registers.fullAddress & 0x00FF) | (data << 8);
             m_registers.addr = 1;
         }
         else 
         {
-            m_registers.fullAddress = (m_registers.fullAddress & 0x00FF) | (data << 8);
+            m_registers.fullAddress = (m_registers.fullAddress & 0xFF00) | data;
             m_registers.addr = 0;
         }
         break;
     case 7:
         WritePPU(m_registers.fullAddress, data);
+        m_registers.fullAddress += (m_registers.ctrl.VRAMAddressIncrement ? 32 : 1);
         break;
     }
 }
@@ -111,8 +117,23 @@ void Processor2C02::WritePPU(uint16_t addr, uint8_t data)
     }
     else if (addr >= Cst::PPU_START_VRAM && addr <= Cst::PPU_END_VRAM)
     {
-        addr &= 0x0007;
-        WriteCPU(addr, data);
+        addr &= 0x0FFF;
+        // if (m_cartridge->GetMirroring() == Mirroring::VERTICAL)
+        {
+            // Vertical
+            if (addr >= 0x0000 && addr <= 0x03FF)
+                m_namedTables[0][addr & 0x03FF] = data;
+            if (addr >= 0x0400 && addr <= 0x07FF)
+                m_namedTables[1][addr & 0x03FF] = data;
+            if (addr >= 0x0800 && addr <= 0x0BFF)
+                m_namedTables[0][addr & 0x03FF] = data;
+            if (addr >= 0x0C00 && addr <= 0x0FFF)
+                m_namedTables[1][addr & 0x03FF] = data;
+        }
+        // else 
+        // {
+        
+        // }
     }
     else if (addr >= Cst::PPU_START_PALETTE && addr <= Cst::PPU_END_PALETTE)
     {
@@ -141,8 +162,22 @@ uint8_t Processor2C02::ReadPPU(uint16_t addr)
     }
     else if (addr >= Cst::PPU_START_VRAM && addr <= Cst::PPU_END_VRAM)
     {
-        addr &= 0x0007;
-        data = ReadCPU(addr);
+        addr &= 0x0FFF;
+        // if (m_cartridge->GetMirroring() == Mirroring::VERTICAL)
+        {
+            // Vertical
+            if (addr >= 0x0000 && addr <= 0x03FF)
+                data = m_namedTables[0][addr & 0x03FF];
+            if (addr >= 0x0400 && addr <= 0x07FF)
+                data = m_namedTables[1][addr & 0x03FF];
+            if (addr >= 0x0800 && addr <= 0x0BFF)
+                data = m_namedTables[0][addr & 0x03FF];
+            if (addr >= 0x0C00 && addr <= 0x0FFF)
+                data = m_namedTables[1][addr & 0x03FF];
+        }
+        // else 
+        // {
+        // }
     }
     else if (addr >= Cst::PPU_START_PALETTE && addr <= Cst::PPU_END_PALETTE)
     {
@@ -177,18 +212,17 @@ void Processor2C02::Clock()
         m_scanlines++;
         if (m_scanlines >= 261)
         {
-            m_registers.status.verticalBlankStarted = 0;
             m_scanlines = -1;
             m_isFrameComplete = true;
-        }
-        else if (m_scanlines == 241)
-        {
-            m_registers.status.verticalBlankStarted = 1;
         }
         else if (m_scanlines == 0) 
         {
             m_isFrameComplete = false;
         }
+    }
+    else if (m_scanlines == 241 && m_cycles == 1)
+    {
+        m_registers.status.verticalBlankStarted = 1;
     }
 }
 
@@ -213,8 +247,8 @@ void Processor2C02::RandomizeScreen()
 
 uint8_t Processor2C02::GetColorFromPaletteRam(uint8_t n, uint8_t i)
 {
-    uint16_t addr = 0x3F00 + n * 4 + i;
-    return ReadPPU(addr);
+    uint16_t addr = 0x3F00 + (n * 4 + i);
+    return ReadPPU(addr) & 0x3F;
 }
 
 void Processor2C02::FillFromPatternTable(uint8_t index, uint8_t selectedPalette, uint8_t* buffer)
@@ -228,8 +262,10 @@ void Processor2C02::FillFromPatternTable(uint8_t index, uint8_t selectedPalette,
             for (uint8_t row = 0; row < 8; ++row)
             {
                 uint16_t addr = index * 0x1000 + offset + row;
+                // It seems in the rom, it stores 64 bits of lowPixel and then 64 bits of
+                // highPixel. Therefore, we need to offset our read for high by 8 bytes.
                 uint8_t lowPixel = ReadPPU(addr);
-                uint8_t highPixel = ReadPPU(addr + 1);
+                uint8_t highPixel = ReadPPU(addr + 8);
 
                 for (uint8_t col = 0; col < 8; ++col)
                 {
@@ -240,7 +276,8 @@ void Processor2C02::FillFromPatternTable(uint8_t index, uint8_t selectedPalette,
                     uint16_t x = tileX * 8 + (7 - col);
                     uint16_t y = tileY * 8 + row;
                     uint16_t value = y * 128 + x;
-                    buffer[value] = GetColorFromPaletteRam(selectedPalette, pixelValue);
+                    uint8_t pixelColor = GetColorFromPaletteRam(selectedPalette, pixelValue);
+                    buffer[value] = pixelColor;
                 }
             }
         }
