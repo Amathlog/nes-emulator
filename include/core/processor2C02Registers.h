@@ -65,6 +65,21 @@ union PPUSTATUS
 
     uint8_t flags = 0x00;
 };
+
+union LoopyRegister
+{
+    struct
+    {
+        uint16_t coarseX: 5;
+        uint16_t coarseY: 5;
+        uint16_t nametableX: 1;
+        uint16_t nametableY: 1;
+        uint16_t fineY: 3;
+        uint16_t ununsed: 1;
+    };
+
+    uint16_t reg;
+};
 }
 
 struct PPURegisters
@@ -76,8 +91,12 @@ struct PPURegisters
     uint8_t oamdata;                // 0x2004
     uint8_t scroll;                 // 0x2005
     uint8_t addr;                   // 0x2006
-    uint16_t fullAddress;
     uint8_t data;                   // 0x2007
+
+    Registers::LoopyRegister vram_addr;
+    Registers::LoopyRegister tram_addr;
+
+    uint8_t fineX;
 
     void Reset()
     {
@@ -88,8 +107,10 @@ struct PPURegisters
         oamdata = 0;
         scroll = 0;
         addr = 0;
-        fullAddress = 0;
         data = 0;
+        vram_addr.reg = 0;
+        tram_addr.reg = 0;
+        fineX = 0;
     }
 };
 

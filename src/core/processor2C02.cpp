@@ -46,15 +46,15 @@ uint8_t Processor2C02::ReadCPU(uint16_t addr)
     {
         // delay read
         data = m_registers.data;
-        m_registers.data = ReadPPU(m_registers.fullAddress);
+        m_registers.data = ReadPPU(m_registers.vram_addr.reg);
 
         // Note: In case of reading to the palette ram, there is no delay
         // Therefore skip the delay if we are in this range (with mirroring)
-        uint16_t tempAddr = m_registers.fullAddress &= Cst::PPU_MASK_MIRROR;
+        uint16_t tempAddr = m_registers.vram_addr.reg &= Cst::PPU_MASK_MIRROR;
         if (tempAddr >= Cst::PPU_START_PALETTE && tempAddr <= Cst::PPU_END_PALETTE)
             data = m_registers.data;
 
-        m_registers.fullAddress += (m_registers.ctrl.VRAMAddressIncrement ? 32 : 1);
+        m_registers.vram_addr.reg += (m_registers.ctrl.VRAMAddressIncrement ? 32 : 1);
 
         break;
     }
@@ -65,10 +65,15 @@ uint8_t Processor2C02::ReadCPU(uint16_t addr)
 
 void Processor2C02::WriteCPU(uint16_t addr, uint8_t data)
 {
+    // We never write directly to the vram address, we only write to the tram address.
+    // cf loopy_registers
+    // We only write to vram when we read the whole address (case 6)
     switch(addr)
     {
     case 0:
         m_registers.ctrl.flags = data;
+        m_registers.tram_addr.nametableX = m_registers.ctrl.msbXScroll;
+        m_registers.tram_addr.nametableX = m_registers.ctrl.msbYScroll;
         break;
     case 1:
         m_registers.mask.flags = data;
@@ -83,23 +88,38 @@ void Processor2C02::WriteCPU(uint16_t addr, uint8_t data)
         m_registers.oamdata = data;
         break;
     case 5:
-        m_registers.scroll = data;
-        break;
-    case 6:
+        // For the scrolling part, the 3 lsb are for fine and the 5 msb for coarse
+        // Writing is in 2 parts, first for X, then for Y. Use the same addr flag
+        // than for the address (case 6)
         if (m_registers.addr == 0)
         {
-            m_registers.fullAddress = (m_registers.fullAddress & 0x00FF) | (data << 8);
+            m_registers.fineX = data & 0x07;
+            m_registers.tram_addr.coarseX = data >> 3;
             m_registers.addr = 1;
         }
         else 
         {
-            m_registers.fullAddress = (m_registers.fullAddress & 0xFF00) | data;
+            m_registers.tram_addr.fineY = data & 0x07;
+            m_registers.tram_addr.coarseY = data >> 3;
             m_registers.addr = 0;
         }
         break;
+    case 6:
+        if (m_registers.addr == 0)
+        {
+            m_registers.tram_addr.reg = (m_registers.tram_addr.reg & 0x00FF) | (data << 8);
+            m_registers.addr = 1;
+        }
+        else 
+        {
+            m_registers.tram_addr.reg = (m_registers.tram_addr.reg & 0xFF00) | data;
+            m_registers.addr = 0;
+            m_registers.vram_addr.reg = m_registers.tram_addr.reg;
+        }
+        break;
     case 7:
-        WritePPU(m_registers.fullAddress, data);
-        m_registers.fullAddress += (m_registers.ctrl.VRAMAddressIncrement ? 32 : 1);
+        WritePPU(m_registers.vram_addr.reg, data);
+        m_registers.vram_addr.reg += (m_registers.ctrl.VRAMAddressIncrement ? 32 : 1);
         break;
     }
 }
