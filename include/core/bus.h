@@ -35,6 +35,6 @@ namespace NesEmulator
 
         std::vector<uint8_t> m_cpuRam;
         std::shared_ptr<Cartridge> m_cartridge;
-        std::size_t m_clockCounter = 0;
+        size_t m_clockCounter = 0;
     };
 }

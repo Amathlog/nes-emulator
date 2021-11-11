@@ -483,9 +483,9 @@ void Processor2C02::Reset()
 
 void Processor2C02::RandomizeScreen()
 {
-    for (int j = 0; j < GetHeight(); ++j)
+    for (unsigned j = 0; j < GetHeight(); ++j)
     {
-        for(int i = 0; i < GetWidth(); ++i)
+        for(unsigned i = 0; i < GetWidth(); ++i)
         {
             m_screen[j * 256 + i] = rand() % 2 == 0 ? 0x30 : 0x0f;
         }
