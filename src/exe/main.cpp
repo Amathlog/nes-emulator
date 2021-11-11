@@ -18,8 +18,8 @@ int main(int argc, char **argv)
     auto root = dir / ".." / ".." / "..";
 
     auto path = root / "tests" / "test_roms" / "nestest.nes";
-    //std::string path = root / "tests" / "test_roms" / "smb.nes";
-    //std::string path = root / "tests" / "test_roms" / "donkey_kong.nes";
+    //auto path = root / "roms" / "smb.nes";
+    //auto path = root / "roms" / "donkey_kong.nes";
     NesEmulator::Utils::FileReadVisitor visitor(path.string());
 
 
