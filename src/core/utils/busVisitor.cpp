@@ -12,13 +12,13 @@ BusReadVisitor::BusReadVisitor(const Bus& bus, uint16_t startAddr, uint16_t endA
 
 }
 
-void BusReadVisitor::Read(uint8_t* data, std::size_t size)
+void BusReadVisitor::Read(uint8_t* data, size_t size)
 {
     Peek(data, size);
     m_ptr += (uint16_t)size;
 }
 
-void BusReadVisitor::Peek(uint8_t* data, std::size_t size)
+void BusReadVisitor::Peek(uint8_t* data, size_t size)
 {
     if (size > Remaining())
         return;
@@ -30,7 +30,7 @@ void BusReadVisitor::Peek(uint8_t* data, std::size_t size)
     }
 }
 
-void BusReadVisitor::Advance(std::size_t size)
+void BusReadVisitor::Advance(size_t size)
 {
     if (size > Remaining())
         return;
@@ -38,7 +38,7 @@ void BusReadVisitor::Advance(std::size_t size)
     m_ptr += (uint16_t)size;
 }
 
-std::size_t BusReadVisitor::Remaining() const
+size_t BusReadVisitor::Remaining() const
 {
     if (m_ptr <= m_endAddr)
         return m_endAddr - m_ptr;

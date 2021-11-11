@@ -14,6 +14,7 @@
 
 using NesEmulatorExe::MainWindow;
 using NesEmulatorExe::DisassemblyWidget;
+using NesEmulatorExe::Mode;
 
 
 constexpr unsigned DEFAULT_FRAMERATE = 60;

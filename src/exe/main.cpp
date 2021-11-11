@@ -15,16 +15,20 @@ int main(int argc, char **argv)
 {
     // Load a rom from a file
     auto dir = fs::weakly_canonical(fs::path(argv[0])).parent_path();
-    NesEmulator::Utils::FileReadVisitor visitor(dir / ".." / ".." / ".." / "tests" / "test_roms" / "nestest.nes");
-    // NesEmulator::Utils::FileReadVisitor visitor(dir / ".." / ".." / ".." / "roms" / "smb.nes");
-    // NesEmulator::Utils::FileReadVisitor visitor(dir / ".." / ".." / ".." / "roms" / "donkey_kong.nes");
+    auto root = dir / ".." / ".." / "..";
+
+    auto path = root / "tests" / "test_roms" / "nestest.nes";
+    //std::string path = root / "tests" / "test_roms" / "smb.nes";
+    //std::string path = root / "tests" / "test_roms" / "donkey_kong.nes";
+    NesEmulator::Utils::FileReadVisitor visitor(path.string());
+
 
     auto cartridge = std::make_shared<NesEmulator::Cartridge>(visitor);
 
     NesEmulator::Bus bus;
     bus.InsertCartridge(cartridge);
     bus.Reset();
-    // bus.GetCPU().SetPC(0xc000);
+    //bus.GetCPU().SetPC(0xc000);
 
     QApplication app (argc, argv);
 
