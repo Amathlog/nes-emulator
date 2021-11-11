@@ -102,10 +102,6 @@ bool Cartridge::ReadPPU(uint16_t addr, uint8_t& data)
     if (m_mapper->MapReadPPU(addr, mappedAddress))
     {
         data = m_chrData[mappedAddress];
-        if (data != 0)
-        {
-            data = data;
-        }
         return true;
     }
 

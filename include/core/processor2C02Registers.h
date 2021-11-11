@@ -11,18 +11,11 @@ namespace Registers
 // 0x2000
 union PPUCTRL
 {
-    // Scroll part (MSB = Most Significant Bit)
+    // Ctrl part
     struct
     {
         uint8_t msbXScroll: 1;
         uint8_t msbYScroll: 1;
-        uint8_t unused: 6;
-    };
-
-    // Ctrl part
-    struct
-    {
-        uint8_t baseNametableAddress: 2;
         uint8_t VRAMAddressIncrement: 1;
         uint8_t spritePatternTableAddress: 1;
         uint8_t backgroundPatternTableAddress: 1;
@@ -89,14 +82,24 @@ struct PPURegisters
     Registers::PPUSTATUS status;    // 0x2002
     uint8_t oamaddr;                // 0x2003
     uint8_t oamdata;                // 0x2004
-    uint8_t scroll;                 // 0x2005
     uint8_t addr;                   // 0x2006
     uint8_t data;                   // 0x2007
 
-    Registers::LoopyRegister vram_addr;
-    Registers::LoopyRegister tram_addr;
+    Registers::LoopyRegister vramAddr;
+    Registers::LoopyRegister tramAddr;
 
     uint8_t fineX;
+
+    // For rendering (background)
+    uint8_t bgNextTileId = 0x00;
+    uint8_t bgNextTileAttr = 0x00;
+    uint8_t bgNextTileLsb = 0x00;
+    uint8_t bgNextTileMsb = 0x00;
+    // Shift registers (background)
+    uint16_t bgShifterPatternLsb = 0x0000;
+    uint16_t bgShifterPatternMsb = 0x0000;
+    uint16_t bgShifterAttrLsb = 0x0000;
+    uint16_t bgShifterAttrMsb = 0x0000;
 
     void Reset()
     {
@@ -105,12 +108,20 @@ struct PPURegisters
         status.flags = 0;
         oamaddr = 0;
         oamdata = 0;
-        scroll = 0;
         addr = 0;
         data = 0;
-        vram_addr.reg = 0;
-        tram_addr.reg = 0;
+        vramAddr.reg = 0;
+        tramAddr.reg = 0;
         fineX = 0;
+
+        bgNextTileId = 0;
+        bgNextTileAttr = 0;
+        bgNextTileLsb = 0;
+        bgNextTileMsb = 0;
+        bgShifterAttrLsb = 0;
+        bgShifterAttrMsb = 0;
+        bgShifterPatternLsb = 0;
+        bgShifterPatternMsb = 0;
     }
 };
 
