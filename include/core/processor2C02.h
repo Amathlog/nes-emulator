@@ -50,7 +50,7 @@ namespace NesEmulator
         std::array<std::array<uint8_t, Cst::PPU_NAMED_TABLES_SIZE>, Cst::PPU_NB_NAMED_TABLES> m_namedTables;
         std::array<uint8_t, Cst::PPU_PALETTE_SIZE> m_paletteTable;
 
-        uint8_t m_screen[256][240];
+        uint8_t m_screen[256*240];
         bool m_isFrameComplete = false;
         bool m_nmi = false;
 

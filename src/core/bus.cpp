@@ -122,6 +122,7 @@ void Bus::Reset()
 {
     m_clockCounter = 0;
     m_cpu.Reset();
+    m_ppu.Reset();
 }
 
 void Bus::InsertCartridge(const std::shared_ptr<Cartridge>& cartridge)

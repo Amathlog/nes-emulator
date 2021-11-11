@@ -46,15 +46,14 @@ uint8_t Processor2C02::ReadCPU(uint16_t addr)
     {
         // delay read
         data = m_registers.data;
-        m_registers.data = ReadPPU(m_registers.vram_addr.reg);
+        m_registers.data = ReadPPU(m_registers.vramAddr.reg);
 
         // Note: In case of reading to the palette ram, there is no delay
-        // Therefore skip the delay if we are in this range (with mirroring)
-        uint16_t tempAddr = m_registers.vram_addr.reg &= Cst::PPU_MASK_MIRROR;
-        if (tempAddr >= Cst::PPU_START_PALETTE && tempAddr <= Cst::PPU_END_PALETTE)
+        // Therefore skip the delay if we are in this range
+        if (m_registers.vramAddr.reg >= Cst::PPU_START_PALETTE)
             data = m_registers.data;
 
-        m_registers.vram_addr.reg += (m_registers.ctrl.VRAMAddressIncrement ? 32 : 1);
+        m_registers.vramAddr.reg += (m_registers.ctrl.VRAMAddressIncrement ? 32 : 1);
 
         break;
     }
@@ -72,8 +71,8 @@ void Processor2C02::WriteCPU(uint16_t addr, uint8_t data)
     {
     case 0:
         m_registers.ctrl.flags = data;
-        m_registers.tram_addr.nametableX = m_registers.ctrl.msbXScroll;
-        m_registers.tram_addr.nametableX = m_registers.ctrl.msbYScroll;
+        m_registers.tramAddr.nametableX = m_registers.ctrl.msbXScroll;
+        m_registers.tramAddr.nametableY = m_registers.ctrl.msbYScroll;
         break;
     case 1:
         m_registers.mask.flags = data;
@@ -94,32 +93,32 @@ void Processor2C02::WriteCPU(uint16_t addr, uint8_t data)
         if (m_registers.addr == 0)
         {
             m_registers.fineX = data & 0x07;
-            m_registers.tram_addr.coarseX = data >> 3;
+            m_registers.tramAddr.coarseX = data >> 3;
             m_registers.addr = 1;
         }
         else 
         {
-            m_registers.tram_addr.fineY = data & 0x07;
-            m_registers.tram_addr.coarseY = data >> 3;
+            m_registers.tramAddr.fineY = data & 0x07;
+            m_registers.tramAddr.coarseY = data >> 3;
             m_registers.addr = 0;
         }
         break;
     case 6:
         if (m_registers.addr == 0)
         {
-            m_registers.tram_addr.reg = (m_registers.tram_addr.reg & 0x00FF) | (data << 8);
+            m_registers.tramAddr.reg = (m_registers.tramAddr.reg & 0x00FF) | ((uint16_t)((data & 0x3F)) << 8);
             m_registers.addr = 1;
         }
         else 
         {
-            m_registers.tram_addr.reg = (m_registers.tram_addr.reg & 0xFF00) | data;
+            m_registers.tramAddr.reg = (m_registers.tramAddr.reg & 0xFF00) | data;
             m_registers.addr = 0;
-            m_registers.vram_addr.reg = m_registers.tram_addr.reg;
+            m_registers.vramAddr.reg = m_registers.tramAddr.reg;
         }
         break;
     case 7:
-        WritePPU(m_registers.vram_addr.reg, data);
-        m_registers.vram_addr.reg += (m_registers.ctrl.VRAMAddressIncrement ? 32 : 1);
+        WritePPU(m_registers.vramAddr.reg, data);
+        m_registers.vramAddr.reg += (m_registers.ctrl.VRAMAddressIncrement ? 32 : 1);
         break;
     }
 }
@@ -133,7 +132,7 @@ void Processor2C02::WritePPU(uint16_t addr, uint8_t data)
     }
     else if(addr >= Cst::PPU_START_CHR_ROM && addr <= Cst::PPU_END_CHR_ROM)
     {
-        m_namedTables[(addr & 0x1000) >> 12][addr & 0x0FFF] = data;
+        m_namedTables[(addr & 0x1000) >> 12][addr & 0x0FBF] = data;
     }
     else if (addr >= Cst::PPU_START_VRAM && addr <= Cst::PPU_END_VRAM)
     {
@@ -184,7 +183,7 @@ uint8_t Processor2C02::ReadPPU(uint16_t addr)
     }
     else if(addr >= Cst::PPU_START_CHR_ROM && addr <= Cst::PPU_END_CHR_ROM)
     {
-        data = m_namedTables[(addr & 0x1000) >> 12][addr & 0x0FFF];
+        data = m_namedTables[(addr & 0x1000) >> 12][addr & 0x0FBF];
     }
     else if (addr >= Cst::PPU_START_VRAM && addr <= Cst::PPU_END_VRAM)
     {
@@ -221,23 +220,243 @@ uint8_t Processor2C02::ReadPPU(uint16_t addr)
         if (addr == 0x0018) addr = 0x0008;
         if (addr == 0x001C) addr = 0x000C;
 
-        data = m_paletteTable[addr];
+        data = m_paletteTable[addr] & (m_registers.mask.greyscale ? 0x30 : 0x3F);
     }
     return data;
 }
 
 void Processor2C02::Clock()
 {
-    // TODO
-    // For now some random noise is added at each clock.
-//     static unsigned i = 0, j = 0;
-//     m_screen[i][j] = rand() % 2 == 0 ? 0x30 : 0x0f;
-//     j++;
-//     if (j == GetWidth())
-//     {
-//         j = 0;
-//         i = (i + 1) % GetHeight();
-//     }
+    m_isFrameComplete = false;
+    // Utility lambdas
+    auto incrementScrollX = [this]()
+    {
+        // We only increment the scrolling if we are rendering something
+        if (m_registers.mask.showBackground || m_registers.mask.showSprites)
+        {
+            if (m_registers.vramAddr.coarseX == 31)
+            {
+                // If we reach 32, it means we are outside our current nametable. 
+                // (There are only 32 tiles on the X axis)
+                // Therefore we need to start reading from the other one.
+                // We start reading at tile 0
+                m_registers.vramAddr.coarseX = 0;
+                // Select the other nametable on the X axis (aka flip the bit)
+                m_registers.vramAddr.nametableX = ~m_registers.vramAddr.nametableX;
+            }
+            else 
+            {
+                m_registers.vramAddr.coarseX++;
+            }
+        }
+    };
+
+    auto incrementScrollY = [this]()
+    {
+        // We only increment the scrolling if we are rendering something
+        if (m_registers.mask.showBackground || m_registers.mask.showSprites)
+        {
+            // On the Y axis, it is a bit different, as we are operating on a scanline
+            // so we increment our fine Y
+            // If we go beyond 7 for fineY, we increment our tile counter on the Y axis (coarseY)
+            // And if we go beyond 30, it means we are outside our current nametable, so same thing as X.
+            if (m_registers.vramAddr.fineY < 7)
+            {
+                m_registers.vramAddr.fineY++;
+            }
+            else
+            {
+                m_registers.vramAddr.fineY = 0;
+                if (m_registers.vramAddr.coarseY == 29)
+                {
+                    m_registers.vramAddr.coarseY = 0;
+                    m_registers.vramAddr.nametableY = ~m_registers.vramAddr.nametableY;
+                }
+                else if (m_registers.vramAddr.coarseY == 31)
+                {
+                    // If for some reason we are ouside our range, just wraps around
+                    m_registers.vramAddr.coarseY = 0;
+                }
+                else 
+                {
+                    m_registers.vramAddr.coarseY++;
+                }
+                
+            }
+        }
+    };
+
+    // Transfer the info from tram to vram
+    auto transferAddressX = [&]()
+    {
+        if (m_registers.mask.showBackground || m_registers.mask.showSprites)
+        {
+            m_registers.vramAddr.nametableX = m_registers.tramAddr.nametableX;
+            m_registers.vramAddr.coarseX = m_registers.tramAddr.coarseX;
+        }
+    };
+
+    // Transfer the info from tram to vram
+    auto transferAddressY = [&]()
+    {
+        if (m_registers.mask.showBackground || m_registers.mask.showSprites)
+        {
+            m_registers.vramAddr.fineY = m_registers.tramAddr.fineY;
+            m_registers.vramAddr.nametableY = m_registers.tramAddr.nametableY;
+            m_registers.vramAddr.coarseY = m_registers.tramAddr.coarseY;
+        }
+    };
+
+    auto LoadBackgroundShifters = [&]()
+    {
+        m_registers.bgShifterPatternLsb = (m_registers.bgShifterPatternLsb & 0xFF00) | m_registers.bgNextTileLsb;
+        m_registers.bgShifterPatternMsb = (m_registers.bgShifterPatternMsb & 0xFF00) | m_registers.bgNextTileMsb;
+        // Set the whole byte to 0 or 1 depending on the tile attr value (for each bit 0 and 1)
+        m_registers.bgShifterAttrLsb = (m_registers.bgShifterAttrLsb & 0xFF00) | ((m_registers.bgNextTileAttr & 0b01) ? 0xFF : 0x00);
+        m_registers.bgShifterAttrMsb = (m_registers.bgShifterAttrMsb & 0xFF00) | ((m_registers.bgNextTileAttr & 0b10) ? 0xFF : 0x00);
+    };
+
+    auto UpdateShifters = [&]()
+    {
+        if (m_registers.mask.showBackground)
+        {
+            m_registers.bgShifterPatternLsb <<= 1;
+            m_registers.bgShifterPatternMsb <<= 1;
+            m_registers.bgShifterAttrLsb <<= 1;
+            m_registers.bgShifterAttrMsb <<= 1;
+        }
+    };
+
+    // Visible lines (except for -1)
+    if (m_scanlines >= -1 && m_scanlines < 240)
+    {
+        if (m_scanlines == 0 && m_cycles == 0)
+        {
+            // First cycle skipped
+            m_cycles = 1;
+        }
+
+        if (m_scanlines == -1 && m_cycles == 1)
+        {
+            // End of vertical blank
+            m_registers.status.verticalBlankStarted = 0;
+        
+        }
+
+        if ((m_cycles >= 2 && m_cycles < 258) || (m_cycles >= 321 && m_cycles < 338))
+        {
+            UpdateShifters();
+            switch ((m_cycles - 1) % 8)
+            {
+            // Load nametable byte
+            case 0:
+                LoadBackgroundShifters();
+                m_registers.bgNextTileId = ReadPPU(Cst::PPU_START_VRAM | (m_registers.vramAddr.reg & 0x0FFF));
+                break;
+            // Load attribute byte
+            // Attribute memory is offset from the beginning of the nametable by 0x03C0
+            case 2:
+            {
+                uint16_t adding = (m_registers.vramAddr.nametableY << 11) |
+                                    (m_registers.vramAddr.nametableX << 10) |
+                                    ((m_registers.vramAddr.coarseY >> 2) << 3) |
+                                    (m_registers.vramAddr.coarseX >> 2);
+
+                uint16_t ppuAddr = (Cst::PPU_START_VRAM + 0x03C0) | adding;
+                m_registers.bgNextTileAttr = ReadPPU(ppuAddr);
+
+                if (m_registers.bgNextTileAttr != 0)
+                    adding = adding;
+
+                if (m_registers.vramAddr.coarseY & 0x02)
+                    m_registers.bgNextTileAttr >>= 4;
+                if (m_registers.vramAddr.coarseX & 0x02)
+                    m_registers.bgNextTileAttr >>= 2;
+                m_registers.bgNextTileAttr &= 0x03;
+                break;
+            }
+            // Load LSB tile byte
+            case 4:
+                m_registers.bgNextTileLsb = ReadPPU(
+                    (((uint16_t)m_registers.ctrl.backgroundPatternTableAddress) << 12) +
+                    (((uint16_t)m_registers.bgNextTileId) << 4) +
+                    (m_registers.vramAddr.fineY) + 0);
+                break;
+            // Load MSB tile byte
+            case 6:
+                m_registers.bgNextTileMsb = ReadPPU(
+                    (((uint16_t)m_registers.ctrl.backgroundPatternTableAddress) << 12) +
+                    (((uint16_t)m_registers.bgNextTileId) << 4) +
+                    (m_registers.vramAddr.fineY) + 8);
+                break;
+            // Increment horizontal direction
+            case 7:
+                incrementScrollX();
+                break;
+            }
+        }
+
+        // Increment vertical direction
+        if (m_cycles == 256)
+        {
+            incrementScrollY();
+        }
+
+        // Need to reset X address after incrementing Y
+        if (m_cycles == 257)
+        {
+            LoadBackgroundShifters();
+            transferAddressX();
+        }
+
+        if (m_cycles == 338 || m_cycles == 340)
+		{
+			m_registers.bgNextTileId = ReadPPU(Cst::PPU_START_VRAM | (m_registers.vramAddr.reg & 0x0FFF));
+		}
+
+        // Need to reset the Y adress when we are in "pre-redering"
+        // and the specification says that we do it each tick between 280 and 304 cycles
+        if (m_scanlines == -1 && (m_cycles >= 280 && m_cycles <= 304))
+        {
+            transferAddressY();
+        }
+    }
+
+    // On scanline 240, nothing happens
+    if (m_scanlines == 240)
+    {
+        // Chilling
+    }
+
+    if (m_scanlines == 241 && m_cycles == 1)
+    {
+        m_registers.status.verticalBlankStarted = 1;
+        if (m_registers.ctrl.generateNMIWhenVBI)
+            m_nmi = true;
+    }
+
+    uint8_t bg_pixel = 0x00;
+    uint8_t bg_palette = 0x00;
+
+    if (m_cycles >= 1 && m_cycles <= 256 && m_scanlines >= 0 && m_scanlines < 240)
+    {
+        if (m_registers.mask.showBackground)
+        {
+            uint16_t bit_mux = 0x8000 >> m_registers.fineX;
+
+            uint8_t p0_pixel = (m_registers.bgShifterPatternLsb & bit_mux) > 0;
+            uint8_t p1_pixel = (m_registers.bgShifterPatternMsb & bit_mux) > 0;
+            bg_pixel = (p1_pixel << 1) | p0_pixel;
+
+            uint8_t p0_palette = (m_registers.bgShifterAttrLsb & bit_mux) > 0;
+            uint8_t p1_palette = (m_registers.bgShifterAttrMsb & bit_mux) > 0;
+            bg_palette =  (p1_palette << 1) | p0_palette;
+        }
+
+        size_t index = m_scanlines * 256 + m_cycles - 1;
+        m_screen[index] = GetColorFromPaletteRam(bg_palette, bg_pixel);
+    }
+
     m_cycles++;
     if (m_cycles >= 341)
     {
@@ -248,27 +467,15 @@ void Processor2C02::Clock()
             m_scanlines = -1;
             m_isFrameComplete = true;
         }
-        else if (m_scanlines == 0) 
-        {
-            m_isFrameComplete = false;
-        }
-    }
-    else if (m_scanlines == 241 && m_cycles == 1)
-    {
-        m_registers.status.verticalBlankStarted = 1;
-        if (m_registers.ctrl.generateNMIWhenVBI)
-            m_nmi = true;
-    }
-    else if (m_scanlines == -1 && m_cycles == 1) {
-        m_registers.status.verticalBlankStarted = 0;
     }
 }
 
 void Processor2C02::Reset()
 {
     memset(m_screen, 0, GetWidth()*GetHeight());
-    m_namedTables.fill({0});
-    m_paletteTable.fill({0});
+    m_namedTables[0].fill(0);
+    m_namedTables[1].fill(0);
+    m_paletteTable.fill(0);
     m_registers.Reset();
     m_scanlines = 0;
     m_cycles = 0;
@@ -276,11 +483,11 @@ void Processor2C02::Reset()
 
 void Processor2C02::RandomizeScreen()
 {
-    for(int i = 0; i < GetWidth(); ++i)
+    for (int j = 0; j < GetHeight(); ++j)
     {
-        for (int j = 0; j < GetHeight(); ++j)
+        for(int i = 0; i < GetWidth(); ++i)
         {
-            m_screen[i][j] = rand() % 2 == 0 ? 0x30 : 0x0f;
+            m_screen[j * 256 + i] = rand() % 2 == 0 ? 0x30 : 0x0f;
         }
     }
 }
@@ -341,7 +548,7 @@ void Processor2C02::FillFromNameTable(uint8_t index, uint8_t selectedPalette, ui
             for (uint8_t row = 0; row < 8; ++row)
             {
                 uint16_t addrNameTable = (switchIndexes ? (index + 1) % 2 : index) * 0x1000;
-                uint16_t addr = addrNameTable * 0x1000 + offset + row;
+                uint16_t addr = addrNameTable + offset + row;
                 // It seems in the rom, it stores 64 bits of lowPixel and then 64 bits of
                 // highPixel. Therefore, we need to offset our read for high by 8 bytes.
                 uint8_t lowPixel = ReadPPU(addr);

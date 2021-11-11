@@ -81,8 +81,7 @@ void MainWindow::Update()
     m_renderWidget->Update();
     if (m_mode == Mode::NORMAL)
     {
-        // Run 29781 clocks
-        for (unsigned i = 0; i < 29781; ++i)
+        do
         {
             m_bus.Clock();
             if (m_breakAddress <= 0xFFFF && m_bus.GetCPU().GetPC() == (uint16_t)m_breakAddress)
@@ -90,7 +89,7 @@ void MainWindow::Update()
                 SetMode(Mode::STEP);
                 break;
             }
-        }
+        } while (!m_bus.GetPPU().IsFrameComplete());
         m_disassemblyWidget->Update();
         m_paletteWidget->Update();
     }
