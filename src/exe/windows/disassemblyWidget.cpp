@@ -43,6 +43,8 @@ DisassemblyWidget::DisassemblyWidget(NesEmulator::Bus& bus, unsigned nbDisassemb
         m_mainLayout->addWidget(m_disassemblyLines[i].get());
     }
 
+    setFixedWidth(170);
+
     Update();
 }
 
