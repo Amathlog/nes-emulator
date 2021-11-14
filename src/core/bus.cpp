@@ -41,6 +41,13 @@ void Bus::WriteCPU(uint16_t address, uint8_t data)
         // Mirroring.
         m_ppu.WriteCPU(address % Cst::PPU_REG_SIZE, data);
     }
+    else if (address == Cst::DMA_REGISTER_ADDR)
+    {
+        m_dmaPage = data;
+        m_dmaAddr = 0x00;
+        m_dmaTransfer = true;
+        m_dmaWaitForCPU = true;
+    }
     else if (address == Cst::CONTROLLER_1_ADDR || address == Cst::CONTROLLER_2_ADDR)
     {
         uint16_t index = address & 0x0001;
@@ -76,6 +83,44 @@ uint8_t Bus::ReadCPU(uint16_t address)
     return data;
 }
 
+void Bus::Verbose()
+{
+    if (!m_cpu.IsOpComplete())
+        return;
+
+    auto addPadding = [](size_t p)
+    {
+        for (size_t i = 0; i < p; ++i)
+        {
+            std::cout << " ";
+        }
+    };
+
+    Utils::BusReadVisitor visitor(*this, m_cpu.GetPC(), m_cpu.GetPC() + 3);
+    uint16_t dummy;
+    auto line = NesEmulator::Utils::Disassemble(visitor, m_cpu.GetPC(), dummy);
+    std::cout << line[0];
+    // Padding
+    size_t padding = 30;
+    padding -= line[0].size();
+    addPadding(padding);
+    std::cout << " A:" << std::hex << +m_cpu.GetA();
+    std::cout << " X:" << std::hex << +m_cpu.GetX();
+    std::cout << " Y:" << std::hex << +m_cpu.GetY();
+    std::cout << " P:" << std::hex << +m_cpu.GetStatus().flags;
+    std::cout << " SP:" << std::hex << +m_cpu.GetSP();
+    int16_t scanlines = m_ppu.GetScanlines();
+    int16_t cycles = m_ppu.GetCycles();
+    padding = scanlines >= 100 ? 0 : ((scanlines >= 10 || scanlines == -1) ? 1 : 2);
+    std::cout << " PPU:";
+    addPadding(padding);
+    std::cout << std::dec << scanlines << ",";
+    padding = cycles >= 100 ? 0 : ((cycles >= 10 || cycles == -1) ? 1 : 2);
+    addPadding(padding);
+    std::cout << cycles;
+    std::cout << " CYC:" << m_cpu.GetNbOfTotalCycles() << std::endl;
+}
+
 void Bus::Clock()
 {
     constexpr bool verbose = false;
@@ -84,41 +129,46 @@ void Bus::Clock()
     m_ppu.Clock();
     if (m_clockCounter % 3 == 0)
     {
-        if (verbose && m_cpu.IsOpComplete())
+        if constexpr (verbose)
         {
-            auto addPadding = [](size_t p)
-            {
-                for (size_t i = 0; i < p; ++i)
-                {
-                    std::cout << " ";
-                }
-            };
-
-            Utils::BusReadVisitor visitor(*this, m_cpu.GetPC(), m_cpu.GetPC() + 3);
-            uint16_t dummy;
-            auto line = NesEmulator::Utils::Disassemble(visitor, m_cpu.GetPC(), dummy);
-            std::cout << line[0];
-            // Padding
-            size_t padding = 30;
-            padding -= line[0].size();
-            addPadding(padding);
-            std::cout << " A:" << std::hex << +m_cpu.GetA();
-            std::cout << " X:" << std::hex << +m_cpu.GetX();
-            std::cout << " Y:" << std::hex << +m_cpu.GetY();
-            std::cout << " P:" << std::hex << +m_cpu.GetStatus().flags;
-            std::cout << " SP:" << std::hex << +m_cpu.GetSP();
-            int16_t scanlines = m_ppu.GetScanlines();
-            int16_t cycles = m_ppu.GetCycles();
-            padding = scanlines >= 100 ? 0 : ((scanlines >= 10 || scanlines == -1) ? 1 : 2);
-            std::cout << " PPU:";
-            addPadding(padding);
-            std::cout << std::dec << scanlines << ",";
-            padding = cycles >= 100 ? 0 : ((cycles >= 10 || cycles == -1) ? 1 : 2);
-            addPadding(padding);
-            std::cout << cycles;
-            std::cout << " CYC:" << m_cpu.GetNbOfTotalCycles() << std::endl;
+            Verbose();
         }
-        m_cpu.Clock();
+
+        // DMA specific
+        // When DMA transfer is enabled, CPU gets suspended
+        if (m_dmaTransfer)
+        {
+            if (m_dmaWaitForCPU)
+            {
+                // But at the beginning, we need to wait until clock count is odd
+                // It can takes 1 or 2 cycles
+                if (m_clockCounter % 2 == 1)
+                    m_dmaWaitForCPU = false;
+            }
+            else {
+                // On even cycles, we read the data
+                // On odd cycles, we write the data
+                if (m_clockCounter % 2 == 0)
+                {
+                    uint16_t addr = ((uint16_t)m_dmaPage << 8) | m_dmaAddr;
+                    m_dmaData = ReadCPU(addr);
+                }
+                else 
+                {
+                    // First write the address for OAM
+                    WriteCPU(Cst::PPU_REG_START_ADDR + 0x0003, m_dmaAddr);
+                    // Then write the data
+                    WriteCPU(Cst::PPU_REG_START_ADDR + 0x0004, m_dmaData);
+
+                    // When we reach the last address, we stop
+                    if (++m_dmaAddr == 0)
+                        m_dmaTransfer = false;
+                }
+            }
+        }
+        {
+            m_cpu.Clock();
+        }
     }
 
     if (m_ppu.IsNMISet())

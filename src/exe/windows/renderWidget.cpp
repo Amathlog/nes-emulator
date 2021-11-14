@@ -25,9 +25,13 @@ RenderWidget::RenderWidget(NesEmulator::Bus& bus, QWidget* parent)
     m_graphicView = std::make_unique<QGraphicsView>(m_scene.get());
     m_imagePixmap = m_scene->addPixmap(QPixmap::fromImage(*m_renderedImage));
 
-    m_graphicView->scale(2, 2);
+    constexpr float scale = 3;
+
+    m_graphicView->scale(scale, scale);
 
     m_mainLayout->addWidget(m_graphicView.get());
+
+    setFixedSize((m_bus.GetPPU().GetWidth() + 15) * scale, (m_bus.GetPPU().GetHeight() + 15) * scale);
 }
 
 
