@@ -1,6 +1,9 @@
 #pragma once
 
 #include <cstdint>
+#include <cstddef>
+
+using std::size_t;
 
 namespace NesEmulator
 {
