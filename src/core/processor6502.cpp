@@ -314,7 +314,8 @@ uint8_t Processor6502::GeneralAddition()
     uint8_t signFetched = (m_fetched & 0x80) >> 7;
     uint8_t signR = ((uint8_t)temp & 0x80) >> 7;
 
-    m_status.V = (signA ^ signR) & ~(signA ^ signFetched);
+    // m_status.V = (signA ^ signR) & ~(signA ^ signFetched);
+    m_status.V = ((~((uint16_t)m_A ^ (uint16_t)m_fetched) & ((uint16_t)m_A ^ (uint16_t)temp)) & 0x0080 ) > 0;
 
     // Carry check
     m_status.C = temp > 255u;
@@ -408,9 +409,8 @@ uint8_t Processor6502::ASL()
 {
     Fetch();
 
-    m_status.C = (m_fetched & 0x80) >> 7;
-
     uint8_t temp = m_fetched << 1;
+    m_status.C = (m_fetched & 0x80) >> 7;
 
     SetFlagIfNegOrZero(temp);
 
@@ -739,9 +739,9 @@ uint8_t Processor6502::ROL()
 {
     Fetch();
 
-    m_status.C = (m_fetched & 0x80) >> 7;
+    uint8_t temp = (m_fetched << 1) | m_status.C;
 
-    uint8_t temp = m_fetched << 1 | m_status.C;
+    m_status.C = (m_fetched & 0x80) >> 7;
 
     SetFlagIfNegOrZero(temp);
 
@@ -758,9 +758,9 @@ uint8_t Processor6502::ROR()
 {
     Fetch();
 
-    m_status.C = m_fetched & 0x01;
+    uint8_t temp = (m_fetched >> 1) | (m_status.C << 7);
 
-    uint8_t temp = (m_fetched >> 1) | m_status.C;
+    m_status.C = m_fetched & 0x01;
 
     SetFlagIfNegOrZero(temp);
 
