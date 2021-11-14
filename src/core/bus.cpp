@@ -1,3 +1,4 @@
+#include "core/controller.h"
 #include "core/utils/busVisitor.h"
 #include "core/utils/disassembly.h"
 #include <core/bus.h>
@@ -10,9 +11,8 @@
 
 
 using NesEmulator::Bus;
-using NesEmulator::Processor6502;
-using NesEmulator::Processor2C02;
 using NesEmulator::Cartridge;
+using NesEmulator::Controller;
 
 Bus::Bus()
 {
@@ -41,6 +41,12 @@ void Bus::WriteCPU(uint16_t address, uint8_t data)
         // Mirroring.
         m_ppu.WriteCPU(address % Cst::PPU_REG_SIZE, data);
     }
+    else if (address == Cst::CONTROLLER_1_ADDR || address == Cst::CONTROLLER_2_ADDR)
+    {
+        uint16_t index = address & 0x0001;
+        if (m_controllers[index].get() != nullptr)
+            m_controllersState[index] = m_controllers[index]->GetButtonsState();
+    }
 }
 
 uint8_t Bus::ReadCPU(uint16_t address)
@@ -59,6 +65,12 @@ uint8_t Bus::ReadCPU(uint16_t address)
     {
         // Mirroring.
         data = m_ppu.ReadCPU(address % Cst::PPU_REG_SIZE);
+    }
+    else if (address == Cst::CONTROLLER_1_ADDR || address == Cst::CONTROLLER_2_ADDR)
+    {
+        uint16_t index = address & 0x0001;
+        data = (m_controllersState[index] & 0x80) > 0;
+        m_controllersState[index] <<= 1;
     }
 
     return data;
@@ -123,10 +135,23 @@ void Bus::Reset()
     m_clockCounter = 0;
     m_cpu.Reset();
     m_ppu.Reset();
+    m_controllersState[0] = 0x00;
+    m_controllersState[1] = 0x00;
 }
 
 void Bus::InsertCartridge(const std::shared_ptr<Cartridge>& cartridge)
 {
     m_cartridge = cartridge;
     m_ppu.ConnectCartridge(cartridge);
+}
+
+void Bus::ConnectController(const std::shared_ptr<Controller>& controller, uint8_t controllerIndex)
+{
+    m_controllers[controllerIndex & 0x01] = controller;
+}
+
+void Bus::DisconnectController(uint8_t controllerIndex)
+{
+    m_controllers[controllerIndex & 0x01].reset();
+    m_controllersState[controllerIndex & 0x01] = 0;
 }

@@ -47,5 +47,8 @@ namespace Cst
     constexpr uint16_t PPU_END_PALETTE = 0x3FFF;
 
     constexpr uint16_t PPU_MASK_MIRROR = 0x3FFF;
+
+    constexpr uint16_t CONTROLLER_1_ADDR = 0x4016;
+    constexpr uint16_t CONTROLLER_2_ADDR = 0x4017;
 }
 }

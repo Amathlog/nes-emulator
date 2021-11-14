@@ -7,8 +7,10 @@
 #include <core/bus.h>
 #include <memory>
 #include <exe/windows/disassemblyWidget.h>
+#include <qevent.h>
 #include <qlineedit.h>
 #include <qpushbutton.h>
+#include <exe/qtController.h>
 
 namespace NesEmulatorExe
 {
@@ -31,6 +33,10 @@ namespace NesEmulatorExe
 
         void SetFramerate(unsigned framerate);
         unsigned GetFramerate() const { return m_framerate; }
+
+        // bool event(QEvent* event) override;
+        void keyPressEvent(QKeyEvent* event) override;
+        void keyReleaseEvent(QKeyEvent* event) override;
 
     private slots:
         void HandleButton();
@@ -67,5 +73,7 @@ namespace NesEmulatorExe
         unsigned m_framerate;
         uint32_t m_breakAddress = 1 << 24; // Just a number higher than 1 << 16
         // unsigned m_remainingClocksAfterBreak = 0;
+
+        std::shared_ptr<QtController> m_controller;
     };
 }
