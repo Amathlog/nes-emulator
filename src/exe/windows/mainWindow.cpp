@@ -9,7 +9,9 @@
 #include <qboxlayout.h>
 #include <qlayout.h>
 #include <qlineedit.h>
+#include <qnamespace.h>
 #include <qpushbutton.h>
+#include <qwidget.h>
 #include <string>
 
 using NesEmulatorExe::MainWindow;
@@ -69,7 +71,37 @@ MainWindow::MainWindow(NesEmulator::Bus& bus, Mode mode, QWidget* parent)
     SetFramerate(DEFAULT_FRAMERATE);
 
     SetMode(mode);
+
+    m_controller = std::make_shared<QtController>(0);
+    m_bus.ConnectController(m_controller, 0);
+
+    setFocusPolicy(Qt::FocusPolicy::ClickFocus);
 }
+
+// bool MainWindow::event(QEvent *event)
+// {
+//     if (m_controller->UpdateOnEvent(event))
+//         return true;
+
+//     return QWidget::event(event);
+// }
+
+void MainWindow::keyPressEvent(QKeyEvent* event)
+{
+    if (m_controller->UpdateOnEvent((Qt::Key)event->key(), true))
+        return;
+
+    QWidget::keyPressEvent(event);
+}
+
+void MainWindow::keyReleaseEvent(QKeyEvent* event)
+{
+    if (m_controller->UpdateOnEvent((Qt::Key)event->key(), false))
+        return;
+
+    QWidget::keyPressEvent(event);
+}
+
 
 void MainWindow::HandleButton()
 {
