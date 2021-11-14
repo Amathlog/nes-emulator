@@ -41,3 +41,4 @@ build/
 roms/
 
 CMakeLists.txt.user
+tests/scripts/our_log.txt
