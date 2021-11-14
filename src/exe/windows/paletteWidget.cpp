@@ -60,7 +60,7 @@ void PaletteWidget::Update()
             uint8_t color = m_bus.GetPPU().GetColorFromPaletteRam(i, idx);
             uchar* bits = m_paletteImages[i]->bits();
             bits = bits;
-            for (unsigned scanline = 0; scanline < m_paletteImages[i]->height(); ++scanline)
+            for (int scanline = 0; scanline < m_paletteImages[i]->height(); ++scanline)
             {
                 memset(m_paletteImages[i]->scanLine(scanline) + idx * quarterWidth, color, quarterWidth);
             }

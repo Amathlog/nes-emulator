@@ -37,7 +37,7 @@ DisassemblyWidget::DisassemblyWidget(NesEmulator::Bus& bus, unsigned nbDisassemb
 
     m_mainLayout->addSpacing(20);
 
-    for (int i = 0; i < nbDisassemblyLines; ++i)
+    for (unsigned i = 0; i < nbDisassemblyLines; ++i)
     {
         m_disassemblyLines[i] = std::make_unique<QLabel>();
         m_mainLayout->addWidget(m_disassemblyLines[i].get());

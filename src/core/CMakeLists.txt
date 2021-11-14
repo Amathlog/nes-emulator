@@ -10,5 +10,5 @@ file(GLOB_RECURSE CORELIB_SRC
 )
 
 link_directories(${NesEmulator_SOURCE_DIR}/external/SFML)
-add_library(NesEmulator_Core ${CORELIB_SRC})
+add_library(NesEmulator_Core STATIC ${CORELIB_SRC})
 target_link_libraries(NesEmulator_Core sfml-system sfml-window sfml-audio sfml-graphics)

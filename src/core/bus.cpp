@@ -86,9 +86,9 @@ void Bus::Clock()
     {
         if (verbose && m_cpu.IsOpComplete())
         {
-            auto addPadding = [](std::size_t p)
+            auto addPadding = [](size_t p)
             {
-                for (auto i = 0; i < p; ++i)
+                for (size_t i = 0; i < p; ++i)
                 {
                     std::cout << " ";
                 }
@@ -99,7 +99,7 @@ void Bus::Clock()
             auto line = NesEmulator::Utils::Disassemble(visitor, m_cpu.GetPC(), dummy);
             std::cout << line[0];
             // Padding
-            std::size_t padding = 30;
+            size_t padding = 30;
             padding -= line[0].size();
             addPadding(padding);
             std::cout << " A:" << std::hex << +m_cpu.GetA();
