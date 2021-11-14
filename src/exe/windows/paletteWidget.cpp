@@ -41,6 +41,9 @@ PaletteWidget::PaletteWidget(NesEmulator::Bus& bus, QWidget* parent)
 
     m_mainLayout->addWidget(m_graphicView.get());
 
+
+    setFixedSize(m_scene->width() * 2 + 40, m_scene->height() * 2 + 60);
+
     Update();
 }
 

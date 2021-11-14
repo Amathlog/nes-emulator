@@ -11,6 +11,7 @@
 #include <qlineedit.h>
 #include <qpushbutton.h>
 #include <exe/qtController.h>
+#include <exe/windows/oamWidget.h>
 
 namespace NesEmulatorExe
 {
@@ -64,6 +65,7 @@ namespace NesEmulatorExe
         std::unique_ptr<QPushButton> m_runToButton;
 
         std::unique_ptr<DisassemblyWidget> m_disassemblyWidget;
+        std::unique_ptr<OAMWidget> m_oamWidget;
         std::unique_ptr<PaletteWidget> m_paletteWidget;
         std::unique_ptr<RenderWidget> m_renderWidget;
 

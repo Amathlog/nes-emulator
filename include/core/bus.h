@@ -31,6 +31,7 @@ namespace NesEmulator
 
         void Clock();
         void Reset();
+        void Verbose();
 
     private:
         Processor6502 m_cpu;
@@ -43,5 +44,13 @@ namespace NesEmulator
 
         std::array<std::shared_ptr<Controller>, 2> m_controllers;
         std::array<uint8_t, 2> m_controllersState;
+
+        // DMA specific
+        uint8_t m_dmaPage = 0x00;
+        uint8_t m_dmaAddr = 0x00;
+        uint8_t m_dmaData = 0x00;
+
+        bool m_dmaTransfer = false;
+        bool m_dmaWaitForCPU = true;
     };
 }

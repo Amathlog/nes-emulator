@@ -1,3 +1,4 @@
+#include "exe/windows/oamWidget.h"
 #include "exe/windows/paletteWidget.h"
 #include "exe/windows/renderWidget.h"
 #include <exe/windows/mainWindow.h>
@@ -20,6 +21,8 @@ using NesEmulatorExe::Mode;
 
 
 constexpr unsigned DEFAULT_FRAMERATE = 60;
+constexpr bool USE_DISASSEMBLY = false;
+constexpr bool USE_OAM = true;
 
 MainWindow::MainWindow(NesEmulator::Bus& bus, Mode mode, QWidget* parent)
     : QWidget(parent)
@@ -60,8 +63,17 @@ MainWindow::MainWindow(NesEmulator::Bus& bus, Mode mode, QWidget* parent)
 
     m_mainLayout->addLayout(m_buttonLayout.get());
 
-    m_disassemblyWidget = std::make_unique<DisassemblyWidget>(m_bus, 25);
-    m_mainLayout->addWidget(m_disassemblyWidget.get());
+    if constexpr (USE_DISASSEMBLY)
+    {
+        m_disassemblyWidget = std::make_unique<DisassemblyWidget>(m_bus, 25);
+        m_mainLayout->addWidget(m_disassemblyWidget.get());
+    }
+
+    if constexpr (USE_OAM)
+    {
+        m_oamWidget = std::make_unique<OAMWidget>(m_bus, 25);
+        m_mainLayout->addWidget(m_oamWidget.get());
+    }
 
     m_paletteWidget = std::make_unique<PaletteWidget>(m_bus);
     m_mainLayout->addWidget(m_paletteWidget.get());
@@ -123,7 +135,13 @@ void MainWindow::Update()
                 break;
             }
         } while (!m_bus.GetPPU().IsFrameComplete());
-        m_disassemblyWidget->Update();
+
+        if constexpr (USE_DISASSEMBLY)
+            m_disassemblyWidget->Update();
+
+        if constexpr (USE_OAM)
+            m_oamWidget->Update();
+        
         m_paletteWidget->Update();
     }
 }
@@ -138,7 +156,13 @@ void MainWindow::Step()
     } while (!m_bus.GetCPU().IsOpComplete());
 
     m_renderWidget->Update();
-    m_disassemblyWidget->Update();
+
+    if constexpr (USE_DISASSEMBLY)
+            m_disassemblyWidget->Update();
+
+    if constexpr (USE_OAM)
+        m_oamWidget->Update();
+    
     m_paletteWidget->Update();
 }
 
@@ -184,6 +208,12 @@ void MainWindow::Reset()
 {
     m_bus.Reset();
     m_renderWidget->Update();
-    m_disassemblyWidget->Update();
+    
+    if constexpr (USE_DISASSEMBLY)
+        m_disassemblyWidget->Update();
+
+    if constexpr (USE_OAM)
+        m_oamWidget->Update();
+
     m_paletteWidget->Update();
 }

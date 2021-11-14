@@ -53,5 +53,7 @@ namespace Cst
 
     constexpr uint16_t CONTROLLER_1_ADDR = 0x4016;
     constexpr uint16_t CONTROLLER_2_ADDR = 0x4017;
+
+    constexpr uint16_t DMA_REGISTER_ADDR = 0x4014;
 }
 }

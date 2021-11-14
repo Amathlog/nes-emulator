@@ -42,6 +42,8 @@ namespace NesEmulator
 
         bool IsNMISet() const { return m_nmi; }
         void ResetNMI() { m_nmi = false; }
+
+        const PPURegisters& GetRegisters() const { return m_registers; }
         
     private:
         std::shared_ptr<Cartridge> m_cartridge;

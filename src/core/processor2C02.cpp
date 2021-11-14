@@ -34,7 +34,7 @@ uint8_t Processor2C02::ReadCPU(uint16_t addr)
         // Can't read from OAMAddress register
         break;
     case 4:
-        data = m_registers.oamdata;
+        data = m_registers.GetOAM()[m_registers.oamaddr];
         break;
     case 5:
         // Can't read from Scroll register
@@ -84,7 +84,7 @@ void Processor2C02::WriteCPU(uint16_t addr, uint8_t data)
         m_registers.oamaddr = data;
         break;
     case 4:
-        m_registers.oamdata = data;
+        m_registers.GetOAM()[m_registers.oamaddr] = data;
         break;
     case 5:
         // For the scrolling part, the 3 lsb are for fine and the 5 msb for coarse

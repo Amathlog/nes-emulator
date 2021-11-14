@@ -75,13 +75,28 @@ union LoopyRegister
 };
 }
 
+struct OAM
+{
+    uint8_t y;
+    uint8_t tileId;
+    uint8_t attribute;
+    uint8_t x;
+
+    void Reset()
+    {
+        y = tileId = attribute = x = 0;
+    }
+};
+
+constexpr int oamSize = 64;
+
 struct PPURegisters
 {
     Registers::PPUCTRL ctrl;        // 0x2000
     Registers::PPUMASK mask;        // 0x2001
     Registers::PPUSTATUS status;    // 0x2002
     uint8_t oamaddr;                // 0x2003
-    uint8_t oamdata;                // 0x2004
+    OAM oam[oamSize];               // 0x2004
     uint8_t addr;                   // 0x2006
     uint8_t data;                   // 0x2007
 
@@ -107,7 +122,9 @@ struct PPURegisters
         mask.flags = 0;
         status.flags = 0;
         oamaddr = 0;
-        oamdata = 0;
+        for (int i = 0; i < oamSize; ++i)
+            oam[i].Reset();
+
         addr = 0;
         data = 0;
         vramAddr.reg = 0;
@@ -123,6 +140,7 @@ struct PPURegisters
         bgShifterPatternLsb = 0;
         bgShifterPatternMsb = 0;
     }
-};
 
+    uint8_t* GetOAM() { return (uint8_t*)oam; }
+};
 }
