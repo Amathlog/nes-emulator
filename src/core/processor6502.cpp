@@ -2,6 +2,7 @@
 #include <core/processor6502.h>
 #include <core/bus.h>
 
+#include <cstdint>
 #include <iostream>
 #include <cassert>
 
@@ -115,9 +116,9 @@ void Processor6502::Reset()
     m_SP = 0xFD;
     m_fetched = 0x00;
 
-    uint8_t savedU = m_status.U;
     m_status.flags = 0x00;
-    m_status.U = savedU;
+    m_status.U = 1;
+    m_status.I = 1;
 
     m_relAddress = 0x0000;
     m_absAddress = 0x0000;
@@ -444,8 +445,9 @@ uint8_t Processor6502::BIT()
 
     uint8_t temp = m_A & m_fetched;
 
-    SetFlagIfNegOrZero(temp);
-    m_status.V = (temp & 0x40) >> 6;
+    m_status.Z = (temp == 0x00);
+    m_status.N = (m_fetched & 0x80) >> 7;
+    m_status.V = (m_fetched & 0x40) >> 6;
 
     return 0;
 }
@@ -712,11 +714,13 @@ uint8_t Processor6502::PHA()
 
 uint8_t Processor6502::PHP()
 {
+    uint8_t savedB = m_status.B;
+    uint8_t savedU = m_status.U;
     m_status.B = 1;
     m_status.U = 1;
     PushDataToStack(m_status.flags);
-    m_status.B = 0;
-    m_status.U = 0;
+    m_status.B = savedB;
+    m_status.U = savedU;
     return 0;
 }
 
@@ -730,8 +734,10 @@ uint8_t Processor6502::PLA()
 uint8_t Processor6502::PLP()
 {
     uint8_t savedU = m_status.U;
+    uint8_t savedB = m_status.B;
     m_status.flags = PopDataFromStack();
     m_status.U = savedU;
+    m_status.B = savedB;
     return 0;
 }
 
@@ -838,24 +844,28 @@ uint8_t Processor6502::STY()
 uint8_t Processor6502::TAX()
 {
     m_X = m_A;
+    SetFlagIfNegOrZero(m_X);
     return 0;
 }
 
 uint8_t Processor6502::TAY()
 {
     m_Y = m_A;
+    SetFlagIfNegOrZero(m_Y);
     return 0;
 }
 
 uint8_t Processor6502::TSX()
 {
     m_X = m_SP;
+    SetFlagIfNegOrZero(m_X);
     return 0;
 }
 
 uint8_t Processor6502::TXA()
 {
     m_A = m_X;
+    SetFlagIfNegOrZero(m_A);
     return 0;
 }
 
@@ -868,6 +878,7 @@ uint8_t Processor6502::TXS()
 uint8_t Processor6502::TYA()
 {
     m_A = m_Y;
+    SetFlagIfNegOrZero(m_A);
     return 0;
 }
 
