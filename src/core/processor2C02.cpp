@@ -1,4 +1,5 @@
 #include "core/constants.h"
+#include "core/processor2C02Registers.h"
 #include <core/processor2C02.h>
 #include <core/cartridge.h>
 #include <cstdint>
@@ -325,6 +326,24 @@ void Processor2C02::Clock()
             m_registers.bgShifterAttrLsb <<= 1;
             m_registers.bgShifterAttrMsb <<= 1;
         }
+        
+        if (m_registers.mask.showSprites && m_cycles >= 1 && m_cycles < 258)
+        {
+            for (uint8_t i = 0; i < m_spritesCount; ++i)
+            {
+                // Decrement X each time, when we hit 0, it means we reach the sprite,
+                // From then, we can shift the shifters
+                if (m_selectedSprites[i].x > 0)
+                {
+                    m_selectedSprites[i].x--;
+                }
+                else 
+                {
+                    m_registers.fgShifterPatternLsb[i] <<= 1;
+                    m_registers.fgShifterPatternMsb[i] <<= 1;
+                }
+            }
+        }
     };
 
     // Visible lines (except for -1)
@@ -340,7 +359,14 @@ void Processor2C02::Clock()
         {
             // End of vertical blank
             m_registers.status.verticalBlankStarted = 0;
-        
+            
+            // Also some cleanup on sprite data
+            m_registers.status.spriteOverflow = 0;
+            m_registers.status.sprite0Hit = 0;
+
+            m_spritesCount = 0;
+            m_registers.fgShifterPatternLsb.fill(0x00);
+            m_registers.fgShifterPatternMsb.fill(0x00);
         }
 
         if ((m_cycles >= 2 && m_cycles < 258) || (m_cycles >= 321 && m_cycles < 338))
@@ -425,8 +451,13 @@ void Processor2C02::Clock()
         // For this time, we just do the whole "scanning" at a single clock
         if (m_scanlines >= 0 && m_cycles == 257)
         {
+            m_registers.spriteZeroIsPossible = false;
+
             for (auto& item : m_selectedSprites)
                 item.Reset();
+
+            m_registers.fgShifterPatternLsb.fill(0x00);
+            m_registers.fgShifterPatternMsb.fill(0x00);
 
             m_spritesCount = 0;
             bool spriteOverflow = false;
@@ -439,13 +470,105 @@ void Processor2C02::Clock()
                 if (diff >= 0 && diff < (m_registers.ctrl.spriteSize ? 16 : 8))
                 {
                     if (m_spritesCount < 8)
+                    {
+                        // Is it sprite 0 ?
+                        if (i == 0)
+                            m_registers.spriteZeroIsPossible = true;
+
                         m_selectedSprites[m_spritesCount++] = oam;
+                    }
                     else
+                    {
                         spriteOverflow = true;
+                        break;
+                    }
                 }
             }
 
             m_registers.status.spriteOverflow = spriteOverflow;
+        }
+
+        if (m_scanlines >= 0 && m_cycles == 340)
+        {
+            // Computing the foreground shifters for each sprite
+            for (uint8_t i = 0; i < m_spritesCount; ++i)
+            {
+                uint16_t spritePatternAddrLsb = 0x0000;
+                uint16_t spritePatternAddrMsb = 0x0000;
+                const OAM& oam = m_selectedSprites[i];
+
+                // Check if we flip vertically by checking the MSB of the attribute
+                bool flipVertically = (oam.attribute & 0x80) > 0;
+
+                // If so, inverse the lsb addr (0 -> 7 for normal, 7 -> 0 for flipped)
+                uint8_t lsbAddr = (m_scanlines - oam.y) & 0x07;
+                if (flipVertically)
+                    lsbAddr = 7 - lsbAddr;
+
+                // We can also check if it is flipped horizontally by checking the 2nd MSB bit of the attribute
+                bool flipHorizontally = (oam.attribute & 0x40) > 0;
+
+                // First check in which mode we are, 8x8 or 8x16
+                if (m_registers.ctrl.spriteSize == 0)
+                {
+                    // 8x8 mode
+                    spritePatternAddrLsb = (m_registers.ctrl.spritePatternTableAddress << 12)
+                                           | (oam.tileId << 4)
+                                           | lsbAddr;
+                }
+                else 
+                {
+                    // 8x16 mode
+                    // We need to check the 7 msb bits of the tile id to know
+                    // which row to select in our pattern table.
+                    // In normal mode, the top half row is given by (tileID & 0xFE) << 4
+                    // and we add one for the bottom half => ((tileID & 0xFE) + 1) << 4
+                    // In case of flipped, we need to have the +1 for the top half 
+                    // and not for the bottom half. 1 << 4 = 16, so it's +16
+
+                    uint8_t topHalfRow = ((oam.tileId & 0xFE) << 4);
+                    uint8_t bottomHalfRow = ((oam.tileId & 0xFE) << 4);
+
+                    if (flipVertically)
+                        bottomHalfRow += (1 << 4);
+                    else
+                        topHalfRow += (1 << 4);
+
+                    if (m_scanlines - oam.y < 8)
+                    {
+                        spritePatternAddrLsb = ((oam.tileId & 0x01) << 12)
+                                               | topHalfRow
+                                               | lsbAddr;
+                    }
+                    else 
+                    {
+                        spritePatternAddrLsb = ((oam.tileId & 0x01) << 12)
+                                               | bottomHalfRow
+                                               | lsbAddr;
+                    }
+                }
+
+                // At this point, we have the address of the low bytes
+                // To have the address of the high bytes, we just add 8
+                spritePatternAddrMsb = spritePatternAddrLsb + 8;
+
+                m_registers.fgShifterPatternLsb[i] = ReadPPU(spritePatternAddrLsb);
+                m_registers.fgShifterPatternMsb[i] = ReadPPU(spritePatternAddrMsb);
+
+                if (flipHorizontally)
+                {
+                    // Taken from https://stackoverflow.com/questions/2602823
+                    auto bitFlip = [](uint8_t b) {
+                        b = (b & 0xF0) >> 4 | (b & 0x0F) << 4;
+                        b = (b & 0xCC) >> 2 | (b & 0x33) << 2;
+                        b = (b & 0xAA) >> 1 | (b & 0x55) << 1;
+                        return b;
+                    };
+
+                    m_registers.fgShifterPatternLsb[i] = bitFlip(m_registers.fgShifterPatternLsb[i]);
+                    m_registers.fgShifterPatternMsb[i] = bitFlip(m_registers.fgShifterPatternMsb[i]);
+                }
+            }
         }
     }
 
@@ -465,6 +588,10 @@ void Processor2C02::Clock()
     uint8_t bg_pixel = 0x00;
     uint8_t bg_palette = 0x00;
 
+    uint8_t fg_pixel = 0x00;
+    uint8_t fg_palette = 0x00;
+    uint8_t fg_priority = 0x00;
+
     if (m_cycles >= 1 && m_cycles <= 256 && m_scanlines >= 0 && m_scanlines < 240)
     {
         if (m_registers.mask.showBackground)
@@ -480,8 +607,84 @@ void Processor2C02::Clock()
             bg_palette =  (p1_palette << 1) | p0_palette;
         }
 
+        if (m_registers.mask.showSprites)
+        {
+            m_registers.spriteZeroIsRendered = false;
+
+            for (uint8_t i = 0; i < m_spritesCount; ++i)
+            {
+                if (m_selectedSprites[i].x == 0)
+                {
+                    uint8_t p0_pixel = (m_registers.fgShifterPatternLsb[i] & 0x80) > 0;
+                    uint8_t p1_pixel = (m_registers.fgShifterPatternMsb[i] & 0x80) > 0;
+                    fg_pixel = (p1_pixel << 1) | p0_pixel;
+
+                    // 4 first colors are for the background, that's why we have a +4
+                    fg_palette = (m_selectedSprites[i].attribute & 0x03) + 0x04;
+                    fg_priority = (m_selectedSprites[i].attribute & 0x20) == 0;
+
+                    // If we have a pixel to draw, we stop stop here
+                    if (fg_pixel != 0)
+                    {
+                        // If it is our first sprite selected
+                        // It is sprite zero rendered, if the first sprite selected is sprite zero
+                        // (and we know it with our flag spriteZeroIsPossible)
+                        if (i == 0)
+                            m_registers.spriteZeroIsRendered = m_registers.spriteZeroIsPossible;
+
+                        break;
+                    }
+                }
+            }
+        }
+
+        // Compute the final pixel and palette!
+        // By default, draw the background pixel
+        uint8_t pixel = 0x00;
+        uint8_t palette = 0x00;
+
+        // If we have no background pixel, draw the foreground pixel
+        // If we have both not 0, draw the pixel only if it has priority
+        if (bg_pixel != 0 && fg_pixel == 0)
+        {
+            pixel = bg_pixel;
+            palette = bg_palette;
+        }
+        else if (bg_pixel == 0 && fg_pixel != 0)
+        {
+            pixel = fg_pixel;
+            palette = fg_palette;
+        }
+        else if (bg_pixel != 0 && fg_pixel != 0)
+        {
+            pixel = fg_priority > 0 ? fg_pixel : bg_pixel;
+            palette = fg_priority > 0 ? fg_palette : bg_palette;
+
+            // Also, we can only have a sprite zero hit, if the sprite
+            // "collides" with the background.
+            if (m_registers.spriteZeroIsRendered)
+            {
+                // If we don't render the left most background or sprite,
+                // we can't have sprite 0 hit for the 8 first cycles.
+                if (~(m_registers.mask.showBackgroundLeftmost | m_registers.mask.showSpritesLeftmost))
+                {
+                    if (m_cycles >= 9 && m_cycles < 258)
+                    {
+                        m_registers.status.sprite0Hit = 1;
+                    }
+                }
+                else
+                {
+                    if (m_cycles >= 1 && m_cycles < 258)
+                    {
+                        m_registers.status.sprite0Hit = 1;
+                    }
+                }
+            }
+        }
+
         size_t index = m_scanlines * 256 + m_cycles - 1;
-        m_screen[index] = GetColorFromPaletteRam(bg_palette, bg_pixel);
+        m_screen[index] = GetColorFromPaletteRam(palette, pixel);
     }
 
     m_cycles++;

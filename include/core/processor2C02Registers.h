@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <array>
 
 namespace NesEmulator 
 {
@@ -115,6 +116,13 @@ struct PPURegisters
     uint16_t bgShifterPatternMsb = 0x0000;
     uint16_t bgShifterAttrLsb = 0x0000;
     uint16_t bgShifterAttrMsb = 0x0000;
+    // Shift registers (foreground)
+    std::array<uint8_t, 8> fgShifterPatternLsb;
+    std::array<uint8_t, 8> fgShifterPatternMsb;
+
+    // Sprite zero hit detection
+    bool spriteZeroIsPossible;
+    bool spriteZeroIsRendered;
 
     void Reset()
     {
@@ -139,6 +147,12 @@ struct PPURegisters
         bgShifterAttrMsb = 0;
         bgShifterPatternLsb = 0;
         bgShifterPatternMsb = 0;
+
+        fgShifterPatternLsb.fill(0x00);
+        fgShifterPatternMsb.fill(0x00);
+
+        spriteZeroIsPossible = false;
+        spriteZeroIsRendered = false;
     }
 
     uint8_t* GetOAM() { return (uint8_t*)oam; }
