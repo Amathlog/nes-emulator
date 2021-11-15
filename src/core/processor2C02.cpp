@@ -420,6 +420,33 @@ void Processor2C02::Clock()
         {
             transferAddressY();
         }
+
+        // Foreground rendering. To improve for better compability with other games
+        // For this time, we just do the whole "scanning" at a single clock
+        if (m_scanlines >= 0 && m_cycles == 257)
+        {
+            for (auto& item : m_selectedSprites)
+                item.Reset();
+
+            m_spritesCount = 0;
+            bool spriteOverflow = false;
+
+            // Looking for all objects, check if they are on the current scanline
+            for (uint8_t i = 0; i < 64 && m_spritesCount < 9; ++i)
+            {
+                const OAM& oam = m_registers.oam[i];
+                int16_t diff = ((int16_t)m_scanlines) - ((int16_t)m_registers.oam[i].y);
+                if (diff >= 0 && diff < (m_registers.ctrl.spriteSize ? 16 : 8))
+                {
+                    if (m_spritesCount < 8)
+                        m_selectedSprites[m_spritesCount++] = oam;
+                    else
+                        spriteOverflow = true;
+                }
+            }
+
+            m_registers.status.spriteOverflow = spriteOverflow;
+        }
     }
 
     // On scanline 240, nothing happens
