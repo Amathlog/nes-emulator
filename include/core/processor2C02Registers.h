@@ -84,7 +84,7 @@ struct OAM
 
     void Reset()
     {
-        y = tileId = attribute = x = 0;
+        y = tileId = attribute = x = 0xFF;
     }
 };
 
