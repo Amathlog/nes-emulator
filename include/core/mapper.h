@@ -4,6 +4,12 @@
 
 namespace NesEmulator
 {
+    enum class Mirroring
+    {
+        VERTICAL,
+        HORIZONTAL,
+    };
+
     class IMapper
     {
     public:
@@ -15,9 +21,10 @@ namespace NesEmulator
         virtual ~IMapper() = default;
 
         virtual bool MapReadCPU(uint16_t address, uint32_t& mappedAddress) = 0;
-        virtual bool MapWriteCPU(uint16_t address, uint32_t& mappedAddress) = 0;
+        virtual bool MapWriteCPU(uint16_t address, uint32_t& mappedAddress, uint8_t data) = 0;
         virtual bool MapReadPPU(uint16_t address, uint32_t& mappedAddress) = 0;
-        virtual bool MapWritePPU(uint16_t address, uint32_t& mappedAddress) = 0;
+        virtual bool MapWritePPU(uint16_t address, uint32_t& mappedAddress, uint8_t data) = 0;
+        virtual Mirroring GetMirroring() const = 0;
 
     protected:
         uint8_t m_nbPrgBanks;
