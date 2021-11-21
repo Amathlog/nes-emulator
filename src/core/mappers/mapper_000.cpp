@@ -1,10 +1,13 @@
+#include "core/mapper.h"
 #include <core/mappers/mapper_000.h>
 #include <cassert>
+#include <cstdint>
 
 using NesEmulator::Mapper_000;
 
-Mapper_000::Mapper_000(uint8_t nbPrgBanks, uint8_t nbChrBanks)
+Mapper_000::Mapper_000(uint8_t nbPrgBanks, uint8_t nbChrBanks, Mirroring initialMirroring)
     : IMapper(nbPrgBanks, nbChrBanks)
+    , m_mirroring(initialMirroring)
 {
     // We need to be sure that there is 1 or 2 prgBanks and 1 chrBanks
     assert(nbPrgBanks <= 2 && nbChrBanks == 1 && "Wrong number of prgBanks or chrBans in mapper 000");
@@ -28,7 +31,7 @@ bool Mapper_000::MapReadCPU(uint16_t address, uint32_t& mappedAddress)
     return false;
 }
 
-bool Mapper_000::MapWriteCPU(uint16_t address, uint32_t& mappedAddress)
+bool Mapper_000::MapWriteCPU(uint16_t address, uint32_t& mappedAddress, uint8_t /*data*/)
 { 
     // Can only write to the PrgRam, located at $6000 to $7FFF, mirroring to fit size 8kB
     // There is also a switch?
@@ -52,7 +55,7 @@ bool Mapper_000::MapReadPPU(uint16_t address, uint32_t& mappedAddress)
     return false;
 }
 
-bool Mapper_000::MapWritePPU(uint16_t address, uint32_t& mappedAddress)
+bool Mapper_000::MapWritePPU(uint16_t /*address*/, uint32_t& /*mappedAddress*/, uint8_t /*data*/)
 {
     return false;
 }

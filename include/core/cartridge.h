@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <vector>
 #include <memory>
+#include <core/mapper.h>
 
 namespace NesEmulator
 {
@@ -10,14 +11,6 @@ namespace NesEmulator
     {
         class IReadVisitor;
     }
-
-    enum class Mirroring
-    {
-        VERTICAL,
-        HORIZONTAL,
-    };
-
-    class IMapper;
 
     class Cartridge
     {
@@ -34,7 +27,7 @@ namespace NesEmulator
         bool WritePPU(uint16_t addr, uint8_t data);
         bool ReadPPU(uint16_t addr, uint8_t& data);
 
-        Mirroring GetMirroring() const { return m_mirorring; }
+        Mirroring GetMirroring() const { return m_mapper->GetMirroring(); }
 
     private:
         std::vector<uint8_t> m_prgData;
@@ -44,7 +37,5 @@ namespace NesEmulator
         std::unique_ptr<IMapper> m_mapper;
         uint8_t m_nbPrgBanks = 0;
         uint8_t m_nbChrBanks = 0;
-
-        Mirroring m_mirorring;
     };
 }

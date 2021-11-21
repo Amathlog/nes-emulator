@@ -38,7 +38,7 @@ Cartridge::Cartridge(IReadVisitor& visitor)
         visitor.Advance(NesEmulator::Cst::ROM_TRAINER_SIZE);
 
     // Mirorring is the less significant bit of the flag6
-    m_mirorring = (header.flag6 & 0x01) ? Mirroring::VERTICAL : Mirroring::HORIZONTAL;
+    Mirroring initialMirroring = (header.flag6 & 0x01) ? Mirroring::VERTICAL : Mirroring::HORIZONTAL;
 
     m_nbPrgBanks = header.prgRomSize;
     m_prgData.resize(m_nbPrgBanks * NesEmulator::Cst::ROM_PRG_CHUNK_SIZE);
@@ -53,7 +53,7 @@ Cartridge::Cartridge(IReadVisitor& visitor)
 
     // Setup the mapper
     uint8_t mapperId = (header.flag7 & 0xF0) | ((header.flag6 & 0xF0) >> 4);
-    m_mapper = NesEmulator::CreateMapper(mapperId, m_nbPrgBanks, m_nbChrBanks);
+    m_mapper = NesEmulator::CreateMapper(mapperId, m_nbPrgBanks, m_nbChrBanks, initialMirroring);
     
     assert(m_mapper.get() != nullptr && "Invalid mapper id, unsupported");
 
@@ -78,7 +78,7 @@ bool Cartridge::ReadCPU(uint16_t address, uint8_t& data)
 bool Cartridge::WriteCPU(uint16_t addr, uint8_t data)
 {
     uint32_t mappedAddress = 0;
-    if (m_mapper->MapWriteCPU(addr, mappedAddress))
+    if (m_mapper->MapWriteCPU(addr, mappedAddress, data))
     {
         m_prgRam[mappedAddress] = data;
     }
@@ -89,7 +89,7 @@ bool Cartridge::WriteCPU(uint16_t addr, uint8_t data)
 bool Cartridge::WritePPU(uint16_t addr, uint8_t data)
 {
     // uint32_t mappedAddress = 0;
-    // if (m_mapper->MapWritePPU(addr, mappedAddress))
+    // if (m_mapper->MapWritePPU(addr, mappedAddress, data))
     // {
     //     m_chrData[mappedAddress] = data;
     // }

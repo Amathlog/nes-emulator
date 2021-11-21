@@ -5,11 +5,11 @@
 
 namespace NesEmulator
 {
-    class Mapper_000 : public IMapper
+    class Mapper_001 : public IMapper
     {
     public:
-        Mapper_000(uint8_t nbPrgBanks, uint8_t nbChrBanks, Mirroring intialMirroring);
-        ~Mapper_000() = default;
+        Mapper_001(uint8_t nbPrgBanks, uint8_t nbChrBanks, Mirroring initialMirroring);
+        ~Mapper_001() = default;
 
         bool MapReadCPU(uint16_t address, uint32_t& mappedAddress) override;
         bool MapWriteCPU(uint16_t address, uint32_t& mappedAddress, uint8_t data) override;
@@ -18,6 +18,11 @@ namespace NesEmulator
         Mirroring GetMirroring() const override { return m_mirroring; }
 
     private:
+        void ResetShiftRegister();
+        void HandleLoadRegister(uint8_t data);
+        uint8_t m_shiftRegister = 0x01;
+        uint8_t m_internalRegister = 0x00;
+        bool m_loadRegisterDone = false;
         Mirroring m_mirroring;
     };
 }
