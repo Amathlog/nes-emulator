@@ -33,7 +33,7 @@ int main(int argc, char **argv)
 
     QApplication app (argc, argv);
 
-    NesEmulatorExe::Mode mode = NesEmulatorExe::Mode::STEP;
+    NesEmulatorExe::Mode mode = NesEmulatorExe::Mode::NORMAL;
 
     NesEmulatorExe::MainWindow mainWindow(bus, mode);
     mainWindow.show();
