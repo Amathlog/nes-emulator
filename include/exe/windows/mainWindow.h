@@ -1,17 +1,22 @@
 #pragma once
 
 #include "exe/windows/renderWidget.h"
+#include <chrono>
 #include <exe/windows/paletteWidget.h>
 #include <QMainWindow>
 #include <QtWidgets>
 #include <core/bus.h>
 #include <memory>
 #include <exe/windows/disassemblyWidget.h>
+#include <qboxlayout.h>
 #include <qevent.h>
 #include <qlineedit.h>
+#include <qmainwindow.h>
 #include <qpushbutton.h>
 #include <exe/qtController.h>
 #include <exe/windows/oamWidget.h>
+#include <exe/windows/debugWidget.h>
+#include <core/bus.h>
 
 namespace NesEmulatorExe
 {
@@ -22,7 +27,7 @@ namespace NesEmulatorExe
         STEP
     };
 
-    class MainWindow : public QWidget
+    class MainWindow : public QMainWindow
     {
         //Q_OBJECT
 
@@ -40,42 +45,56 @@ namespace NesEmulatorExe
         void keyReleaseEvent(QKeyEvent* event) override;
 
     private slots:
-        void HandleButton();
         void Step();
-        void Break();
         void Update();
-        void SetRunTo();
         void Reset();
+        void ToggleDebug();
+        void TogglePalette();
+        void ToggleDisassembly();
+        void ToggleOAM();
+        void SetNormalMode();
+        void SetUnlimittedMode();
 
     private:
 
         void SetMode(Mode mode);
+        void UpdateAllWidgets();
+        void UpdateStatus();
+        void UpdateModes();
+        void CreateAllExtraActions();
 
         NesEmulator::Bus& m_bus;
+        std::unique_ptr<QWidget> m_centralWidget;
         std::unique_ptr<QHBoxLayout> m_mainLayout;
-        std::unique_ptr<QVBoxLayout> m_buttonLayout;
 
-        std::unique_ptr<QPushButton> m_resetButton;
-        std::unique_ptr<QPushButton> m_stepButton;
-        std::unique_ptr<QPushButton> m_breakButton;
-
-        std::unique_ptr<QHBoxLayout> m_runToLayout;
-        std::unique_ptr<QLabel> m_hexPrefix;
-        std::unique_ptr<QLineEdit> m_pcEdit;
-        std::unique_ptr<QPushButton> m_runToButton;
-
+        std::unique_ptr<RenderWidget> m_renderWidget;
+        std::unique_ptr<QVBoxLayout> m_renderDebugLayout;
+        
+        std::unique_ptr<DebugWidget> m_debugWidget;
         std::unique_ptr<DisassemblyWidget> m_disassemblyWidget;
         std::unique_ptr<OAMWidget> m_oamWidget;
         std::unique_ptr<PaletteWidget> m_paletteWidget;
-        std::unique_ptr<RenderWidget> m_renderWidget;
+
+        std::unique_ptr<QAction> m_toggleDebugAction;
+        std::unique_ptr<QAction> m_toggleDisassemblyAction;
+        std::unique_ptr<QAction> m_togglePaletteAction;
+        std::unique_ptr<QAction> m_toggleOAMAction;
+
+        std::unique_ptr<QAction> m_setNormalMode;
+        std::unique_ptr<QAction> m_setUnlimittedMode;
+
+        std::unique_ptr<QAction> m_resetAction;
 
         std::unique_ptr<QTimer> m_renderingTimer;
+        std::unique_ptr<QLabel> m_statusBarFPS;
 
         Mode m_mode = Mode::NORMAL;
         unsigned m_framerate;
-        uint32_t m_breakAddress = 1 << 24; // Just a number higher than 1 << 16
         // unsigned m_remainingClocksAfterBreak = 0;
 
         std::shared_ptr<QtController> m_controller;
+        std::chrono::high_resolution_clock::time_point m_lastUpdateTime;
+        unsigned long long m_accumulator = 0;
+        unsigned long long m_fpsCounterCount = 0;
     };
 }
