@@ -11,9 +11,9 @@ namespace NesEmulator
         Mapper_066(uint8_t nbPrgBanks, uint8_t nbChrBanks, Mirroring intialMirroring);
         ~Mapper_066() = default;
 
-        bool MapReadCPU(uint16_t address, uint32_t& mappedAddress) override;
+        bool MapReadCPU(uint16_t address, uint32_t& mappedAddress, uint8_t& data) override;
         bool MapWriteCPU(uint16_t address, uint32_t& mappedAddress, uint8_t data) override;
-        bool MapReadPPU(uint16_t address, uint32_t& mappedAddress) override; 
+        bool MapReadPPU(uint16_t address, uint32_t& mappedAddress, uint8_t& data) override; 
         bool MapWritePPU(uint16_t address, uint32_t& mappedAddress, uint8_t data) override;
         Mirroring GetMirroring() const override { return m_mirroring; }
         void Reset() override;

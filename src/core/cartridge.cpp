@@ -64,12 +64,19 @@ Cartridge::Cartridge(IReadVisitor& visitor)
 bool Cartridge::ReadCPU(uint16_t address, uint8_t& data)
 {
     uint32_t mappedAddress = 0;
-    if (m_mapper->MapReadCPU(address, mappedAddress))
+    if (m_mapper->MapReadCPU(address, mappedAddress, data))
     {
+        if (mappedAddress == 0xFFFFFFFF)
+        {
+            return true;
+        }
+
         if (address >= 0x6000 && address <= 0x7FFF)
             data = m_prgRam[mappedAddress];
         else
             data = m_prgData[mappedAddress];
+
+        return true;
     }
 
     return false;
@@ -80,7 +87,10 @@ bool Cartridge::WriteCPU(uint16_t addr, uint8_t data)
     uint32_t mappedAddress = 0;
     if (m_mapper->MapWriteCPU(addr, mappedAddress, data))
     {
-        m_prgRam[mappedAddress] = data;
+        if (mappedAddress != 0xFFFFFFFF)
+            m_prgRam[mappedAddress] = data;
+
+        return true;
     }
     
     return false;
@@ -104,8 +114,11 @@ bool Cartridge::WritePPU(uint16_t addr, uint8_t data)
 bool Cartridge::ReadPPU(uint16_t addr, uint8_t& data)
 {
     uint32_t mappedAddress = 0;
-    if (m_mapper->MapReadPPU(addr, mappedAddress))
+    if (m_mapper->MapReadPPU(addr, mappedAddress, data))
     {
+        if (mappedAddress == 0xFFFFFFFF)
+            return true;
+            
         // If we have no chrBank, we need to read from RAM
         if (m_nbChrBanks == 0)
             data = m_prgRam[mappedAddress];
