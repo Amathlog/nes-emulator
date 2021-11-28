@@ -7,6 +7,7 @@ using NesEmulator::Mapper_001;
 
 Mapper_001::Mapper_001(uint8_t nbPrgBanks, uint8_t nbChrBanks, Mirroring initialMirroring)
     : IMapper(nbPrgBanks, nbChrBanks)
+    , m_originalMirroring(initialMirroring)
     , m_mirroring(initialMirroring)
 {
     // We need to be sure that there is 1 or 2 prgBanks and 1 chrBanks
@@ -130,6 +131,8 @@ bool Mapper_001::MapWriteCPU(uint16_t address, uint32_t& mappedAddress, uint8_t 
                 // Low bit ignored in 32kB mode
                 m_currentPrgBankSwitch = m_32kBModePrgBank ? (prgROMBank & 0xF2) : prgROMBank;
             }
+
+            m_loadRegisterDone = false;
         }
     }
 
@@ -162,8 +165,14 @@ bool Mapper_001::MapReadPPU(uint16_t address, uint32_t& mappedAddress)
     return false;
 }
 
-bool Mapper_001::MapWritePPU(uint16_t /*address*/, uint32_t& /*mappedAddress*/, uint8_t /*data*/)
+bool Mapper_001::MapWritePPU(uint16_t address, uint32_t& mappedAddress, uint8_t /*data*/)
 {
+    if (m_nbChrBanks == 0 && address >= 0x0000 && address <= 0x1FFF)
+    {
+        mappedAddress = address;        
+        return true;
+    }
+
     return false;
 }
 
@@ -184,4 +193,19 @@ void Mapper_001::HandleLoadRegister(uint8_t data)
     {
         m_shiftRegister = (m_shiftRegister << 1) | (data & 0x01);
     }
+}
+
+void Mapper_001::Reset()
+{
+    m_shiftRegister = 0x01;
+    m_internalRegister = 0x00;
+    m_loadRegisterDone = false;
+    m_mirroring = m_originalMirroring;
+
+    m_currentPrgBankSwitch = 0;
+    m_PrgBank0IsSwitch = true;
+    m_currentChrBank0 = 0;
+    m_currentChrBank1 = 1;
+    m_32kBModePrgBank = false;
+    m_8kBModeChrBank = false;
 }

@@ -26,6 +26,8 @@ namespace NesEmulator
         virtual bool MapWritePPU(uint16_t address, uint32_t& mappedAddress, uint8_t data) = 0;
         virtual Mirroring GetMirroring() const = 0;
 
+        virtual void Reset() {}
+
     protected:
         uint8_t m_nbPrgBanks;
         uint8_t m_nbChrBanks;

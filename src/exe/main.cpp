@@ -17,11 +17,20 @@ int main(int argc, char **argv)
     auto dir = fs::weakly_canonical(fs::path(argv[0])).parent_path();
     auto root = dir / ".." / ".." / "..";
 
+    // Mapper 000 also
     auto path = root / "tests" / "test_roms" / "nestest.nes";
-    // auto path = root / "roms" / "smb.nes";
-    //auto path = root / "roms" / "donkey_kong.nes";
-    //auto path = root / "roms" / "ice_climber.nes";
-    // auto path = root / "roms" / "zelda1.nes";
+
+    // Mapper 000
+    // path = root / "roms" / "smb.nes";
+    // path = root / "roms" / "donkey_kong.nes";
+    // path = root / "roms" / "ice_climber.nes";
+
+    // Mapper 001
+    // path = root / "roms" / "zelda1.nes";
+
+    // Mapper 002
+    // path = root / "roms" / "ducktales.nes";
+
     NesEmulator::Utils::FileReadVisitor visitor(path.string());
 
 
@@ -35,8 +44,9 @@ int main(int argc, char **argv)
     QApplication app (argc, argv);
 
     NesEmulatorExe::Mode mode = NesEmulatorExe::Mode::NORMAL;
+    NesEmulatorExe::Layout layout = NesEmulatorExe::Layout::NORMAL;
 
-    NesEmulatorExe::MainWindow mainWindow(bus, mode);
+    NesEmulatorExe::MainWindow mainWindow(bus, mode, layout);
     mainWindow.show();
 
     return app.exec();

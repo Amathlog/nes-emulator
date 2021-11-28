@@ -27,12 +27,18 @@ namespace NesEmulatorExe
         STEP
     };
 
+    enum class Layout
+    {
+        NORMAL,
+        DEBUG
+    };
+
     class MainWindow : public QMainWindow
     {
         //Q_OBJECT
 
     public:
-        MainWindow(NesEmulator::Bus& bus, Mode mode = Mode::NORMAL, QWidget* parent = nullptr);
+        MainWindow(NesEmulator::Bus& bus, Mode mode = Mode::NORMAL, Layout layout = Layout::NORMAL, QWidget* parent = nullptr);
         virtual ~MainWindow() {};
 
         Mode GetCurrentMode() const { return m_mode; }

@@ -28,6 +28,7 @@ namespace NesEmulator
         bool ReadPPU(uint16_t addr, uint8_t& data);
 
         Mirroring GetMirroring() const { return m_mapper->GetMirroring(); }
+        void Reset();
 
     private:
         std::vector<uint8_t> m_prgData;

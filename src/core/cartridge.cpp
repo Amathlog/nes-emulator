@@ -88,11 +88,16 @@ bool Cartridge::WriteCPU(uint16_t addr, uint8_t data)
 
 bool Cartridge::WritePPU(uint16_t addr, uint8_t data)
 {
-    // uint32_t mappedAddress = 0;
-    // if (m_mapper->MapWritePPU(addr, mappedAddress, data))
-    // {
-    //     m_chrData[mappedAddress] = data;
-    // }
+    uint32_t mappedAddress = 0;
+    if (m_mapper->MapWritePPU(addr, mappedAddress, data))
+    {
+        // If we have no chrBank, we need to write to RAM
+        if (m_nbChrBanks == 0)
+        {
+            m_prgRam[mappedAddress] = data;
+            return true;
+        }
+    }
     return false;
 }
 
@@ -110,4 +115,10 @@ bool Cartridge::ReadPPU(uint16_t addr, uint8_t& data)
     }
 
     return false;
+}
+
+void Cartridge::Reset()
+{
+    if (m_mapper)
+        m_mapper->Reset();
 }
