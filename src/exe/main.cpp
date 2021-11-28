@@ -26,7 +26,7 @@ int main(int argc, char **argv)
     // path = root / "roms" / "ice_climber.nes";
 
     // Mapper 001
-    // path = root / "roms" / "zelda1.nes";
+    path = root / "roms" / "zelda1.nes";
 
     // Mapper 002
     // path = root / "roms" / "ducktales.nes";
