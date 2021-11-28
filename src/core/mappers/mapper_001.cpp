@@ -12,37 +12,43 @@ Mapper_001::Mapper_001(uint8_t nbPrgBanks, uint8_t nbChrBanks, Mirroring initial
 {
     // We need to be sure that there is 1 or 2 prgBanks and 1 chrBanks
     assert(nbPrgBanks >= 2 && nbPrgBanks <= 16 && (nbChrBanks == 0 || nbChrBanks >= 2) && nbChrBanks <= 32 && "Wrong number of prgBanks or chrBans in mapper 001");
+
+    m_staticRAM.resize(32 * 1024); // 32kB
 }
 
-bool Mapper_001::MapReadCPU(uint16_t address, uint32_t& mappedAddress)
+bool Mapper_001::MapReadCPU(uint16_t address, uint32_t& mappedAddress, uint8_t& data)
 {
     if (address >= 0x6000 && address <= 0x7FFF)
     {
         // PrgRam range
-        mappedAddress = address & 0x01FF;
+        mappedAddress = 0xFFFFFFFF;
+        data = m_staticRAM[address & 0x1FFF];
         return true;
     }
-    else if (address >= 0x8000 && address <= 0xBFFF)
+    else if (address >= 0x8000)
     {
-        // Check bank 0
-        // If the bank 0 is fixed, it is the first one
-        uint8_t bankNumber = (m_32kBModePrgBank || m_PrgBank0IsSwitch) ? m_currentPrgBankSwitch : 0;
-        mappedAddress = 0x4000 * bankNumber + (address & 0x3FFF);
-        return true;
-    }
-    else if (address >= 0xC000 && address <= 0xFFFF)
-    {
-        // Check bank 0
-        // If the bank 1 is fixed, it is the last one
-        uint8_t bankNumber = 0;
         if (m_32kBModePrgBank)
-            bankNumber = m_currentPrgBankSwitch + 1;
-        else if (!m_PrgBank0IsSwitch)
-            bankNumber = m_currentPrgBankSwitch;
+        {
+            mappedAddress = m_currentPrgBankSwitch * 0x8000 + (address & 0x7FFF);
+        }
         else
-            bankNumber = m_nbPrgBanks - 1;
+        {
+            uint8_t bankNumber = 0;
+            if (address <= 0xBFFF)
+            {
+                // Low bank
+                // If bank 0 is fixed, it is the first one
+                bankNumber = m_PrgBank0IsSwitch ? m_currentPrgBankSwitch : 0;
+            }
+            else
+            {
+                // High bank
+                // If bank 1 is fixed, it is the last one
+                bankNumber = !m_PrgBank0IsSwitch ? m_currentPrgBankSwitch : m_nbPrgBanks - 1; 
+            }
 
-        mappedAddress = 0x4000 * bankNumber + (address & 0x3FFF);
+            mappedAddress = bankNumber * 0x4000 + (address & 0x3FFF);
+        }
         return true;
     }
 
@@ -53,7 +59,8 @@ bool Mapper_001::MapWriteCPU(uint16_t address, uint32_t& mappedAddress, uint8_t 
 { 
     if (address >= 0x6000 && address <= 0x7FFF)
     {
-        mappedAddress = address & 0x01FF;
+        mappedAddress = 0xFFFFFFFF;
+        m_staticRAM[address & 0x1FFF] = data;
         return true;
     }
     if (address >= 0x8000)
@@ -110,7 +117,7 @@ bool Mapper_001::MapWriteCPU(uint16_t address, uint32_t& mappedAddress, uint8_t 
             {
                 uint8_t chrBank0 = m_internalRegister & 0x1F;
                 // Ignore lowest bit in 8kB mode
-                m_currentChrBank0 = m_8kBModeChrBank ? (chrBank0 & 0xF2) : chrBank0;
+                m_currentChrBank0 = m_8kBModeChrBank ? (chrBank0 >> 1) : chrBank0;
             }
             // CHR Bank 1 (0xC000-0xDFFF)
             else if (address <= 0xDFFF)
@@ -126,10 +133,10 @@ bool Mapper_001::MapWriteCPU(uint16_t address, uint32_t& mappedAddress, uint8_t 
             else 
             {
                 uint8_t prgROMBank = m_internalRegister & 0x0F;
-                uint8_t prgRAMChipEnable = (m_internalRegister & 0x10) > 0;
+                //uint8_t prgRAMChipEnable = (m_internalRegister & 0x10) > 0;
 
                 // Low bit ignored in 32kB mode
-                m_currentPrgBankSwitch = m_32kBModePrgBank ? (prgROMBank & 0xF2) : prgROMBank;
+                m_currentPrgBankSwitch = m_32kBModePrgBank ? (prgROMBank >> 1) : prgROMBank;
             }
 
             m_loadRegisterDone = false;
@@ -139,7 +146,7 @@ bool Mapper_001::MapWriteCPU(uint16_t address, uint32_t& mappedAddress, uint8_t 
     return false;
 }
 
-bool Mapper_001::MapReadPPU(uint16_t address, uint32_t& mappedAddress)
+bool Mapper_001::MapReadPPU(uint16_t address, uint32_t& mappedAddress, uint8_t& /*data*/)
 {
     // First check if we have Chr bank. If not, we need to read from RAM
     if (m_nbChrBanks == 0)
@@ -149,15 +156,18 @@ bool Mapper_001::MapReadPPU(uint16_t address, uint32_t& mappedAddress)
     }
     else
     {
-        if (address >= 0x0000 && address <= 0x0FFF)
+        if (address <= 0x1FFF)
         {
-            mappedAddress = 0x1000 * m_currentChrBank0 + (address & 0x0FFF);        
-            return true;
-        }
-        else if (address >= 0x1000 && address <= 0x1FFF)
-        {
-            uint8_t bankNumber = m_8kBModeChrBank ? (m_currentChrBank0 + 1) : m_currentChrBank1;
-            mappedAddress = 0x1000 * bankNumber + (address & 0x0FFF);
+            if (m_8kBModeChrBank)
+            {
+                mappedAddress = m_currentChrBank0 * 0x2000 + (address & 0x1FFF);
+            }
+            else 
+            {
+                uint8_t bankNumber = address <= 0x0FFF ? m_currentChrBank0 : m_currentChrBank1;
+                mappedAddress = 0x1000 * bankNumber + (address & 0x0FFF);
+            }
+
             return true;
         }
     }
@@ -178,34 +188,48 @@ bool Mapper_001::MapWritePPU(uint16_t address, uint32_t& mappedAddress, uint8_t 
 
 void Mapper_001::ResetShiftRegister()
 {
-    m_shiftRegister = 0x01;
+    m_shiftRegister = 0x00;
+    m_shiftCounter = 0;
+}
+
+void Mapper_001::ResetControlRegister()
+{
+    m_PrgBank0IsSwitch = true;
+    m_32kBModePrgBank = false;
+    m_8kBModeChrBank = false;
+    m_mirroring = m_originalMirroring;
 }
 
 void Mapper_001::HandleLoadRegister(uint8_t data)
 {
-    if ((m_shiftRegister & 0x10) > 0)
+    // If the highest bit is set, we just reset
+    if ((data & 0x80) > 0)
+    {
+        ResetShiftRegister();
+        // Control register is also reset
+        ResetControlRegister();
+        return;
+    }
+    
+    // We receive bits, starting with LSB. So we need this shift gymnastic.
+    m_shiftRegister |= ((data & 0x01) << m_shiftCounter);
+
+    if (++m_shiftCounter == 5)
     {
         m_loadRegisterDone = true;
-        m_internalRegister = ((m_shiftRegister << 1) | (data & 0x01)) & 0x1F;
+        m_internalRegister = m_shiftRegister & 0x1F;
         ResetShiftRegister();
-    }
-    else
-    {
-        m_shiftRegister = (m_shiftRegister << 1) | (data & 0x01);
     }
 }
 
 void Mapper_001::Reset()
 {
-    m_shiftRegister = 0x01;
+    ResetShiftRegister();
     m_internalRegister = 0x00;
     m_loadRegisterDone = false;
-    m_mirroring = m_originalMirroring;
 
     m_currentPrgBankSwitch = 0;
-    m_PrgBank0IsSwitch = true;
     m_currentChrBank0 = 0;
-    m_currentChrBank1 = 1;
-    m_32kBModePrgBank = false;
-    m_8kBModeChrBank = false;
+    m_currentChrBank1 = 0;
+    ResetControlRegister();
 }
