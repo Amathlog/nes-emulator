@@ -172,6 +172,7 @@ void MainWindow::ToggleDebug()
     {
         m_debugWidget->setEnabled(false);
         m_renderDebugLayout->removeWidget(m_debugWidget.get());
+        disconnect(m_debugWidget->GetStepButton());
         m_debugWidget.reset();
     }
     else
@@ -179,6 +180,7 @@ void MainWindow::ToggleDebug()
         m_debugWidget = std::make_unique<DebugWidget>(m_bus, m_mode);
         m_debugWidget->setEnabled(true);
         m_renderDebugLayout->addWidget(m_debugWidget.get());
+        connect(m_debugWidget->GetStepButton(), &QPushButton::released, this, &MainWindow::Step);
     }
     m_toggleDebugAction->setChecked((bool)m_debugWidget);
 }
