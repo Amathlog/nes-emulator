@@ -149,7 +149,7 @@ bool Mapper_001::MapWriteCPU(uint16_t address, uint32_t& mappedAddress, uint8_t 
 bool Mapper_001::MapReadPPU(uint16_t address, uint32_t& mappedAddress, uint8_t& /*data*/)
 {
     // First check if we have Chr bank. If not, we need to read from RAM
-    if (m_nbChrBanks == 0)
+    if (m_nbChrBanks == 0 && address <= 0x1FFF)
     {
         mappedAddress = (address & 0x1FFF);
         return true;
@@ -179,7 +179,7 @@ bool Mapper_001::MapWritePPU(uint16_t address, uint32_t& mappedAddress, uint8_t 
 {
     if (m_nbChrBanks == 0 && address >= 0x0000 && address <= 0x1FFF)
     {
-        mappedAddress = address;        
+        mappedAddress = address & 0x1FFF;        
         return true;
     }
 
