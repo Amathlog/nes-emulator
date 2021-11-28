@@ -101,7 +101,11 @@ bool Cartridge::ReadPPU(uint16_t addr, uint8_t& data)
     uint32_t mappedAddress = 0;
     if (m_mapper->MapReadPPU(addr, mappedAddress))
     {
-        data = m_chrData[mappedAddress];
+        // If we have no chrBank, we need to read from RAM
+        if (m_nbChrBanks == 0)
+            data = m_prgRam[mappedAddress];
+        else
+            data = m_chrData[mappedAddress];
         return true;
     }
 

@@ -17,10 +17,11 @@ int main(int argc, char **argv)
     auto dir = fs::weakly_canonical(fs::path(argv[0])).parent_path();
     auto root = dir / ".." / ".." / "..";
 
-    //auto path = root / "tests" / "test_roms" / "nestest.nes";
-    auto path = root / "roms" / "smb.nes";
+    auto path = root / "tests" / "test_roms" / "nestest.nes";
+    // auto path = root / "roms" / "smb.nes";
     //auto path = root / "roms" / "donkey_kong.nes";
     //auto path = root / "roms" / "ice_climber.nes";
+    // auto path = root / "roms" / "zelda1.nes";
     NesEmulator::Utils::FileReadVisitor visitor(path.string());
 
 

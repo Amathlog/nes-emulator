@@ -24,5 +24,12 @@ namespace NesEmulator
         uint8_t m_internalRegister = 0x00;
         bool m_loadRegisterDone = false;
         Mirroring m_mirroring;
+
+        uint8_t m_currentPrgBankSwitch = 0;
+        bool m_PrgBank0IsSwitch = false;
+        uint8_t m_currentChrBank0 = 0;
+        uint8_t m_currentChrBank1 = 1;
+        bool m_32kBModePrgBank = false;
+        bool m_8kBModeChrBank = false;
     };
 }
