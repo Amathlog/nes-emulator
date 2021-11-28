@@ -30,7 +30,7 @@ constexpr unsigned DEFAULT_FRAMERATE = 60;
 constexpr unsigned NB_LINES_DISASSEMBLY = 25;
 
 
-MainWindow::MainWindow(NesEmulator::Bus& bus, Mode mode, QWidget* parent)
+MainWindow::MainWindow(NesEmulator::Bus& bus, Mode mode, Layout layout, QWidget* parent)
     : QMainWindow(parent)
     , m_bus(bus)
     , m_mode(mode)
@@ -83,6 +83,13 @@ MainWindow::MainWindow(NesEmulator::Bus& bus, Mode mode, QWidget* parent)
     modeMenu->addAction(m_setUnlimittedMode.get());
 
     CreateAllExtraActions();
+
+    if (layout == Layout::DEBUG)
+    {
+        ToggleDebug();
+        TogglePalette();
+        ToggleDisassembly();
+    }
 }
 
 void MainWindow::keyPressEvent(QKeyEvent* event)

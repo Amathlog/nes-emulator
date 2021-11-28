@@ -12,7 +12,7 @@ DebugWidget::DebugWidget(NesEmulator::Bus& bus, Mode& mode, QWidget* parent)
 
     m_stepButton = std::make_unique<QPushButton>("Step");
 
-    m_breakButton = std::make_unique<QPushButton>("Break");
+    m_breakButton = std::make_unique<QPushButton>(m_mode == Mode::STEP ? "Continue" : "Break");
     connect(m_breakButton.get(), &QPushButton::released, this, &DebugWidget::Break);
 
     m_buttonLayout->addWidget(m_breakButton.get());

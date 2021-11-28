@@ -187,6 +187,8 @@ void Bus::Reset()
     m_ppu.Reset();
     m_controllersState[0] = 0x00;
     m_controllersState[1] = 0x00;
+    if (m_cartridge)
+        m_cartridge->Reset();
 }
 
 void Bus::InsertCartridge(const std::shared_ptr<Cartridge>& cartridge)

@@ -17,6 +17,8 @@ namespace NesEmulator
         bool MapWritePPU(uint16_t address, uint32_t& mappedAddress, uint8_t data) override;
         Mirroring GetMirroring() const override { return m_mirroring; }
 
+        void Reset() override;
+
     private:
         void ResetShiftRegister();
         void HandleLoadRegister(uint8_t data);
@@ -24,6 +26,7 @@ namespace NesEmulator
         uint8_t m_internalRegister = 0x00;
         bool m_loadRegisterDone = false;
         Mirroring m_mirroring;
+        Mirroring m_originalMirroring;
 
         uint8_t m_currentPrgBankSwitch = 0;
         bool m_PrgBank0IsSwitch = false;

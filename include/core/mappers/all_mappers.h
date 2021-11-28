@@ -4,6 +4,7 @@
 #include <memory>
 #include <core/mappers/mapper_000.h>
 #include <core/mappers/mapper_001.h>
+#include <core/mappers/mapper_002.h>
 
 namespace NesEmulator
 {
@@ -14,7 +15,9 @@ namespace NesEmulator
         case 0:
             return std::make_unique<Mapper_000>(nbPrgBanks, nbChrBanks, initialMirroring);
         case 1:
-            return std::make_unique<Mapper_001>(nbPrgBanks, nbChrBanks, initialMirroring);
+            return std::make_unique<Mapper_001>(nbPrgBanks, nbChrBanks, initialMirroring);        
+        case 2:
+            return std::make_unique<Mapper_002>(nbPrgBanks, nbChrBanks, initialMirroring);
         default:
             return nullptr;
         }
