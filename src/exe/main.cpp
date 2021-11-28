@@ -34,6 +34,9 @@ int main(int argc, char **argv)
     // Mapper 003
     // path = root / "roms" / "donkeykong_classics.nes";
 
+    // Mapper 066
+    // path = root / "roms" / "smb_duckhunt.nes";
+
     NesEmulator::Utils::FileReadVisitor visitor(path.string());
 
 
