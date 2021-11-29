@@ -50,6 +50,10 @@ Cartridge::Cartridge(IReadVisitor& visitor)
         m_chrData.resize(m_nbChrBanks * NesEmulator::Cst::ROM_CHR_CHUNK_SIZE);
         visitor.Read(m_chrData.data(), m_chrData.size());
     }
+    else 
+    {
+        m_chrData.resize(0x2000);
+    }
 
     // Setup the mapper
     uint8_t mapperId = (header.flag7 & 0xF0) | ((header.flag6 & 0xF0) >> 4);
@@ -71,11 +75,10 @@ bool Cartridge::ReadCPU(uint16_t address, uint8_t& data)
             return true;
         }
 
-        if (address >= 0x6000 && address <= 0x7FFF)
-            data = m_prgRam[mappedAddress];
-        else
-            data = m_prgData[mappedAddress];
-
+        // if (address >= 0x6000 && address <= 0x7FFF)
+        //     data = m_prgRam[mappedAddress];
+        // else
+        data = m_prgData[mappedAddress];
         return true;
     }
 
@@ -87,9 +90,10 @@ bool Cartridge::WriteCPU(uint16_t addr, uint8_t data)
     uint32_t mappedAddress = 0;
     if (m_mapper->MapWriteCPU(addr, mappedAddress, data))
     {
-        if (mappedAddress != 0xFFFFFFFF)
-            m_prgRam[mappedAddress] = data;
+        if (mappedAddress == 0xFFFFFFFF)
+            return true;
 
+        m_prgData[mappedAddress] = data;
         return true;
     }
     
@@ -101,12 +105,8 @@ bool Cartridge::WritePPU(uint16_t addr, uint8_t data)
     uint32_t mappedAddress = 0;
     if (m_mapper->MapWritePPU(addr, mappedAddress, data))
     {
-        // If we have no chrBank, we need to write to RAM
-        if (m_nbChrBanks == 0)
-        {
-            m_prgRam[mappedAddress] = data;
-            return true;
-        }
+        m_chrData[mappedAddress] = data;
+        return true;
     }
     return false;
 }
@@ -116,11 +116,7 @@ bool Cartridge::ReadPPU(uint16_t addr, uint8_t& data)
     uint32_t mappedAddress = 0;
     if (m_mapper->MapReadPPU(addr, mappedAddress, data))
     {
-        // If we have no chrBank, we need to read from RAM
-        if (m_nbChrBanks == 0)
-            data = m_prgRam[mappedAddress];
-        else
-            data = m_chrData[mappedAddress];
+        data = m_chrData[mappedAddress];
         return true;
     }
 
