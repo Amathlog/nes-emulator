@@ -58,8 +58,10 @@ make
 ```
 
 Controls:
-* Arrows -> D-Pad
-* Z -> A
-* X -> B
-* A -> Select
-* S -> Start
+| Keyboard | NES Controller |
+| -------- | -------------- |
+| Arrows   | D-Pad          |
+| Z        | A              |
+| X        | B              |
+| A        | Select         |
+| B        | Start          |
