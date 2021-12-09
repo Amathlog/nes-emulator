@@ -26,7 +26,7 @@ int main(int argc, char **argv)
     // path = root / "roms" / "ice_climber.nes";
 
     // Mapper 001
-    path = root / "roms" / "zelda1.nes";
+    // path = root / "roms" / "zelda1.nes";
 
     // Mapper 002
     // path = root / "roms" / "ducktales.nes";
@@ -36,6 +36,14 @@ int main(int argc, char **argv)
 
     // Mapper 066
     // path = root / "roms" / "smb_duckhunt.nes";
+
+    // Check the arg, if there is a file to load
+    if (argc > 1)
+    {
+        path = fs::path(argv[1]);
+        if (path.is_relative())
+            path = root / path;
+    }
 
     NesEmulator::Utils::FileReadVisitor visitor(path.string());
 
