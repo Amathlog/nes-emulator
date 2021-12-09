@@ -56,3 +56,10 @@ make
 ```
 ./NesEmulator <path_to_your_rom>
 ```
+
+Controls:
+* Arrows -> D-Pad
+* Z -> A
+* X -> B
+* A -> Select
+* S -> Start
