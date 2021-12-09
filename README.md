@@ -30,7 +30,7 @@ There is no rom included in this project. You need to dump your original games t
 - ...
 
 ## Full interface
-<img src="images/debug.png" width="50%">
+<img src="images/debug.png">
 
 ## Supported mappers
 | Mappers  | Game Example       | Video    |
