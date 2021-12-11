@@ -5,28 +5,18 @@
 #include <cassert>
 #include <cstring>
 #include <iostream>
+#include <core/ines.h>
 
 using NesEmulator::Cartridge;
 using NesEmulator::Utils::IReadVisitor;
+
 
 Cartridge::~Cartridge() {}
 
 Cartridge::Cartridge(IReadVisitor& visitor)
 {
     // First read the header
-    struct Header
-    {
-        char nesName[4];
-        uint8_t prgRomSize;
-        uint8_t chrRomSize;
-        uint8_t flag6;
-        uint8_t flag7;
-        uint8_t flag8;
-        uint8_t flag9;
-        uint8_t flag10;
-        uint8_t unused[5];
-    } header;
-
+    iNESHeader header;
     visitor.Read(&header, 1);
 
     // Check that the first bytes are the one we expect. If not, perhaps it is not the right
@@ -34,19 +24,19 @@ Cartridge::Cartridge(IReadVisitor& visitor)
     assert(strncmp(header.nesName, NesEmulator::Cst::NES_HEADER, 4) == 0 && "The NES header is what we expected. Aborting.");
 
     // If there is trainer data, ignore it
-    if ((header.flag6 & 0x04) == 0x04)
+    if (header.flag6.hasTrainerData)
         visitor.Advance(NesEmulator::Cst::ROM_TRAINER_SIZE);
 
     // Mirorring is the less significant bit of the flag6
-    Mirroring initialMirroring = (header.flag6 & 0x01) ? Mirroring::VERTICAL : Mirroring::HORIZONTAL;
+    Mirroring initialMirroring = (header.flag6.mirroring) ? Mirroring::VERTICAL : Mirroring::HORIZONTAL;
 
-    m_nbPrgBanks = header.prgRomSize;
+    m_nbPrgBanks = header.GetPRGROMSize();
     m_prgData.resize(m_nbPrgBanks * NesEmulator::Cst::ROM_PRG_CHUNK_SIZE);
     visitor.Read(m_prgData.data(), m_prgData.size());
 
-    if (header.chrRomSize > 0)
+    m_nbChrBanks = header.GetCHRROMSize();
+    if (m_nbChrBanks > 0)
     {
-        m_nbChrBanks = header.chrRomSize;
         m_chrData.resize(m_nbChrBanks * NesEmulator::Cst::ROM_CHR_CHUNK_SIZE);
         visitor.Read(m_chrData.data(), m_chrData.size());
     }
@@ -56,8 +46,7 @@ Cartridge::Cartridge(IReadVisitor& visitor)
     }
 
     // Setup the mapper
-    uint8_t mapperId = (header.flag7 & 0xF0) | ((header.flag6 & 0xF0) >> 4);
-    m_mapper = NesEmulator::CreateMapper(mapperId, m_nbPrgBanks, m_nbChrBanks, initialMirroring);
+    m_mapper = NesEmulator::CreateMapper(header);
     
     assert(m_mapper.get() != nullptr && "Invalid mapper id, unsupported");
 

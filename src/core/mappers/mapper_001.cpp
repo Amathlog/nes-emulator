@@ -5,13 +5,11 @@
 
 using NesEmulator::Mapper_001;
 
-Mapper_001::Mapper_001(uint8_t nbPrgBanks, uint8_t nbChrBanks, Mirroring initialMirroring)
-    : IMapper(nbPrgBanks, nbChrBanks)
-    , m_originalMirroring(initialMirroring)
-    , m_mirroring(initialMirroring)
+Mapper_001::Mapper_001(const iNESHeader& header)
+    : IMapper(header)
 {
     // We need to be sure that there is 1 or 2 prgBanks and 1 chrBanks
-    assert(nbPrgBanks >= 2 && nbPrgBanks <= 16 && (nbChrBanks == 0 || nbChrBanks >= 2) && nbChrBanks <= 32 && "Wrong number of prgBanks or chrBans in mapper 001");
+    assert(m_nbPrgBanks >= 2 && m_nbPrgBanks <= 16 && (m_nbChrBanks == 0 || m_nbChrBanks >= 2) && m_nbChrBanks <= 32 && "Wrong number of prgBanks or chrBans in mapper 001");
 
     m_staticRAM.resize(32 * 1024); // 32kB
 }
