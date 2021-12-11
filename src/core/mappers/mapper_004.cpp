@@ -1,17 +1,17 @@
 #include "core/mapper.h"
-#include <core/mappers/mapper_003.h>
+#include <core/mappers/mapper_004.h>
 #include <cassert>
 #include <cstdint>
 
-using NesEmulator::Mapper_003;
+using NesEmulator::Mapper_004;
 
-Mapper_003::Mapper_003(const iNESHeader& header)
+Mapper_004::Mapper_004(const iNESHeader& header)
     : IMapper(header)
 {
-    assert(m_nbPrgBanks > 0 && m_nbPrgBanks <= 2 && (m_nbChrBanks >= 2) && "Wrong number of prgBanks or chrBans in mapper 003");
+    assert(m_nbPrgBanks > 0 && m_nbPrgBanks <= 2 && (m_nbChrBanks >= 2) && "Wrong number of prgBanks or chrBans in mapper 004");
 }
 
-bool Mapper_003::MapReadCPU(uint16_t address, uint32_t& mappedAddress, uint8_t& /*data*/)
+bool Mapper_004::MapReadCPU(uint16_t address, uint32_t& mappedAddress, uint8_t& /*data*/)
 {
     if (address >= 0x6000 && address <= 0x7FFF)
     {
@@ -35,7 +35,7 @@ bool Mapper_003::MapReadCPU(uint16_t address, uint32_t& mappedAddress, uint8_t& 
     return false;
 }
 
-bool Mapper_003::MapWriteCPU(uint16_t address, uint32_t& mappedAddress, uint8_t data)
+bool Mapper_004::MapWriteCPU(uint16_t address, uint32_t& mappedAddress, uint8_t data)
 { 
     if (address >= 0x6000 && address <= 0x7FFF)
     {
@@ -45,29 +45,26 @@ bool Mapper_003::MapWriteCPU(uint16_t address, uint32_t& mappedAddress, uint8_t 
     }
     if (address >= 0x8000 && address <= 0xFFFF)
     {
-        m_currentSwitchChrBank = data;
     }
     return false;
 }
 
-bool Mapper_003::MapReadPPU(uint16_t address, uint32_t& mappedAddress, uint8_t& /*data*/)
+bool Mapper_004::MapReadPPU(uint16_t address, uint32_t& mappedAddress, uint8_t& /*data*/)
 {
     if (address >= 0x0000 && address <= 0x1FFF)
     {
-        mappedAddress = m_currentSwitchChrBank * 0x2000 + address;        
         return true;
     }
 
     return false;
 }
 
-bool Mapper_003::MapWritePPU(uint16_t /*address*/, uint32_t& /*mappedAddress*/, uint8_t /*data*/)
+bool Mapper_004::MapWritePPU(uint16_t /*address*/, uint32_t& /*mappedAddress*/, uint8_t /*data*/)
 {
     return false;
 }
 
-void Mapper_003::Reset()
+void Mapper_004::Reset()
 {
     IMapper::Reset();
-    m_currentSwitchChrBank = 0;
 }

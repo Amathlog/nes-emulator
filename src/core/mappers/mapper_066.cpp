@@ -5,11 +5,10 @@
 
 using NesEmulator::Mapper_066;
 
-Mapper_066::Mapper_066(uint8_t nbPrgBanks, uint8_t nbChrBanks, Mirroring initialMirroring)
-    : IMapper(nbPrgBanks, nbChrBanks)
-    , m_mirroring(initialMirroring)
+Mapper_066::Mapper_066(const iNESHeader& header)
+    : IMapper(header)
 {
-    assert(nbPrgBanks >= 2 && nbChrBanks >= 2 && "Wrong number of prgBanks or chrBans in mapper 066");
+    assert(m_nbPrgBanks >= 2 && m_nbChrBanks >= 2 && "Wrong number of prgBanks or chrBans in mapper 066");
 }
 
 bool Mapper_066::MapReadCPU(uint16_t address, uint32_t& mappedAddress, uint8_t& /*data*/)
@@ -70,6 +69,7 @@ bool Mapper_066::MapWritePPU(uint16_t /*address*/, uint32_t& /*mappedAddress*/, 
 
 void Mapper_066::Reset()
 {
+    IMapper::Reset();
     m_currentSwitchPrgBank = 0;
     m_currentSwitchChrBank = 0;
 }
