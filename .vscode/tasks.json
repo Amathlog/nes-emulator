@@ -1,0 +1,27 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Build",
+            "type": "shell",
+            "command": "/usr/bin/cmake --build /home/adrien/Programming/nes-emulator/build --config Debug --target NesEmulator -j 18"
+        },
+        {
+            "label": "Rebuild",
+            "type": "shell",
+            "command": "/usr/bin/cmake --build /home/adrien/Programming/nes-emulator/build --config Debug --target NesEmulator -j 18 --clean-first"
+        },
+        {
+            "label": "Build Tests",
+            "type": "shell",
+            "command": "/usr/bin/cmake --build /home/adrien/Programming/nes-emulator/build --config Debug --target NesEmulatorUnitTests -j 18"
+        },
+        {
+            "label": "Rebuild Tests",
+            "type": "shell",
+            "command": "/usr/bin/cmake --build /home/adrien/Programming/nes-emulator/build --config Debug --target NesEmulatorUnitTests -j 18 --clean-first"
+        },
+    ]
+}

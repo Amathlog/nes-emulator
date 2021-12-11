@@ -8,7 +8,7 @@
             "name": "Debug",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/build/nes-emulator",
+            "program": "${workspaceFolder}/build/src/exe/NesEmulator",
             "args": [],
             "stopAtEntry": false,
             "cwd": "${fileDirname}",
@@ -22,7 +22,71 @@
                     "ignoreFailures": true
                 }
             ],
-            "visualizerFile": "/home/adrien/.config/Code/User/workspaceStorage/0de0b48786435909f8a5a95fd6e883f3/tonka3000.qtvsctools/qt.natvis.xml"
+            "visualizerFile": "/home/adrien/.config/Code/User/workspaceStorage/0de0b48786435909f8a5a95fd6e883f3/tonka3000.qtvsctools/qt.natvis.xml",
+            "preLaunchTask": "Build"
+        },
+        {
+            "name": "SMB",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceRoot}/build/src/exe/NesEmulator",
+            "args": ["./roms/smb.nes"],
+            "stopAtEntry": false,
+            "cwd": "${fileDirname}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ],
+            "visualizerFile": "/home/adrien/.config/Code/User/workspaceStorage/0de0b48786435909f8a5a95fd6e883f3/tonka3000.qtvsctools/qt.natvis.xml",
+            "preLaunchTask": "Build"
+        },
+        {
+            "name": "Zelda1",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceRoot}/build/src/exe/NesEmulator",
+            "args": ["./roms/zelda1.nes"],
+            "stopAtEntry": false,
+            "cwd": "${fileDirname}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ],
+            "visualizerFile": "/home/adrien/.config/Code/User/workspaceStorage/0de0b48786435909f8a5a95fd6e883f3/tonka3000.qtvsctools/qt.natvis.xml",
+            "preLaunchTask": "Build"
+        },
+        {
+            "name": "TestRom",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceRoot}/build/src/exe/NesEmulator",
+            "args": ["./tests/test_roms/nestest.nes"],
+            "stopAtEntry": false,
+            "cwd": "${fileDirname}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ],
+            "visualizerFile": "/home/adrien/.config/Code/User/workspaceStorage/0de0b48786435909f8a5a95fd6e883f3/tonka3000.qtvsctools/qt.natvis.xml",
+            "preLaunchTask": "Build"
         }
     ]
 }
