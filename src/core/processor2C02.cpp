@@ -525,14 +525,15 @@ void Processor2C02::Clock()
                     // and we add one for the bottom half => ((tileID & 0xFE) + 1) << 4
                     // In case of flipped, we need to have the +1 for the top half 
                     // and not for the bottom half. 1 << 4 = 16, so it's +16
+                    // Put it on a 16bits int to avoid overflow.
 
-                    uint8_t topHalfRow = ((oam.tileId & 0xFE) << 4);
-                    uint8_t bottomHalfRow = ((oam.tileId & 0xFE) << 4);
+                    uint16_t topHalfRow = ((oam.tileId & 0xFE) << 4);
+                    uint16_t bottomHalfRow = ((oam.tileId & 0xFE) << 4);
 
                     if (flipVertically)
-                        bottomHalfRow += (1 << 4);
-                    else
                         topHalfRow += (1 << 4);
+                    else
+                        bottomHalfRow += (1 << 4);
 
                     if (m_scanlines - oam.y < 8)
                     {
