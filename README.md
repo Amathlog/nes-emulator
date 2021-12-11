@@ -36,7 +36,7 @@ There is no rom included in this project. You need to dump your original games t
 | Mappers  | Game Example       | Video    |
 | ----------------| ------------------- | -------- |
 | 0               | Super Mario Bros.   | <img src="images/smb.gif" width="300" height="300" /> |
-| 1 (not perfect) | The Legend of Zelda | <img src="images/zelda.gif" width="300" height="300" />  |
+| 1               | The Legend of Zelda | <img src="images/zelda.gif" width="300" height="300" />  |
 | 2               | Duck Tails          | <img src="images/ducktails.gif" width="300" height="300" />  |
 | 3               | DonkeyKong Classics | <img src="images/dkclassics.gif" width="300" height="300" />  |
 | 66              | Duck Hunt + SMB     | <img src="images/duckhunt.gif" width="300" height="300" />  |
