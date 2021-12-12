@@ -3,6 +3,7 @@
 #include <core/mapper.h>
 #include <cstdint>
 #include <array>
+#include <vector>
 
 namespace NesEmulator
 {
@@ -24,5 +25,7 @@ namespace NesEmulator
         uint8_t m_chrRomBankMode = 0;
         uint8_t m_nextIndexToUpdate = 0;
         bool m_prgRamEnabled = true;
+
+        std::vector<uint8_t> m_staticRAM;
     };
 }
