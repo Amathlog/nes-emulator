@@ -41,6 +41,8 @@ namespace NesEmulator
 
         // Called at the end of each scanline
         virtual void ScanlineDone() {}
+        // Called at the end for each PPU cycle
+        virtual void CPUClock() {}
         // Check if we should fire an IRQ
         virtual bool ShouldIRQ() const { return false; }
         // Clear the IRQ state

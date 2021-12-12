@@ -168,6 +168,7 @@ void Bus::Clock()
         }
         {
             m_cpu.Clock();
+            m_cartridge->GetMapper()->CPUClock();
         }
     }
 

@@ -8,13 +8,15 @@
 #include <core/mappers/mapper_002.h>
 #include <core/mappers/mapper_003.h>
 #include <core/mappers/mapper_004.h>
+#include "core/mappers/mapper_040.h"
 #include <core/mappers/mapper_066.h>
 
 namespace NesEmulator
 {
     inline std::unique_ptr<IMapper> CreateMapper(const iNESHeader& header)
     {
-        switch(header.GetMapperId())
+        uint16_t mapperId = header.GetMapperId();
+        switch(mapperId)
         {
         case 0:
             return std::make_unique<Mapper_000>(header);
@@ -26,6 +28,8 @@ namespace NesEmulator
             return std::make_unique<Mapper_003>(header);
         case 4:
             return std::make_unique<Mapper_004>(header);
+        case 40:
+            return std::make_unique<Mapper_040>(header);
         case 66:
             return std::make_unique<Mapper_066>(header);
         default:

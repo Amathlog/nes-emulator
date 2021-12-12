@@ -27,9 +27,6 @@ Cartridge::Cartridge(IReadVisitor& visitor)
     if (header.flag6.hasTrainerData)
         visitor.Advance(NesEmulator::Cst::ROM_TRAINER_SIZE);
 
-    // Mirorring is the less significant bit of the flag6
-    Mirroring initialMirroring = (header.flag6.mirroring) ? Mirroring::VERTICAL : Mirroring::HORIZONTAL;
-
     m_nbPrgBanks = header.GetPRGROMSize();
     m_prgData.resize(m_nbPrgBanks * NesEmulator::Cst::ROM_PRG_CHUNK_SIZE);
     visitor.Read(m_prgData.data(), m_prgData.size());
