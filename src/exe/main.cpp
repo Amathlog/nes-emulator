@@ -34,6 +34,10 @@ int main(int argc, char **argv)
     // Mapper 003
     // path = root / "roms" / "donkeykong_classics.nes";
 
+    // Mapper 004
+    // path = root / "roms" / "smb2.nes";
+    // path = root / "roms" / "smb3.nes";
+
     // Mapper 066
     // path = root / "roms" / "smb_duckhunt.nes";
 
