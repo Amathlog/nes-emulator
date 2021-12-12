@@ -39,6 +39,7 @@ There is no rom included in this project. You need to dump your original games t
 | 1               | The Legend of Zelda | <img src="images/zelda.gif" width="300" height="300" />  |
 | 2               | Duck Tails          | <img src="images/ducktails.gif" width="300" height="300" />  |
 | 3               | DonkeyKong Classics | <img src="images/dkclassics.gif" width="300" height="300" />  |
+| 4               | Super Mario Bros. 3 | <img src="images/smb3.gif" width="300" height="300" />  |
 | 66              | Duck Hunt + SMB     | <img src="images/duckhunt.gif" width="300" height="300" />  |
 
 ## Compiling on Ubuntu
