@@ -29,6 +29,7 @@ namespace NesEmulator
 
         Mirroring GetMirroring() const { return m_mapper->GetMirroring(); }
         void Reset();
+        IMapper* GetMapper() { return m_mapper.get(); }
 
     private:
         std::vector<uint8_t> m_prgData;

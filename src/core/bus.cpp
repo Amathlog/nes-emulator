@@ -177,6 +177,12 @@ void Bus::Clock()
         m_cpu.NMI();
     }
 
+    if (m_cartridge->GetMapper()->ShouldIRQ())
+    {
+        m_cartridge->GetMapper()->ClearIRQ();
+        m_cpu.IRQ();
+    }
+
     m_clockCounter++;
 }
 
