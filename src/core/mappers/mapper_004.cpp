@@ -25,6 +25,7 @@ bool Mapper_004::MapReadCPU(uint16_t address, uint32_t& mappedAddress, uint8_t& 
         // First bank
         // On mode 0, it is index 6 (R6)
         // On mode 1, it is the second-to-last bank
+        // Multiply the nb of prgbanks because it is 16kB chunks, but we address 8kB at a time.
         if (m_prgRomBankMode == 0)
             mappedAddress = m_indexes[6] * 0x2000 + (address & 0x1FFF);
         else
@@ -99,8 +100,6 @@ bool Mapper_004::MapWriteCPU(uint16_t address, uint32_t& mappedAddress, uint8_t 
             // 7th bit for the chr mode
             m_chrRomBankMode = (data & 0x80) > 0;
         }
-
-        return true;
     }
     else if (address >= 0xA000 && address <= 0xBFFF) 
     {
@@ -115,12 +114,29 @@ bool Mapper_004::MapWriteCPU(uint16_t address, uint32_t& mappedAddress, uint8_t 
             // Mirroring on bit 0
             m_mirroring = (data & 0x01) ? Mirroring::HORIZONTAL : Mirroring::VERTICAL;
         }
-        return true;
     }
-    else if (address >= 0xC000)
+    else if (address >= 0xC000 && address <= 0xDFFF)
     {
-        // IRQ stuff, not yet supported
-        return true;
+        if (address & 0x0001)
+        {
+            m_IRQCounter = 0;
+        }
+        else
+        {
+            m_IRQReload = data;
+        }
+    }
+    else if (address >= 0xE000 && address <= 0xFFFF)
+    {
+        if (address & 0x0001)
+        {
+            m_IRQEnabled = true;
+        }
+        else
+        {
+            m_IRQEnabled = false;
+            m_IRQActive = false;
+        }
     }
 
     return false;
@@ -137,7 +153,7 @@ bool Mapper_004::MapReadPPU(uint16_t address, uint32_t& mappedAddress, uint8_t& 
 
         if (isZeroAndOneIndex)
         {
-            index = address >= (0x0800 + (m_chrRomBankMode ? 0x1000 : 0x0000)); 
+            index = (address & 0x0FFF) >= 0x0800; 
             address &= 0x07FF;
         }
         else
@@ -169,4 +185,35 @@ void Mapper_004::Reset()
     m_chrRomBankMode = 0;
     m_nextIndexToUpdate = 0;
     m_prgRamEnabled = true;
+    m_IRQEnabled = false;
+    m_IRQActive = false;
+    m_IRQCounter = 0;
+    m_IRQReload = 0;
+}
+
+void Mapper_004::ScanlineDone()
+{
+    if (m_IRQCounter == 0)
+    {
+        m_IRQCounter = m_IRQReload;
+    }
+    else
+    {
+        m_IRQCounter--;
+    }
+
+    if (m_IRQCounter == 0 && m_IRQEnabled)
+    {
+        m_IRQActive = true;
+    }
+}
+
+bool Mapper_004::ShouldIRQ() const
+{
+    return m_IRQActive;
+}
+
+void Mapper_004::ClearIRQ()
+{
+    m_IRQActive = false;
 }

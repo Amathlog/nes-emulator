@@ -35,6 +35,17 @@ namespace NesEmulator
             m_mirroring = m_originalMirroring;
         }
 
+        // Functions specific for the PPU. Handle IRQ from the mapper. Used for mapper 004 for example.
+        // It is not very accurate but will do the job nonetheless
+        // By default, all those functions does nothing. Each mapper can handle this as they please
+
+        // Called at the end of each scanline
+        virtual void ScanlineDone() {}
+        // Check if we should fire an IRQ
+        virtual bool ShouldIRQ() const { return false; }
+        // Clear the IRQ state
+        virtual void ClearIRQ() {}
+
     protected:
         iNESHeader m_header;
         uint16_t m_nbPrgBanks;

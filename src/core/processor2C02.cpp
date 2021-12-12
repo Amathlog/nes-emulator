@@ -689,6 +689,15 @@ void Processor2C02::Clock()
     }
 
     m_cycles++;
+    if (m_registers.mask.showBackground || m_registers.mask.showSprites)
+    {
+        // Tell the mapper we have finish a scanline
+        if (m_cycles == 260 && m_scanlines < 240)
+        {
+            m_cartridge->GetMapper()->ScanlineDone();
+        }
+    }
+
     if (m_cycles >= 341)
     {
         m_cycles = 0;
