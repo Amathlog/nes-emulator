@@ -8,14 +8,16 @@ using NesEmulator::Mapper_004;
 Mapper_004::Mapper_004(const iNESHeader& header)
     : IMapper(header)
 {
+    m_staticRAM.resize(0x8000);
 }
 
-bool Mapper_004::MapReadCPU(uint16_t address, uint32_t& mappedAddress, uint8_t& /*data*/)
+bool Mapper_004::MapReadCPU(uint16_t address, uint32_t& mappedAddress, uint8_t& data)
 {
     if (address >= 0x6000 && address <= 0x7FFF && m_prgRamEnabled)
     {
         // PrgRam range
-        mappedAddress = address & 0x1FFF;
+        mappedAddress = 0xFFFFFFFF;
+        data = m_staticRAM[address & 0x1FFF];
         return true;
     }
     else if (address >= 0x8000 && address <= 0x9FFF)
@@ -64,8 +66,8 @@ bool Mapper_004::MapWriteCPU(uint16_t address, uint32_t& mappedAddress, uint8_t 
 { 
     if (address >= 0x6000 && address <= 0x7FFF && m_prgRamEnabled)
     {
-        // PrgRam range
-        mappedAddress = address & 0x1FFF;
+        mappedAddress = 0xFFFFFFFF;
+        m_staticRAM[address & 0x1FFF] = data;
         return true;
     }
     if (address >= 0x8000 && address <= 0x9FFF)
