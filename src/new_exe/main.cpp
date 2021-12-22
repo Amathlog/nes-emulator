@@ -1,116 +1,52 @@
+#include "new_exe/mainWindow.h"
 #include <iostream>
-#include <glad/glad.h>
-#include <GLFW/glfw3.h>
-
-#include <imgui.h>
-#include <backends/imgui_impl_glfw.h>
-#include <backends/imgui_impl_opengl3.h>
+#include <filesystem>
+#include <core/utils/fileVisitor.h>
+#include <core/bus.h>
+#include <core/cartridge.h>
 
 
-namespace {
-    void framebuffer_size_callback(GLFWwindow*, int width, int height)
-    {
-        glViewport(0, 0, width, height);
-    } 
-}
+namespace fs = std::filesystem;
 
-int main()
+int main(int argc, char **argv)
 {
-    glfwInit();
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    // Load a rom from a file
+    auto dir = fs::weakly_canonical(fs::path(argv[0])).parent_path();
+    auto root = dir / ".." / ".." / "..";
 
-#ifdef __APPLE__
-    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-#endif
+    // Mapper 000 also
+    auto path = root / "tests" / "test_roms" / "nestest.nes";
 
-    auto window = glfwCreateWindow(640, 480, "Renderer", nullptr, nullptr);
-    if (window == nullptr)
+    // Check the arg, if there is a file to load
+    if (argc > 1)
     {
-        std::cout << "Failed to create GLFW window" << std::endl;
-        glfwTerminate();
-        return -1;
+        path = fs::path(argv[1]);
+        if (path.is_relative())
+            path = root / path;
     }
-    glfwMakeContextCurrent(window);
 
-    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
+    NesEmulator::Utils::FileReadVisitor visitor(path.string());
+
+
+    auto cartridge = std::make_shared<NesEmulator::Cartridge>(visitor);
+
+    NesEmulator::Bus bus;
+    bus.InsertCartridge(cartridge);
+    bus.Reset();
+
     {
-        std::cout << "Failed to initialize GLAD" << std::endl;
-        return -1;
-    } 
+        NesEmulatorGL::MainWindow mainWindow(640, 480);
 
-    // Setup Dear ImGui context
-    IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
-    ImGuiIO& io = ImGui::GetIO(); (void)io;
-
-    // Setup Dear ImGui style
-    ImGui::StyleColorsDark();
-    //ImGui::StyleColorsClassic();
-
-    // Setup Platform/Renderer backends
-    ImGui_ImplGlfw_InitForOpenGL(window, true);
-    ImGui_ImplOpenGL3_Init("#version 330 core");
-
-    framebuffer_size_callback(window, 640, 480);
-    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
-
-    glEnable(GL_DEPTH_TEST);
-
-    bool show_demo_window = true;
-    bool show_another_window = false;
-    ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
-
-    while (!glfwWindowShouldClose(window))
-    {
-        // Start the Dear ImGui frame
-        ImGui_ImplOpenGL3_NewFrame();
-        ImGui_ImplGlfw_NewFrame();
-        ImGui::NewFrame();
-
+        while (!mainWindow.RequestedClose())
         {
-            static float f = 0.0f;
-            static int counter = 0;
+            do
+            {
+                bus.Clock();
+            } while (!bus.GetPPU().IsFrameComplete());
 
-            ImGui::Begin("Hello, world!");                          // Create a window called "Hello, world!" and append into it.
-
-            ImGui::Text("This is some useful text.");               // Display some text (you can use a format strings too)
-            ImGui::Checkbox("Demo Window", &show_demo_window);      // Edit bools storing our window open/close state
-            ImGui::Checkbox("Another Window", &show_another_window);
-
-            ImGui::SliderFloat("float", &f, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
-            ImGui::ColorEdit3("clear color", (float*)&clear_color); // Edit 3 floats representing a color
-
-            if (ImGui::Button("Button"))                            // Buttons return true when clicked (most widgets return true when edited/activated)
-                counter++;
-            ImGui::SameLine();
-            ImGui::Text("counter = %d", counter);
-
-            ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-            ImGui::End();
+            mainWindow.Update();
         }
-
-        ImGui::Render();
-        int display_w, display_h;
-        glfwGetFramebufferSize(window, &display_w, &display_h);
-        glViewport(0, 0, display_w, display_h);
-        glClearColor(clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w);
-        glClear(GL_COLOR_BUFFER_BIT);
-        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-
-        // Swap buffers
-        glfwSwapBuffers(window);
-        glfwPollEvents();
     }
-
-    // Cleanup
-    ImGui_ImplOpenGL3_Shutdown();
-    ImGui_ImplGlfw_Shutdown();
-    ImGui::DestroyContext();
-
-    glfwDestroyWindow(window);
-    glfwTerminate();
 
     return 0;
 }
