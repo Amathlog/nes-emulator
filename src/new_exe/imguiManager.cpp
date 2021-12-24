@@ -5,6 +5,7 @@
 #include <backends/imgui_impl_opengl3.h>
 
 #include <glad/glad.h>
+#include <ImGuiFileBrowser.h>
 
 using NesEmulatorGL::ImguiManager;
 
@@ -65,21 +66,74 @@ void ImguiManager::Update()
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
 
-    static bool demoWindow = false;
+    static bool showFPS = false;
 
     ImGui::BeginMainMenuBar();
 
     if (ImGui::BeginMenu("File"))
     {
-        ImGui::MenuItem("DemoWindow", nullptr, &demoWindow);
+        ImGui::MenuItem("Open File", nullptr, &m_showFileExplorer);
+        ImGui::MenuItem("Exit", nullptr, &m_closeRequested);
+        ImGui::EndMenu();
+    }
+
+    if (ImGui::BeginMenu("Debug"))
+    {
+        ImGui::MenuItem("Show FPS", nullptr, &showFPS);
         ImGui::EndMenu();
     }
 
     ImGui::EndMainMenuBar();
 
-    if (demoWindow)
-        DemoWindow();
+    HandleFileExplorer();
+
+    if (showFPS)
+    {
+        static int corner = 0;
+        ImGuiIO& io = ImGui::GetIO();
+        ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav;
+        if (corner != -1)
+        {
+            const float PAD = 10.0f;
+            const ImGuiViewport* viewport = ImGui::GetMainViewport();
+            ImVec2 work_pos = viewport->WorkPos; // Use work area to avoid menu-bar/task-bar, if any!
+            ImVec2 work_size = viewport->WorkSize;
+            ImVec2 window_pos, window_pos_pivot;
+            window_pos.x = 0.0f;
+            window_pos.y = 30.0f;
+            window_pos_pivot.x = 0.0f;
+            window_pos_pivot.y = 0.0f;
+            ImGui::SetNextWindowPos(window_pos, ImGuiCond_Always, window_pos_pivot);
+            window_flags |= ImGuiWindowFlags_NoMove;
+        }
+        ImGui::SetNextWindowBgAlpha(0.35f); // Transparent background
+        if (ImGui::Begin("FPS", &showFPS, window_flags))
+        {
+            ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+        }
+        ImGui::End();
+    }
 
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+}
+
+void ImguiManager::HandleFileExplorer()
+{
+    if (m_showFileExplorer)
+        ImGui::OpenPopup("Open File");
+
+    static imgui_addons::ImGuiFileBrowser fileDialog;
+
+    if(fileDialog.showFileDialog("Open File", imgui_addons::ImGuiFileBrowser::DialogMode::OPEN, ImVec2(0, 0), ".nes"))
+    {
+        m_currentPathToLoad = fileDialog.selected_path;
+        m_showFileExplorer = false;
+    }
+    else 
+    {
+        m_currentPathToLoad = "";
+    }
+
+    
 }

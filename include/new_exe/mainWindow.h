@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <chrono>
 #include <cmath>
+#include <string>
 
 struct GLFWwindow;
 namespace NesEmulator {
@@ -40,6 +41,7 @@ namespace NesEmulatorGL
         int GetFramerate() const { return m_framerate; }
         int64_t GetFrametime() const { return m_frametimeUS; }
 
+        std::string GetPathToNewGame();
 
         // unsigned int RegisterInputCallback(int inputKey, std::function<void(int)> callback);
         // void RemoveInputCallback(unsigned int id);

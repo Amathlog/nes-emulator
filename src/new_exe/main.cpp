@@ -8,6 +8,17 @@
 
 namespace fs = std::filesystem;
 
+void LoadNewGame(std::string path, NesEmulator::Bus& bus)
+{
+    NesEmulator::Utils::FileReadVisitor visitor(path);
+
+
+    auto cartridge = std::make_shared<NesEmulator::Cartridge>(visitor);
+
+    bus.InsertCartridge(cartridge);
+    bus.Reset();
+}
+
 int main(int argc, char **argv)
 {
     // Load a rom from a file
@@ -27,20 +38,20 @@ int main(int argc, char **argv)
             path = root / path;
     }
 
-    NesEmulator::Utils::FileReadVisitor visitor(path.string());
-
-
-    auto cartridge = std::make_shared<NesEmulator::Cartridge>(visitor);
-
     NesEmulator::Bus bus;
-    bus.InsertCartridge(cartridge);
-    bus.Reset();
+    LoadNewGame(path.string(), bus);
 
     {
         NesEmulatorGL::MainWindow mainWindow(256*3, 240*3, bus.GetPPU().GetWidth(), bus.GetPPU().GetHeight());
 
         while (!mainWindow.RequestedClose())
         {
+            std::string newFileToLoad = mainWindow.GetPathToNewGame();
+            if (!newFileToLoad.empty())
+            {
+                LoadNewGame(newFileToLoad, bus);
+            }
+
             do
             {
                 bus.Clock();
