@@ -6,6 +6,9 @@
 #include <cmath>
 
 struct GLFWwindow;
+namespace NesEmulator {
+    class Bus;
+}
 
 namespace NesEmulatorGL
 {
@@ -18,10 +21,10 @@ namespace NesEmulatorGL
     class MainWindow
     {
     public:
-        MainWindow(unsigned int width, unsigned int height, int framerate = NTSC_FRAMERATE);
+        MainWindow(unsigned width, unsigned height, unsigned internalResWidth, unsigned internalResHeight, int framerate = NTSC_FRAMERATE);
         ~MainWindow();
 
-        void Update();
+        void Update(NesEmulator::Bus& bus);
 
         GLFWwindow* GetWindow() {return m_window;}
         bool RequestedClose();
@@ -36,11 +39,16 @@ namespace NesEmulatorGL
         int GetFramerate() const { return m_framerate; }
         int64_t GetFrametime() const { return m_frametimeUS; }
 
+
         // unsigned int RegisterInputCallback(int inputKey, std::function<void(int)> callback);
         // void RemoveInputCallback(unsigned int id);
         // void ClearInputCallbacks() { m_inputCallbacks.clear(); }
 
     private:
+        bool CreateShader();
+        bool CreateImage();
+        void RenderImage(NesEmulator::Bus& bus);
+
         GLFWwindow* m_window = nullptr;
         std::vector<GLFWwindow*> m_childrenWindows;
         bool m_enable = true;
@@ -48,9 +56,20 @@ namespace NesEmulatorGL
         int m_framerate = -1;
         int64_t m_frametimeUS;
 
+        unsigned m_internalResWidth;
+        unsigned m_internalResHeight;
+
         std::chrono::time_point<std::chrono::high_resolution_clock> m_lastUpdateTime;
 
         ImguiManager* m_imguiManager = nullptr;
+
+        // Shaders
+        unsigned m_programId;
+        // Image
+        unsigned m_VAO;
+        unsigned m_VBO;
+        unsigned m_EBO;
+        unsigned m_texture;
         
         // using MapIdCallback = std::unordered_map<unsigned int, std::pair<int, std::function<void(int)>>>;
         // MapIdCallback m_inputCallbacks;
