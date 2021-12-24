@@ -1,8 +1,10 @@
 #include "core/palette.h"
 #include <cstdint>
+#include <memory>
 #include <new_exe/mainWindow.h>
 #include <new_exe/imguiManager.h>
 #include <new_exe/screen.h>
+#include <new_exe/controller.h>
 #include <core/bus.h>
 
 #include <glad/glad.h>
@@ -51,6 +53,8 @@ MainWindow::MainWindow(unsigned width, unsigned height, unsigned internalResWidt
     framebuffer_size_callback(m_window, width, height);
     glfwSetFramebufferSizeCallback(m_window, framebuffer_size_callback);
 
+    m_controller = std::make_shared<NesEmulatorGL::Controller>(m_window, 0);
+
     m_imguiManager = new ImguiManager(m_window);
     m_screen = new Screen(internalResWidth, internalResHeight);
 
@@ -83,6 +87,20 @@ void MainWindow::Update(NesEmulator::Bus& bus)
 
     glfwPollEvents();
 
+    m_controller->Update();
+
+    static bool hasPressed = false;
+    
+    if (glfwGetKey(m_window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+    {
+        hasPressed = true;
+    }
+    else if (hasPressed && glfwGetKey(m_window, GLFW_KEY_ESCAPE) == GLFW_RELEASE)
+    {
+        hasPressed = false;
+        m_imguiManager->ToggleMainMenu();
+    }
+
     glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
 
@@ -109,4 +127,9 @@ bool MainWindow::RequestedClose()
         return true;
 
     return m_imguiManager->ShouldClose() || glfwWindowShouldClose(m_window);
+}
+
+void MainWindow::ConnectController(NesEmulator::Bus& bus)
+{
+    bus.ConnectController(m_controller, 0);
 }

@@ -5,6 +5,7 @@
 #include <chrono>
 #include <cmath>
 #include <string>
+#include <memory>
 
 struct GLFWwindow;
 namespace NesEmulator {
@@ -15,6 +16,7 @@ namespace NesEmulatorGL
 {
     class ImguiManager;
     class Screen;
+    class Controller;
 
     constexpr int NTSC_FRAMERATE = 60;
     constexpr int PAL_FRAMERATE = 50;
@@ -42,15 +44,13 @@ namespace NesEmulatorGL
         int64_t GetFrametime() const { return m_frametimeUS; }
 
         std::string GetPathToNewGame();
-
-        // unsigned int RegisterInputCallback(int inputKey, std::function<void(int)> callback);
-        // void RemoveInputCallback(unsigned int id);
-        // void ClearInputCallbacks() { m_inputCallbacks.clear(); }
+        void ConnectController(NesEmulator::Bus& bus);
 
     private:
         void RenderImage(NesEmulator::Bus& bus);
 
         GLFWwindow* m_window = nullptr;
+        std::shared_ptr<Controller> m_controller = nullptr;
         std::vector<GLFWwindow*> m_childrenWindows;
         bool m_enable = true;
 
@@ -61,9 +61,5 @@ namespace NesEmulatorGL
 
         ImguiManager* m_imguiManager = nullptr;
         Screen* m_screen = nullptr;
-        
-        // using MapIdCallback = std::unordered_map<unsigned int, std::pair<int, std::function<void(int)>>>;
-        // MapIdCallback m_inputCallbacks;
-        // unsigned int m_latestCallbackId = 0;
     };
 }
