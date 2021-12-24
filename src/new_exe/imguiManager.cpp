@@ -68,22 +68,25 @@ void ImguiManager::Update()
 
     static bool showFPS = false;
 
-    ImGui::BeginMainMenuBar();
-
-    if (ImGui::BeginMenu("File"))
+    if (m_showMainMenu)
     {
-        ImGui::MenuItem("Open File", nullptr, &m_showFileExplorer);
-        ImGui::MenuItem("Exit", nullptr, &m_closeRequested);
-        ImGui::EndMenu();
-    }
+        ImGui::BeginMainMenuBar();
 
-    if (ImGui::BeginMenu("Debug"))
-    {
-        ImGui::MenuItem("Show FPS", nullptr, &showFPS);
-        ImGui::EndMenu();
-    }
+        if (ImGui::BeginMenu("File"))
+        {
+            ImGui::MenuItem("Open File", nullptr, &m_showFileExplorer);
+            ImGui::MenuItem("Exit", nullptr, &m_closeRequested);
+            ImGui::EndMenu();
+        }
 
-    ImGui::EndMainMenuBar();
+        if (ImGui::BeginMenu("Debug"))
+        {
+            ImGui::MenuItem("Show FPS", nullptr, &showFPS);
+            ImGui::EndMenu();
+        }
+
+        ImGui::EndMainMenuBar();
+    }
 
     HandleFileExplorer();
 

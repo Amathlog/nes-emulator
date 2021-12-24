@@ -43,6 +43,7 @@ int main(int argc, char **argv)
 
     {
         NesEmulatorGL::MainWindow mainWindow(256*3, 240*3, bus.GetPPU().GetWidth(), bus.GetPPU().GetHeight());
+        mainWindow.ConnectController(bus);
 
         while (!mainWindow.RequestedClose())
         {
