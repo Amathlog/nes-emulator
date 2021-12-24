@@ -70,6 +70,12 @@ MainWindow::~MainWindow()
     glfwTerminate();
 }
 
+std::string MainWindow::GetPathToNewGame()
+{
+    return m_imguiManager->GetPathToNewGame();
+}
+
+
 void MainWindow::Update(NesEmulator::Bus& bus)
 {
     if (RequestedClose())
@@ -102,5 +108,5 @@ bool MainWindow::RequestedClose()
     if (!m_enable || !m_window)
         return true;
 
-    return glfwWindowShouldClose(m_window);
+    return m_imguiManager->ShouldClose() || glfwWindowShouldClose(m_window);
 }
