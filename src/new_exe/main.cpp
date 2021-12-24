@@ -17,7 +17,7 @@ int main(int argc, char **argv)
     // Mapper 000 also
     auto path = root / "tests" / "test_roms" / "nestest.nes";
 
-    //path = root / "roms" / "zelda1.nes";
+    //path = root / "roms" / "smb.nes";
 
     // Check the arg, if there is a file to load
     if (argc > 1)
@@ -37,7 +37,7 @@ int main(int argc, char **argv)
     bus.Reset();
 
     {
-        NesEmulatorGL::MainWindow mainWindow(640, 480, bus.GetPPU().GetWidth(), bus.GetPPU().GetHeight());
+        NesEmulatorGL::MainWindow mainWindow(256*3, 240*3, bus.GetPPU().GetWidth(), bus.GetPPU().GetHeight());
 
         while (!mainWindow.RequestedClose())
         {
