@@ -25,6 +25,10 @@ int main(int argc, char **argv)
     auto dir = fs::weakly_canonical(fs::path(argv[0])).parent_path();
     auto root = dir / ".." / ".." / "..";
 
+#ifdef WIN32
+    root /= "..";
+#endif // WIN32
+
     // Mapper 000 also
     auto path = root / "tests" / "test_roms" / "nestest.nes";
 

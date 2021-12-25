@@ -37,7 +37,7 @@ namespace NesEmulator
         std::vector<uint8_t> m_prgRam;
         
         std::unique_ptr<IMapper> m_mapper;
-        uint8_t m_nbPrgBanks = 0;
-        uint8_t m_nbChrBanks = 0;
+        uint16_t m_nbPrgBanks = 0;
+        uint16_t m_nbChrBanks = 0;
     };
 }
