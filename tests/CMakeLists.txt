@@ -13,5 +13,5 @@ add_executable(NesEmulatorUnitTests ${TESTS_SRC})
 target_link_libraries(NesEmulatorUnitTests NesEmulator_Core)
 target_link_libraries(NesEmulatorUnitTests gtest_main)
 
-include(GoogleTest)
-gtest_discover_tests(NesEmulatorUnitTests)
+#include(GoogleTest)
+#gtest_discover_tests(NesEmulatorUnitTests)
