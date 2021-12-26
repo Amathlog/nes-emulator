@@ -436,9 +436,9 @@ void Processor2C02::Clock()
         }
 
         if (m_cycles == 338 || m_cycles == 340)
-		{
-			m_registers.bgNextTileId = ReadPPU(Cst::PPU_START_VRAM | (m_registers.vramAddr.reg & 0x0FFF));
-		}
+        {
+            m_registers.bgNextTileId = ReadPPU(Cst::PPU_START_VRAM | (m_registers.vramAddr.reg & 0x0FFF));
+        }
 
         // Need to reset the Y adress when we are in "pre-redering"
         // and the specification says that we do it each tick between 280 and 304 cycles

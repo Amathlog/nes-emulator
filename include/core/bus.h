@@ -6,6 +6,7 @@
 #include <array>
 #include <core/processor6502.h>
 #include <core/processor2C02.h>
+#include <core/processor2A03.h>
 #include <core/controller.h>
 
 namespace NesEmulator
@@ -36,6 +37,7 @@ namespace NesEmulator
     private:
         Processor6502 m_cpu;
         Processor2C02 m_ppu;
+        Processor2A03 m_apu;
 
         std::vector<uint8_t> m_cpuRam;
         std::shared_ptr<Cartridge> m_cartridge;
