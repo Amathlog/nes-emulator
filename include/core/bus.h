@@ -1,5 +1,7 @@
 #pragma once
 
+#include <core/utils/visitor.h>
+#include <core/serializable.h>
 #include <cstdint>
 #include <vector>
 #include <memory>
@@ -13,7 +15,7 @@ namespace NesEmulator
 {      
     class Cartridge;
 
-    class Bus
+    class Bus : public ISerializable
     {
     public:
         Bus();
@@ -33,6 +35,9 @@ namespace NesEmulator
         void Clock();
         void Reset();
         void Verbose();
+
+        void SerializeTo(Utils::IWriteVisitor& visitor) const override;
+        void DeserializeFrom(Utils::IReadVisitor& visitor) override;
 
     private:
         Processor6502 m_cpu;

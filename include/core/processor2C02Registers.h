@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <array>
+#include <core/utils/visitor.h>
 
 namespace NesEmulator 
 {
@@ -87,6 +88,22 @@ struct OAM
     {
         y = tileId = attribute = x = 0xFF;
     }
+
+    void SerializeTo(Utils::IWriteVisitor& visitor) const
+    {
+        visitor.WriteValue(y);
+        visitor.WriteValue(tileId);
+        visitor.WriteValue(attribute);
+        visitor.WriteValue(x);
+    }
+
+    void DeserializeFrom(Utils::IReadVisitor& visitor)
+    {
+        visitor.ReadValue(y);
+        visitor.ReadValue(tileId);
+        visitor.ReadValue(attribute);
+        visitor.ReadValue(x);
+    }
 };
 
 constexpr int oamSize = 64;
@@ -156,5 +173,69 @@ struct PPURegisters
     }
 
     uint8_t* GetOAM() { return (uint8_t*)oam; }
+
+    void SerializeTo(Utils::IWriteVisitor& visitor) const
+    {
+        visitor.WriteValue(ctrl.flags);
+        visitor.WriteValue(mask.flags);
+        visitor.WriteValue(status.flags);
+        visitor.WriteValue(oamaddr);
+
+        for (int i = 0; i < oamSize; ++i)
+            oam[i].SerializeTo(visitor);
+
+        visitor.WriteValue(addr);
+        visitor.WriteValue(data);
+        visitor.WriteValue(vramAddr.reg);
+        visitor.WriteValue(tramAddr.reg);
+        visitor.WriteValue(fineX);
+
+        visitor.WriteValue(bgNextTileId);
+        visitor.WriteValue(bgNextTileAttr);
+        visitor.WriteValue(bgNextTileLsb);
+        visitor.WriteValue(bgNextTileMsb);
+        visitor.WriteValue(bgShifterAttrLsb);
+        visitor.WriteValue(bgShifterAttrMsb);
+        visitor.WriteValue(bgShifterPatternLsb);
+        visitor.WriteValue(bgShifterPatternMsb);
+
+        visitor.Write(fgShifterPatternLsb.data(), 8);
+        visitor.Write(fgShifterPatternMsb.data(), 8);
+
+        visitor.WriteValue(spriteZeroIsPossible);
+        visitor.WriteValue(spriteZeroIsRendered);
+    }
+
+    void DeserializeFrom(Utils::IReadVisitor& visitor)
+    {
+        visitor.ReadValue(ctrl.flags);
+        visitor.ReadValue(mask.flags);
+        visitor.ReadValue(status.flags);
+        visitor.ReadValue(oamaddr);
+
+        for (int i = 0; i < oamSize; ++i)
+            oam[i].DeserializeFrom(visitor);
+
+        visitor.ReadValue(addr);
+        visitor.ReadValue(data);
+        visitor.ReadValue(vramAddr.reg);
+        visitor.ReadValue(tramAddr.reg);
+        visitor.ReadValue(fineX);
+
+        visitor.ReadValue(bgNextTileId);
+        visitor.ReadValue(bgNextTileAttr);
+        visitor.ReadValue(bgNextTileLsb);
+        visitor.ReadValue(bgNextTileMsb);
+        visitor.ReadValue(bgShifterAttrLsb);
+        visitor.ReadValue(bgShifterAttrMsb);
+        visitor.ReadValue(bgShifterPatternLsb);
+        visitor.ReadValue(bgShifterPatternMsb);
+
+        visitor.Read(fgShifterPatternLsb.data(), 8);
+        visitor.Read(fgShifterPatternMsb.data(), 8);
+
+        visitor.ReadValue(spriteZeroIsPossible);
+        visitor.ReadValue(spriteZeroIsRendered);
+    }
 };
 }

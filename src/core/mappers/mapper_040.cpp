@@ -125,3 +125,23 @@ void Mapper_040::ClearIRQ()
 {
     m_IRQActive = false;
 }
+
+void Mapper_040::SerializeTo(Utils::IWriteVisitor& visitor) const
+{
+    IMapper::SerializeTo(visitor);
+
+    visitor.WriteValue(m_switchableBank);
+    visitor.WriteValue(m_IRQCounter);
+    visitor.WriteValue(m_IRQEnabled);
+    visitor.WriteValue(m_IRQActive);
+}
+
+void Mapper_040::DeserializeFrom(Utils::IReadVisitor& visitor)
+{
+    IMapper::DeserializeFrom(visitor);
+
+    visitor.ReadValue(m_switchableBank);
+    visitor.ReadValue(m_IRQCounter);
+    visitor.ReadValue(m_IRQEnabled);
+    visitor.ReadValue(m_IRQActive);
+}
