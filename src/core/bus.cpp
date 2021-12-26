@@ -48,11 +48,18 @@ void Bus::WriteCPU(uint16_t address, uint8_t data)
         m_dmaTransfer = true;
         m_dmaWaitForCPU = true;
     }
-    else if (address == Cst::CONTROLLER_1_ADDR || address == Cst::CONTROLLER_2_ADDR)
+    else if (address == Cst::CONTROLLER_1_ADDR)
     {
-        uint16_t index = address & 0x0001;
-        if (m_controllers[index].get() != nullptr)
-            m_controllersState[index] = m_controllers[index]->GetButtonsState();
+        // When writing to this register, pull both controllers
+        for (auto index = 0; index < m_controllers.size(); ++index)
+        {
+            if (m_controllers[index].get() != nullptr)
+                m_controllersState[index] = m_controllers[index]->GetButtonsState();
+        }
+    }
+    else if (address >= Cst::APU_IO_START_ADDR && address <= Cst::APU_IO_END_ADDR)
+    {
+        m_apu.WriteCPU(address, data);
     }
 }
 
@@ -78,6 +85,10 @@ uint8_t Bus::ReadCPU(uint16_t address)
         uint16_t index = address & 0x0001;
         data = (m_controllersState[index] & 0x80) > 0;
         m_controllersState[index] <<= 1;
+    }
+    else if (address >= Cst::APU_IO_START_ADDR && address <= Cst::APU_IO_END_ADDR)
+    {
+        data = m_apu.ReadCPU(address);
     }
 
     return data;
@@ -192,6 +203,7 @@ void Bus::Reset()
     m_clockCounter = 0;
     m_cpu.Reset();
     m_ppu.Reset();
+    m_apu.Reset();
     m_controllersState[0] = 0x00;
     m_controllersState[1] = 0x00;
     if (m_cartridge)
