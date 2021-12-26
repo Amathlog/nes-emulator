@@ -77,7 +77,7 @@ namespace NesEmulator
             template <typename T>
             void Write(const T* data, size_t size)
             {
-                Write(reinterpret_cast<const uint8_t*>(data), size / sizeof(T));
+                Write(reinterpret_cast<const uint8_t*>(data), size * sizeof(T));
             }
 
             template <typename Container>

@@ -2,8 +2,10 @@
 #include <iostream>
 #include <filesystem>
 #include <core/utils/fileVisitor.h>
+#include <core/utils/vectorVisitor.h>
 #include <core/bus.h>
 #include <core/cartridge.h>
+#include <vector>
 
 
 namespace fs = std::filesystem;
@@ -45,6 +47,8 @@ int main(int argc, char **argv)
     NesEmulator::Bus bus;
     LoadNewGame(path.string(), bus);
 
+    std::vector<uint8_t> stateData;
+
     {
         NesEmulatorGL::MainWindow mainWindow(256*3, 240*3, bus.GetPPU().GetWidth(), bus.GetPPU().GetHeight());
         mainWindow.ConnectController(bus);
@@ -55,6 +59,20 @@ int main(int argc, char **argv)
             if (!newFileToLoad.empty())
             {
                 LoadNewGame(newFileToLoad, bus);
+            }
+
+            if (mainWindow.ShouldSaveState())
+            {
+                stateData.clear();
+                NesEmulator::Utils::VectorWriteVisitor visitor(stateData);
+                bus.SerializeTo(visitor);
+            }
+
+            if (mainWindow.ShouldLoadState() && !stateData.empty())
+            {
+                NesEmulator::Utils::VectorReadVisitor visitor(stateData);
+                bus.Reset();
+                bus.DeserializeFrom(visitor);
             }
 
             do
