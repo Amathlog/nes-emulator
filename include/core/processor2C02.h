@@ -1,16 +1,18 @@
 #pragma once
 
 #include "core/processor2C02Registers.h"
+#include <core/utils/visitor.h>
 #include <cstdint>
 #include <array>
 #include <memory>
 #include <core/constants.h>
+#include <core/serializable.h>
 
 namespace NesEmulator
 {
     class Cartridge;
 
-    class Processor2C02
+    class Processor2C02 : public ISerializable
     {
     public:
         Processor2C02();
@@ -44,6 +46,9 @@ namespace NesEmulator
         void ResetNMI() { m_nmi = false; }
 
         const PPURegisters& GetRegisters() const { return m_registers; }
+
+        void SerializeTo(Utils::IWriteVisitor& visitor) const override;
+        void DeserializeFrom(Utils::IReadVisitor& visitor) override;
         
     private:
         std::shared_ptr<Cartridge> m_cartridge;

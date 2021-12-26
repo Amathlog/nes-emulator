@@ -810,3 +810,51 @@ void Processor2C02::FillFromNameTable(uint8_t index, uint8_t selectedPalette, ui
         }
     }
 }
+
+void Processor2C02::SerializeTo(Utils::IWriteVisitor& visitor) const
+{
+    for (const auto& nameTable : m_namedTables)
+        visitor.Write(nameTable.data(), Cst::PPU_NAMED_TABLES_SIZE);
+
+    visitor.Write(m_paletteTable.data(), Cst::PPU_PALETTE_SIZE);
+
+    // Should not be necessary to serialize the screen
+    // visitor.Write(m_screen, sizeof(m_screen));
+
+    visitor.WriteValue(m_isFrameComplete);
+    visitor.WriteValue(m_nmi);
+
+    m_registers.SerializeTo(visitor);
+
+    visitor.WriteValue(m_scanlines);
+    visitor.WriteValue(m_cycles);
+
+    for (const auto& oam : m_selectedSprites)
+        oam.SerializeTo(visitor);
+    
+    visitor.WriteValue(m_spritesCount);
+}
+
+void Processor2C02::DeserializeFrom(Utils::IReadVisitor& visitor)
+{
+    for (auto& nameTable : m_namedTables)
+        visitor.Read(nameTable.data(), Cst::PPU_NAMED_TABLES_SIZE);
+
+    visitor.Read(m_paletteTable.data(), Cst::PPU_PALETTE_SIZE);
+
+    // Should not be necessary to serialize the screen
+    // visitor.Write(m_screen, sizeof(m_screen));
+
+    visitor.ReadValue(m_isFrameComplete);
+    visitor.ReadValue(m_nmi);
+
+    m_registers.DeserializeFrom(visitor);
+
+    visitor.ReadValue(m_scanlines);
+    visitor.ReadValue(m_cycles);
+
+    for (auto& oam : m_selectedSprites)
+        oam.DeserializeFrom(visitor);
+    
+    visitor.ReadValue(m_spritesCount);
+}

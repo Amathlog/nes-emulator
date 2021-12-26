@@ -1,9 +1,11 @@
 #pragma once
 
+#include <core/utils/visitor.h>
 #include <cstddef>
 #include <cstdint>
 #include <string>
 #include <vector>
+#include <core/serializable.h>
 
 // Stack: LIFO, top down, 8 bit range, 0x0100 - 0x01FF
 constexpr uint16_t STACK_LOCATION = 0x0100;
@@ -30,7 +32,7 @@ namespace NesEmulator
     };
 
 
-    class Processor6502
+    class Processor6502 : public ISerializable
     {
     public:
         Processor6502();
@@ -95,6 +97,8 @@ namespace NesEmulator
         bool IsOpComplete() const { return m_opComplete; };
         size_t GetNbOfTotalCycles() const { return m_numberOfCycles; }
 
+        void SerializeTo(Utils::IWriteVisitor& visitor) const override;
+        void DeserializeFrom(Utils::IReadVisitor& visitor) override;
 
     private:
         // Helpers

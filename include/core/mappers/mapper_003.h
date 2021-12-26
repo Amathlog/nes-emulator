@@ -17,6 +17,9 @@ namespace NesEmulator
         bool MapWritePPU(uint16_t address, uint32_t& mappedAddress, uint8_t data) override;
         void Reset() override;
 
+        void SerializeTo(Utils::IWriteVisitor& visitor) const override;
+        void DeserializeFrom(Utils::IReadVisitor& visitor) override;
+
     private:
         uint8_t m_currentSwitchChrBank = 0;
     };

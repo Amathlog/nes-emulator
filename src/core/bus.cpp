@@ -1,6 +1,7 @@
 #include "core/controller.h"
 #include "core/utils/busVisitor.h"
 #include "core/utils/disassembly.h"
+#include <cassert>
 #include <core/bus.h>
 #include <cstddef>
 #include <cstdint>
@@ -225,4 +226,93 @@ void Bus::DisconnectController(uint8_t controllerIndex)
 {
     m_controllers[controllerIndex & 0x01].reset();
     m_controllersState[controllerIndex & 0x01] = 0;
+}
+
+void Bus::SerializeTo(Utils::IWriteVisitor& visitor) const
+{
+    // Compute SHA-1 to link this state save to a given game
+    // TODO
+    uint64_t hash = 0;
+    visitor.WriteValue(hash);
+
+    m_cpu.SerializeTo(visitor);
+    m_ppu.SerializeTo(visitor);
+    m_apu.SerializeTo(visitor);
+
+    visitor.WriteContainer(m_cpuRam);
+    m_cartridge->GetMapper()->SerializeTo(visitor);
+
+    visitor.WriteValue(m_clockCounter);
+
+    if (m_controllers[0].get() != nullptr)
+    {
+        visitor.WriteValue((uint8_t)1);
+        m_controllers[0]->SerializeTo(visitor);
+    }
+    else
+    {
+        visitor.WriteValue((uint8_t)0);
+    }
+
+    if (m_controllers[1].get() != nullptr)
+    {
+        visitor.WriteValue((uint8_t)1);
+        m_controllers[1]->SerializeTo(visitor);
+    }
+    else 
+    {
+        visitor.WriteValue((uint8_t)0);
+    }
+    
+    visitor.Write(m_controllersState.data(), m_controllersState.size());
+
+    visitor.WriteValue(m_dmaPage);
+    visitor.WriteValue(m_dmaAddr);
+    visitor.WriteValue(m_dmaData);
+
+    visitor.WriteValue(m_dmaTransfer);
+    visitor.WriteValue(m_dmaWaitForCPU);
+}
+
+void Bus::DeserializeFrom(Utils::IReadVisitor& visitor)
+{
+    // Compare hashes to make sure we load a state for the
+    // exact same game
+    // TODO
+    uint64_t hash;
+    visitor.ReadValue(hash);
+
+    assert(hash == 0 || "Hashes were not the same");
+
+    m_cpu.DeserializeFrom(visitor);
+    m_ppu.DeserializeFrom(visitor);
+    m_apu.DeserializeFrom(visitor);
+
+    visitor.ReadContainer(m_cpuRam);
+    m_cartridge->GetMapper()->DeserializeFrom(visitor);
+
+    visitor.ReadValue(m_clockCounter);
+
+    uint8_t controller1Connected;
+    visitor.ReadValue(controller1Connected);
+    if (controller1Connected)
+    {
+        m_controllers[0]->DeserializeFrom(visitor);
+    }
+
+    uint8_t controller2Connected;
+    visitor.ReadValue(controller2Connected);
+    if (controller2Connected)
+    {
+        m_controllers[1]->DeserializeFrom(visitor);
+    }
+
+    visitor.Read(m_controllersState.data(), m_controllersState.size());
+
+    visitor.ReadValue(m_dmaPage);
+    visitor.ReadValue(m_dmaAddr);
+    visitor.ReadValue(m_dmaData);
+
+    visitor.ReadValue(m_dmaTransfer);
+    visitor.ReadValue(m_dmaWaitForCPU);
 }
