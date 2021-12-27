@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <vector>
 #include <memory>
+#include <string>
 #include <core/mapper.h>
 
 namespace NesEmulator
