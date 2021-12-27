@@ -1,7 +1,6 @@
-#include "core/controller.h"
-#include "core/utils/busVisitor.h"
-#include "core/utils/disassembly.h"
-#include <cassert>
+#include <core/controller.h>
+#include <core/utils/busVisitor.h>
+#include <core/utils/disassembly.h>
 #include <core/bus.h>
 #include <cstddef>
 #include <cstdint>
@@ -230,10 +229,14 @@ void Bus::DisconnectController(uint8_t controllerIndex)
 
 void Bus::SerializeTo(Utils::IWriteVisitor& visitor) const
 {
+    // If there is no cartridge loaded, do nothing
+    if (m_cartridge.get() == nullptr)
+        return;
+
     // Compute SHA-1 to link this state save to a given game
-    // TODO
-    uint64_t hash = 0;
-    visitor.WriteValue(hash);
+    std::string hash = m_cartridge->GetSHA1();
+    visitor.WriteValue(hash.size());
+    visitor.Write(hash.c_str(), hash.size());
 
     m_cpu.SerializeTo(visitor);
     m_ppu.SerializeTo(visitor);
@@ -276,13 +279,34 @@ void Bus::SerializeTo(Utils::IWriteVisitor& visitor) const
 
 void Bus::DeserializeFrom(Utils::IReadVisitor& visitor)
 {
-    // Compare hashes to make sure we load a state for the
-    // exact same game
-    // TODO
-    uint64_t hash;
-    visitor.ReadValue(hash);
+    // If there is no cartridge loaded, do nothing
+    if (m_cartridge.get() == nullptr)
+    {
+        std::cerr << "No game loaded, can't load the save state" << std::endl;
+        return;
+    }
 
-    assert(hash == 0 || "Hashes were not the same");
+    // Get SHA-1 to verify this state save is linked to the right game
+    std::string hash = m_cartridge->GetSHA1();
+    std::string readHash;
+    size_t hashSize;
+    visitor.ReadValue(hashSize);
+    if (hashSize != hash.size())
+    {
+        std::cerr << "Hashes for the loaded game and the save state are not the same size" << std::endl;
+        std::cerr << "Save state: " << hashSize << " Game: " << hash.size() << std::endl;
+        return;
+    }
+
+    readHash.resize(hashSize);
+    visitor.Read(readHash.data(), readHash.size());
+
+    if (readHash != hash)
+    {
+        std::cerr << "Hashes for the loaded game and the save state are not the same" << std::endl;
+        std::cerr << "Save state: " << readHash << " Game: " << hash << std::endl;
+        return;
+    }
 
     m_cpu.DeserializeFrom(visitor);
     m_ppu.DeserializeFrom(visitor);
