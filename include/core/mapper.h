@@ -1,6 +1,8 @@
 #pragma once
 
-#include "core/ines.h"
+#include <core/utils/visitor.h>
+#include <core/ines.h>
+#include <core/serializable.h>
 #include <cstdint>
 
 namespace NesEmulator
@@ -11,7 +13,7 @@ namespace NesEmulator
         HORIZONTAL,
     };
 
-    class IMapper
+    class IMapper : public ISerializable
     {
     public:
         IMapper(const iNESHeader& header)
@@ -47,6 +49,16 @@ namespace NesEmulator
         virtual bool ShouldIRQ() const { return false; }
         // Clear the IRQ state
         virtual void ClearIRQ() {}
+
+        void SerializeTo(Utils::IWriteVisitor& visitor) const override
+        {
+            visitor.WriteValue(m_mirroring);
+        }
+
+        void DeserializeFrom(Utils::IReadVisitor& visitor) override
+        {
+            visitor.ReadValue(m_mirroring);
+        }
 
     protected:
         iNESHeader m_header;

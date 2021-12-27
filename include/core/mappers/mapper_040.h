@@ -25,6 +25,9 @@ namespace NesEmulator
         bool ShouldIRQ() const override;
         void ClearIRQ() override;
 
+        void SerializeTo(Utils::IWriteVisitor& visitor) const override;
+        void DeserializeFrom(Utils::IReadVisitor& visitor) override;
+
     private:
         uint8_t m_switchableBank = 0;
 

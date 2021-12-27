@@ -25,6 +25,9 @@ namespace NesEmulator
         bool ShouldIRQ() const override;
         void ClearIRQ() override;
 
+        void SerializeTo(Utils::IWriteVisitor& visitor) const override;
+        void DeserializeFrom(Utils::IReadVisitor& visitor) override;
+
     private:
         std::array<uint8_t, 8> m_indexes;
         uint8_t m_prgRomBankMode = 0;

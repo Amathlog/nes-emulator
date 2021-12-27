@@ -71,3 +71,17 @@ void Mapper_003::Reset()
     IMapper::Reset();
     m_currentSwitchChrBank = 0;
 }
+
+void Mapper_003::SerializeTo(Utils::IWriteVisitor& visitor) const
+{
+    IMapper::SerializeTo(visitor);
+
+    visitor.WriteValue(m_currentSwitchChrBank);
+}
+
+void Mapper_003::DeserializeFrom(Utils::IReadVisitor& visitor)
+{
+    IMapper::DeserializeFrom(visitor);
+
+    visitor.ReadValue(m_currentSwitchChrBank);
+}

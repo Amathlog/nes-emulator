@@ -18,6 +18,10 @@ namespace NesEmulator
         void Reset() override;
 
 
+        void SerializeTo(Utils::IWriteVisitor& visitor) const override;
+        void DeserializeFrom(Utils::IReadVisitor& visitor) override;
+
+    private:
         uint8_t m_currentSwitchPrgBank = 0;
         uint8_t m_currentSwitchChrBank = 0;
     };

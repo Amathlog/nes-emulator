@@ -1,6 +1,7 @@
 #include "core/constants.h"
 #include <core/processor6502.h>
 #include <core/bus.h>
+#include <core/utils/visitor.h>
 
 #include <cstdint>
 #include <iostream>
@@ -9,6 +10,12 @@
 #define LOGGING 0
 
 using NesEmulator::Processor6502;
+
+enum SerializerVersion : int
+{
+    V1 = 0,
+    Current = V1
+};
 
 Processor6502::Processor6502()
 {
@@ -126,6 +133,47 @@ void Processor6502::Reset()
     // Reset takes time
     m_cycles = 7;
     m_opComplete = false;
+}
+
+void Processor6502::SerializeTo(Utils::IWriteVisitor& visitor) const
+{
+    visitor.WriteValue(SerializerVersion::Current);
+
+    visitor.WriteValue(m_A);
+    visitor.WriteValue(m_X);
+    visitor.WriteValue(m_Y);
+    visitor.WriteValue(m_SP);
+    visitor.WriteValue(m_PC);
+    visitor.WriteValue(m_absAddress);
+    visitor.WriteValue(m_relAddress);
+    visitor.WriteValue(m_fetched);
+    visitor.WriteValue(m_opcode);
+    visitor.WriteValue(m_cycles);
+    visitor.WriteValue(m_status);
+    visitor.WriteValue(m_numberOfCycles);
+    visitor.WriteValue(m_opComplete);
+}
+
+void Processor6502::DeserializeFrom(Utils::IReadVisitor& visitor)
+{
+    SerializerVersion version;
+
+    visitor.ReadValue(version);
+    assert(version <= SerializerVersion::Current);
+    
+    visitor.ReadValue(m_A);
+    visitor.ReadValue(m_X);
+    visitor.ReadValue(m_Y);
+    visitor.ReadValue(m_SP);
+    visitor.ReadValue(m_PC);
+    visitor.ReadValue(m_absAddress);
+    visitor.ReadValue(m_relAddress);
+    visitor.ReadValue(m_fetched);
+    visitor.ReadValue(m_opcode);
+    visitor.ReadValue(m_cycles);
+    visitor.ReadValue(m_status);
+    visitor.ReadValue(m_numberOfCycles);
+    visitor.ReadValue(m_opComplete);
 }
 
 void Processor6502::IRQ()

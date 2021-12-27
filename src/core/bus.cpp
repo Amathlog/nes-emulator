@@ -1,7 +1,6 @@
 #include <core/controller.h>
 #include <core/utils/busVisitor.h>
 #include <core/utils/disassembly.h>
-#include <core/utils/visitor.h>
 #include <core/bus.h>
 #include <cstddef>
 #include <cstdint>

@@ -73,3 +73,19 @@ void Mapper_066::Reset()
     m_currentSwitchPrgBank = 0;
     m_currentSwitchChrBank = 0;
 }
+
+void Mapper_066::SerializeTo(Utils::IWriteVisitor& visitor) const
+{
+    IMapper::SerializeTo(visitor);
+
+    visitor.WriteValue(m_currentSwitchPrgBank);
+    visitor.WriteValue(m_currentSwitchChrBank);
+}
+
+void Mapper_066::DeserializeFrom(Utils::IReadVisitor& visitor)
+{
+    IMapper::DeserializeFrom(visitor);
+
+    visitor.ReadValue(m_currentSwitchPrgBank);
+    visitor.ReadValue(m_currentSwitchChrBank);
+}

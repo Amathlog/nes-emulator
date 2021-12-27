@@ -231,3 +231,41 @@ void Mapper_001::Reset()
     m_currentChrBank1 = 0;
     ResetControlRegister();
 }
+
+void Mapper_001::SerializeTo(Utils::IWriteVisitor& visitor) const
+{
+    IMapper::SerializeTo(visitor);
+
+    visitor.WriteValue(m_shiftRegister);
+    visitor.WriteValue(m_shiftCounter);
+    visitor.WriteValue(m_internalRegister);
+    visitor.WriteValue(m_loadRegisterDone);
+
+    visitor.WriteValue(m_currentPrgBankSwitch);
+    visitor.WriteValue(m_PrgBank0IsSwitch);
+    visitor.WriteValue(m_currentChrBank0);
+    visitor.WriteValue(m_currentChrBank1);
+    visitor.WriteValue(m_32kBModePrgBank);
+    visitor.WriteValue(m_8kBModeChrBank);
+
+    visitor.WriteContainer(m_staticRAM);
+}
+
+void Mapper_001::DeserializeFrom(Utils::IReadVisitor& visitor)
+{
+    IMapper::DeserializeFrom(visitor);
+
+    visitor.ReadValue(m_shiftRegister);
+    visitor.ReadValue(m_shiftCounter);
+    visitor.ReadValue(m_internalRegister);
+    visitor.ReadValue(m_loadRegisterDone);
+
+    visitor.ReadValue(m_currentPrgBankSwitch);
+    visitor.ReadValue(m_PrgBank0IsSwitch);
+    visitor.ReadValue(m_currentChrBank0);
+    visitor.ReadValue(m_currentChrBank1);
+    visitor.ReadValue(m_32kBModePrgBank);
+    visitor.ReadValue(m_8kBModeChrBank);
+
+    visitor.ReadContainer(m_staticRAM);
+}
