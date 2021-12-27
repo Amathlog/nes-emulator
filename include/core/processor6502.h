@@ -62,9 +62,15 @@ namespace NesEmulator
         uint8_t SEC(); uint8_t SED(); uint8_t SEI(); uint8_t STA();
         uint8_t STX(); uint8_t STY(); uint8_t TAX(); uint8_t TAY();
         uint8_t TSX(); uint8_t TXA(); uint8_t TXS(); uint8_t TYA();
-        
-        // Illegal instruction
-        uint8_t XXX();
+
+        // Illegal opcodes
+        uint8_t ALR(); uint8_t ANC(); uint8_t ANE(); uint8_t ARR();
+        uint8_t DCP(); uint8_t ISC(); uint8_t LAS(); uint8_t LAX();
+        uint8_t LXA(); uint8_t RLA(); uint8_t RRA(); uint8_t SAX();
+        uint8_t SBX(); uint8_t SHA(); uint8_t SHX(); uint8_t SHY();
+        uint8_t SLO(); uint8_t SRE(); uint8_t TAS();
+
+        uint8_t JAM();
 
         // To force a PC
         void SetPC(uint16_t pc);
@@ -142,5 +148,6 @@ namespace NesEmulator
 
         std::vector<Instruction> m_opCodeMapper;
         bool m_opComplete = true;
+        bool m_isJammed = false;
     };
 }
