@@ -1,6 +1,7 @@
-#include "core/controller.h"
-#include "core/utils/busVisitor.h"
-#include "core/utils/disassembly.h"
+#include <core/controller.h>
+#include <core/utils/busVisitor.h>
+#include <core/utils/disassembly.h>
+#include <core/utils/visitor.h>
 #include <core/bus.h>
 #include <cstddef>
 #include <cstdint>
@@ -225,4 +226,118 @@ void Bus::DisconnectController(uint8_t controllerIndex)
 {
     m_controllers[controllerIndex & 0x01].reset();
     m_controllersState[controllerIndex & 0x01] = 0;
+}
+
+void Bus::SerializeTo(Utils::IWriteVisitor& visitor) const
+{
+    // If there is no cartridge loaded, do nothing
+    if (m_cartridge.get() == nullptr)
+        return;
+
+    // Compute SHA-1 to link this state save to a given game
+    std::string hash = m_cartridge->GetSHA1();
+    visitor.WriteValue(hash.size());
+    visitor.Write(hash.c_str(), hash.size());
+
+    m_cpu.SerializeTo(visitor);
+    m_ppu.SerializeTo(visitor);
+    m_apu.SerializeTo(visitor);
+
+    visitor.WriteContainer(m_cpuRam);
+    m_cartridge->GetMapper()->SerializeTo(visitor);
+
+    visitor.WriteValue(m_clockCounter);
+
+    if (m_controllers[0].get() != nullptr)
+    {
+        visitor.WriteValue((uint8_t)1);
+        m_controllers[0]->SerializeTo(visitor);
+    }
+    else
+    {
+        visitor.WriteValue((uint8_t)0);
+    }
+
+    if (m_controllers[1].get() != nullptr)
+    {
+        visitor.WriteValue((uint8_t)1);
+        m_controllers[1]->SerializeTo(visitor);
+    }
+    else 
+    {
+        visitor.WriteValue((uint8_t)0);
+    }
+    
+    visitor.Write(m_controllersState.data(), m_controllersState.size());
+
+    visitor.WriteValue(m_dmaPage);
+    visitor.WriteValue(m_dmaAddr);
+    visitor.WriteValue(m_dmaData);
+
+    visitor.WriteValue(m_dmaTransfer);
+    visitor.WriteValue(m_dmaWaitForCPU);
+}
+
+void Bus::DeserializeFrom(Utils::IReadVisitor& visitor)
+{
+    // If there is no cartridge loaded, do nothing
+    if (m_cartridge.get() == nullptr)
+    {
+        std::cerr << "No game loaded, can't load the save state" << std::endl;
+        return;
+    }
+
+    // Get SHA-1 to verify this state save is linked to the right game
+    std::string hash = m_cartridge->GetSHA1();
+    std::string readHash;
+    size_t hashSize;
+    visitor.ReadValue(hashSize);
+    if (hashSize != hash.size())
+    {
+        std::cerr << "Hashes for the loaded game and the save state are not the same size" << std::endl;
+        std::cerr << "Save state: " << hashSize << " Game: " << hash.size() << std::endl;
+        return;
+    }
+
+    readHash.resize(hashSize);
+    visitor.Read(readHash.data(), readHash.size());
+
+    if (readHash != hash)
+    {
+        std::cerr << "Hashes for the loaded game and the save state are not the same" << std::endl;
+        std::cerr << "Save state: " << readHash << " Game: " << hash << std::endl;
+        return;
+    }
+
+    m_cpu.DeserializeFrom(visitor);
+    m_ppu.DeserializeFrom(visitor);
+    m_apu.DeserializeFrom(visitor);
+
+    visitor.ReadContainer(m_cpuRam);
+    m_cartridge->GetMapper()->DeserializeFrom(visitor);
+
+    visitor.ReadValue(m_clockCounter);
+
+    uint8_t controller1Connected;
+    visitor.ReadValue(controller1Connected);
+    if (controller1Connected)
+    {
+        m_controllers[0]->DeserializeFrom(visitor);
+    }
+
+    uint8_t controller2Connected;
+    visitor.ReadValue(controller2Connected);
+    if (controller2Connected)
+    {
+        m_controllers[1]->DeserializeFrom(visitor);
+    }
+
+    visitor.Read(m_controllersState.data(), m_controllersState.size());
+
+    visitor.ReadValue(m_dmaPage);
+    visitor.ReadValue(m_dmaAddr);
+    visitor.ReadValue(m_dmaData);
+
+    visitor.ReadValue(m_dmaTransfer);
+    visitor.ReadValue(m_dmaWaitForCPU);
 }

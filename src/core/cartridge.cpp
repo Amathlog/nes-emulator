@@ -1,3 +1,4 @@
+#include "core/utils/sha1.h"
 #include <core/cartridge.h>
 #include <core/utils/visitor.h>
 #include <core/mappers/all_mappers.h>
@@ -49,6 +50,12 @@ Cartridge::Cartridge(IReadVisitor& visitor)
 
     // Allocate 8kB of prgRam
     m_prgRam.resize(0x2000);
+
+    // When all is done, compute the SHA1 of the ROM
+    Utils::SHA1 sha1;
+    sha1.update(m_prgData);
+    sha1.update(m_chrData);
+    m_sha1 = sha1.final();
 }
 
 bool Cartridge::ReadCPU(uint16_t address, uint8_t& data)
