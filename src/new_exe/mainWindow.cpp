@@ -16,9 +16,12 @@
 using NesEmulatorGL::MainWindow;
 
 namespace {
-    void framebuffer_size_callback(GLFWwindow*, int width, int height)
+    void framebuffer_size_callback(GLFWwindow* window, int width, int height)
     {
         glViewport(0, 0, width, height);
+
+        MainWindow* mainWindow = reinterpret_cast<MainWindow*>(glfwGetWindowUserPointer(window));
+        mainWindow->OnScreenResized(width, height);
     } 
 }
 
@@ -50,13 +53,14 @@ MainWindow::MainWindow(unsigned width, unsigned height, unsigned internalResWidt
         return;
     }
 
-    framebuffer_size_callback(m_window, width, height);
-    glfwSetFramebufferSizeCallback(m_window, framebuffer_size_callback);
-
     m_controller = std::make_shared<NesEmulatorGL::Controller>(m_window, 0);
 
     m_imguiManager = new ImguiManager(m_window);
     m_screen = new Screen(internalResWidth, internalResHeight);
+
+    glfwSetWindowUserPointer(m_window, this);
+    framebuffer_size_callback(m_window, width, height);
+    glfwSetFramebufferSizeCallback(m_window, framebuffer_size_callback);
 
     m_enable = m_screen->IsInitialized();
     m_lastUpdateTime = std::chrono::high_resolution_clock::now();
@@ -79,7 +83,6 @@ std::string MainWindow::GetPathToNewGame()
     return m_imguiManager->GetPathToNewGame();
 }
 
-
 void MainWindow::Update(NesEmulator::Bus& bus)
 {
     if (RequestedClose())
@@ -101,7 +104,7 @@ void MainWindow::Update(NesEmulator::Bus& bus)
         m_imguiManager->ToggleMainMenu();
     }
 
-    glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
 
     m_screen->Update(bus);
@@ -146,4 +149,12 @@ bool MainWindow::ShouldLoadState()
     bool res = m_imguiManager->ShouldLoadState();
     m_imguiManager->ResetLoadState();
     return res;
+}
+
+void MainWindow::OnScreenResized(int width, int height)
+{
+    if (m_screen != nullptr)
+    {
+        m_screen->OnScreenResized(width, height);
+    }
 }

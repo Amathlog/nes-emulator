@@ -75,8 +75,10 @@ void ImguiManager::Update()
         if (ImGui::BeginMenu("File"))
         {
             ImGui::MenuItem("Open File", nullptr, &m_showFileExplorer);
+            ImGui::Separator();
             ImGui::MenuItem("Save state", nullptr, &m_requestSaveState);
             ImGui::MenuItem("Load state", nullptr, &m_requestLoadState);
+            ImGui::Separator();
             ImGui::MenuItem("Exit", nullptr, &m_closeRequested);
             ImGui::EndMenu();
         }

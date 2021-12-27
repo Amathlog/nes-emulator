@@ -14,10 +14,12 @@ layout (location = 0) in vec4 vertex; // <vec2 position, vec2 texCoords>
 
 out vec2 TexCoords;
 
+uniform vec2 screenFormat;
+
 void main()
 {
     TexCoords = vertex.zw;
-    gl_Position = vec4(vertex.xy, -1.0f, 1.0f);
+    gl_Position = vec4(vertex.x * screenFormat.x, vertex.y * screenFormat.y, 0.0f, 1.0f);
 }
 )foo";
 
@@ -51,6 +53,9 @@ Screen::Screen(unsigned internalResWidth, unsigned internalResHeight)
         return;
 
     m_initialized = true;
+
+    m_screenFormat[0] = 1.0f;
+    m_screenFormat[1] = 1.0f;
 }
 
 Screen::~Screen()
@@ -62,6 +67,51 @@ Screen::~Screen()
     glDeleteTextures(1, &m_texture);
 }
 
+void Screen::SetScreenFormat(Format format)
+{
+    m_format = format;
+    OnScreenResized(m_currentWidth, m_currentHeight);
+}
+
+void Screen::OnScreenResized(int width, int height)
+{
+    m_currentWidth = width;
+    m_currentHeight = height;
+
+    float currentRatio = (float) width / height;
+    float targetRatio = 1.0f;
+
+    switch(m_format)
+    {
+    case Format::STRETCH:
+        targetRatio = currentRatio;
+        break;
+    case Format::ORIGINAL:
+    {
+        targetRatio = (float)m_internalResWidth / m_internalResHeight;
+        break;
+    }
+    case Format::FOUR_THIRD:
+    {
+        targetRatio = 4.0f / 3.0f;
+        break;
+    }
+    }
+
+    if (currentRatio > targetRatio)
+    {
+        // We have a bigger width that needed
+        m_screenFormat[0] = targetRatio / currentRatio;
+        m_screenFormat[1] = 1.0f;
+    }
+    else 
+    {
+        // We have a bigger height that needed
+        m_screenFormat[0] = 1.0f;
+        m_screenFormat[1] = currentRatio / targetRatio;
+    }
+}
+
 void Screen::Update(NesEmulator::Bus& bus)
 {
     if (!m_initialized)
@@ -69,6 +119,9 @@ void Screen::Update(NesEmulator::Bus& bus)
         
     int paletteLocation = glGetUniformLocation(m_programId, "palette");
     glUniform3fv(paletteLocation, 64, NesEmulator::Palette::GetPaletteFloat());
+
+    int screenFormatLocation = glad_glGetUniformLocation(m_programId, "screenFormat");
+    glUniform2fv(screenFormatLocation, 1, m_screenFormat);
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, m_texture);

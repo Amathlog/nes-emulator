@@ -49,6 +49,8 @@ namespace NesEmulatorGL
         std::string GetPathToNewGame();
         void ConnectController(NesEmulator::Bus& bus);
 
+        void OnScreenResized(int width, int height);
+
     private:
         void RenderImage(NesEmulator::Bus& bus);
 
