@@ -18,6 +18,8 @@ public:
     size_t Remaining() const override;
     void Advance(size_t size) override;
 
+    bool IsValid() const { return m_file.is_open(); }
+
 private:
     std::ifstream m_file;
     size_t m_ptr;

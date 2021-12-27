@@ -1,4 +1,7 @@
-#include "new_exe/mainWindow.h"
+#include <new_exe/messageService/coreMessageService.h>
+#include <new_exe/messageService/messageService.h>
+#include <new_exe/messageService/messages/coreMessage.h>
+#include <new_exe/mainWindow.h>
 #include <iostream>
 #include <filesystem>
 #include <core/utils/fileVisitor.h>
@@ -9,17 +12,7 @@
 
 
 namespace fs = std::filesystem;
-
-void LoadNewGame(std::string path, NesEmulator::Bus& bus)
-{
-    NesEmulator::Utils::FileReadVisitor visitor(path);
-
-
-    auto cartridge = std::make_shared<NesEmulator::Cartridge>(visitor);
-
-    bus.InsertCartridge(cartridge);
-    bus.Reset();
-}
+using namespace NesEmulatorGL;
 
 int main(int argc, char **argv)
 {
@@ -45,9 +38,13 @@ int main(int argc, char **argv)
     }
 
     NesEmulator::Bus bus;
-    LoadNewGame(path.string(), bus);
 
-    std::vector<uint8_t> stateData;
+    // Create the core message service and connect it
+    CoreMessageService messageService(bus);
+    DispatchMessageServiceSingleton::GetInstance().Connect(&messageService);
+
+    // Load a new game
+    DispatchMessageServiceSingleton::GetInstance().Push(LoadNewGameMessage(path.string()));
 
     {
         NesEmulatorGL::MainWindow mainWindow(256*3, 240*3, bus.GetPPU().GetWidth(), bus.GetPPU().GetHeight());
@@ -55,26 +52,6 @@ int main(int argc, char **argv)
 
         while (!mainWindow.RequestedClose())
         {
-            std::string newFileToLoad = mainWindow.GetPathToNewGame();
-            if (!newFileToLoad.empty())
-            {
-                LoadNewGame(newFileToLoad, bus);
-            }
-
-            if (mainWindow.ShouldSaveState())
-            {
-                stateData.clear();
-                NesEmulator::Utils::VectorWriteVisitor visitor(stateData);
-                bus.SerializeTo(visitor);
-            }
-
-            if (mainWindow.ShouldLoadState() && !stateData.empty())
-            {
-                NesEmulator::Utils::VectorReadVisitor visitor(stateData);
-                bus.Reset();
-                bus.DeserializeFrom(visitor);
-            }
-
             do
             {
                 bus.Clock();

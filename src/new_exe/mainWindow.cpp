@@ -78,11 +78,6 @@ MainWindow::~MainWindow()
     glfwTerminate();
 }
 
-std::string MainWindow::GetPathToNewGame()
-{
-    return m_imguiManager->GetPathToNewGame();
-}
-
 void MainWindow::Update(NesEmulator::Bus& bus)
 {
     if (RequestedClose())
@@ -135,20 +130,6 @@ bool MainWindow::RequestedClose()
 void MainWindow::ConnectController(NesEmulator::Bus& bus)
 {
     bus.ConnectController(m_controller, 0);
-}
-
-bool MainWindow::ShouldSaveState()
-{
-    bool res = m_imguiManager->ShouldSaveState();
-    m_imguiManager->ResetSaveState();
-    return res;
-}
-
-bool MainWindow::ShouldLoadState()
-{
-    bool res = m_imguiManager->ShouldLoadState();
-    m_imguiManager->ResetLoadState();
-    return res;
 }
 
 void MainWindow::OnScreenResized(int width, int height)

@@ -11,15 +11,8 @@ namespace NesEmulatorGL
         ImguiManager(GLFWwindow* window);
         ~ImguiManager();
 
-        std::string GetPathToNewGame() const { return m_currentPathToLoad; }
         bool ShouldClose() const { return m_closeRequested; }
         void ToggleMainMenu() { m_showMainMenu = !m_showMainMenu; }
-
-        bool ShouldSaveState() const { return m_requestSaveState; }
-        void ResetSaveState() { m_requestSaveState = false; }
-
-        bool ShouldLoadState() const { return m_requestLoadState; }
-        void ResetLoadState() { m_requestLoadState = false; } 
 
         void Update();
 
@@ -31,7 +24,5 @@ namespace NesEmulatorGL
         bool m_showMainMenu = true;
         bool m_requestSaveState = false;
         bool m_requestLoadState = false;
-
-        std::string m_currentPathToLoad;
     };
 }

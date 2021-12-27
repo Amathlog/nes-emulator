@@ -1,3 +1,5 @@
+#include <new_exe/messageService/messageService.h>
+#include <new_exe/messageService/messages/coreMessage.h>
 #include <new_exe/imguiManager.h>
 
 #include <imgui.h>
@@ -8,6 +10,10 @@
 #include <ImGuiFileBrowser.h>
 
 using NesEmulatorGL::ImguiManager;
+using NesEmulatorGL::DispatchMessageServiceSingleton;
+using NesEmulatorGL::LoadNewGameMessage;
+using NesEmulatorGL::SaveStateMessage;
+using NesEmulatorGL::LoadStateMessage;
 
 ImguiManager::ImguiManager(GLFWwindow* window)
 {
@@ -121,6 +127,18 @@ void ImguiManager::Update()
         ImGui::End();
     }
 
+    if (m_requestSaveState)
+    {
+        DispatchMessageServiceSingleton::GetInstance().Push(SaveStateMessage());
+        m_requestSaveState = false;
+    }
+
+    if (m_requestLoadState)
+    {
+        DispatchMessageServiceSingleton::GetInstance().Push(LoadStateMessage());
+        m_requestLoadState = false;
+    }
+
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
@@ -134,13 +152,8 @@ void ImguiManager::HandleFileExplorer()
 
     if(fileDialog.showFileDialog("Open File", imgui_addons::ImGuiFileBrowser::DialogMode::OPEN, ImVec2(0, 0), ".nes"))
     {
-        m_currentPathToLoad = fileDialog.selected_path;
+        // Load a new file
+        DispatchMessageServiceSingleton::GetInstance().Push(LoadNewGameMessage(fileDialog.selected_path));
         m_showFileExplorer = false;
-    }
-    else 
-    {
-        m_currentPathToLoad = "";
-    }
-
-    
+    }    
 }

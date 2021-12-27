@@ -33,9 +33,6 @@ namespace NesEmulatorGL
         GLFWwindow* GetWindow() {return m_window;}
         bool RequestedClose();
 
-        bool ShouldSaveState();
-        bool ShouldLoadState();
-
         void Enable(bool enable) {m_enable = enable;}
         bool IsEnabled() {return m_enable;}
 
@@ -46,7 +43,6 @@ namespace NesEmulatorGL
         int GetFramerate() const { return m_framerate; }
         int64_t GetFrametime() const { return m_frametimeUS; }
 
-        std::string GetPathToNewGame();
         void ConnectController(NesEmulator::Bus& bus);
 
         void OnScreenResized(int width, int height);

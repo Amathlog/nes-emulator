@@ -36,7 +36,7 @@ FileReadVisitor::FileReadVisitor(const std::string& file)
     }
     else
     {
-        std::cerr << "Failed to open file " << file << std::endl; 
+        std::cerr << "Failed to open file " << file << std::endl;
     }
 }
 
