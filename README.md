@@ -10,23 +10,32 @@ Based on the wonderful tutorial from OneLoneCoder: https://github.com/OneLoneCod
 
 There is no rom included in this project. You need to dump your original games to use them with this emulator.
 
-## Dependencies
-- qt
+## Dependencies (Old exe, linux only)
+- qt (old exe)
 - googletest
 - sfml
 
+## Dependencies (New exe, linux/windows)
+- ImGui
+- glfw
+- OpenGL
+- sfml
+- googletest
+
 ## Implemented features
-- Full support for offical opcodes for the 6502 CPU
+- Full support for offical opcodes for the 6502 CPU (and some illegal opcodes)
 - Keyboard support
 - NTSC roms only (no PAL yet)
 - Some mappers (list bellow)
 - Basic debugging with "gotos" and disassembly
 - Can play from start to finish some games.
+- Basic load/save state (in memory only)
+- Rom loading in UI
 
 ## TODO
 - Sound
 - More mappers
-- Rom loading in UI (only cmd line for now)
+- Better UI
 - ...
 
 ## Full interface
@@ -43,7 +52,7 @@ There is no rom included in this project. You need to dump your original games t
 | 40              | SMB: The Lost Levels| <img src="images/smb_lost_levels.gif" width="300" height="300" />  |
 | 66              | Duck Hunt + SMB     | <img src="images/duckhunt.gif" width="300" height="300" />  |
 
-## Compiling on Ubuntu
+## Compiling on Ubuntu (Old exe)
 ```
 git clone --recursive https://github.com/Amathlog/nes-emulator.git
 apt-get install qt5-default cmake build-essentials clang
@@ -54,9 +63,20 @@ cmake ..
 make
 ```
 
+## Compiling on Ubuntu (New exe)
+```
+git clone --recursive https://github.com/Amathlog/nes-emulator.git
+apt-get install cmake build-essentials clang
+cd nes-emulator
+mkdir build
+cd build
+cmake ..
+make
+```
+
 ## Running the program
 ```
-./NesEmulator <path_to_your_rom>
+./NesEmulatorGL <path_to_your_rom>
 ```
 
 Controls:
@@ -66,4 +86,4 @@ Controls:
 | Z        | A              |
 | X        | B              |
 | A        | Select         |
-| B        | Start          |
+| S        | Start          |
