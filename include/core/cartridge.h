@@ -31,10 +31,14 @@ namespace NesEmulator
         void Reset();
         IMapper* GetMapper() { return m_mapper.get(); }
 
+        const std::string& GetSHA1() const { return m_sha1; }
+
     private:
         std::vector<uint8_t> m_prgData;
         std::vector<uint8_t> m_chrData;
         std::vector<uint8_t> m_prgRam;
+
+        std::string m_sha1;
         
         std::unique_ptr<IMapper> m_mapper;
         uint16_t m_nbPrgBanks = 0;
