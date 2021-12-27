@@ -1,4 +1,7 @@
+#include "new_exe/messageService/messageService.h"
+#include <memory>
 #include <new_exe/screen.h>
+#include <new_exe/messageService/screenMessageService.h>
 #include <core/bus.h>
 #include <core/palette.h>
 
@@ -56,6 +59,9 @@ Screen::Screen(unsigned internalResWidth, unsigned internalResHeight)
 
     m_screenFormat[0] = 1.0f;
     m_screenFormat[1] = 1.0f;
+
+    m_screenMessageService = std::make_unique<ScreenMessageService>(*this);
+    DispatchMessageServiceSingleton::GetInstance().Connect(m_screenMessageService.get());
 }
 
 Screen::~Screen()
@@ -96,6 +102,8 @@ void Screen::OnScreenResized(int width, int height)
         targetRatio = 4.0f / 3.0f;
         break;
     }
+    default:
+        return;
     }
 
     if (currentRatio > targetRatio)

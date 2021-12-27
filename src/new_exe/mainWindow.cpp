@@ -1,4 +1,6 @@
 #include "core/palette.h"
+#include <new_exe/messageService/messageService.h>
+#include <new_exe/messageService/messages/screenMessage.h>
 #include <cstdint>
 #include <memory>
 #include <new_exe/mainWindow.h>
@@ -19,9 +21,8 @@ namespace {
     void framebuffer_size_callback(GLFWwindow* window, int width, int height)
     {
         glViewport(0, 0, width, height);
-
-        MainWindow* mainWindow = reinterpret_cast<MainWindow*>(glfwGetWindowUserPointer(window));
-        mainWindow->OnScreenResized(width, height);
+        // Notify the screen that we have resized
+        NesEmulatorGL::DispatchMessageServiceSingleton::GetInstance().Push(NesEmulatorGL::ResizeMessage(width, height));
     } 
 }
 
@@ -55,8 +56,8 @@ MainWindow::MainWindow(unsigned width, unsigned height, unsigned internalResWidt
 
     m_controller = std::make_shared<NesEmulatorGL::Controller>(m_window, 0);
 
-    m_imguiManager = new ImguiManager(m_window);
     m_screen = new Screen(internalResWidth, internalResHeight);
+    m_imguiManager = new ImguiManager(m_window);
 
     glfwSetWindowUserPointer(m_window, this);
     framebuffer_size_callback(m_window, width, height);

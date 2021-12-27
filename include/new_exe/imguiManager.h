@@ -1,5 +1,6 @@
 #pragma once
 #include <string>
+#include <new_exe/messageService/messages/screenPayload.h>
 
 struct GLFWwindow;
 
@@ -24,5 +25,7 @@ namespace NesEmulatorGL
         bool m_showMainMenu = true;
         bool m_requestSaveState = false;
         bool m_requestLoadState = false;
+
+        Format m_currentFormat;
     };
 }

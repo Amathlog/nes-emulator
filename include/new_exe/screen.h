@@ -1,5 +1,8 @@
 #pragma once
 
+#include <new_exe/messageService/messages/screenPayload.h>
+#include <memory>
+
 namespace NesEmulator
 {
     class Bus;
@@ -7,15 +10,11 @@ namespace NesEmulator
 
 namespace NesEmulatorGL
 {
+    class ScreenMessageService;
+    
     class Screen
     {
     public:
-        enum Format
-        {
-            STRETCH,
-            ORIGINAL,
-            FOUR_THIRD
-        };
 
         Screen(unsigned internalResWidth, unsigned internalResHeight);
         ~Screen();
@@ -24,6 +23,7 @@ namespace NesEmulatorGL
         bool IsInitialized() const { return m_initialized; }
         void OnScreenResized(int width, int height);
         void SetScreenFormat(Format format);
+        Format GetScreenFormat() const { return m_format; }
 
     private:
         bool CreateShader();
@@ -47,5 +47,7 @@ namespace NesEmulatorGL
         unsigned m_VBO;
         unsigned m_EBO;
         unsigned m_texture;
+
+        std::unique_ptr<ScreenMessageService> m_screenMessageService;
     };
 }

@@ -1,3 +1,4 @@
+#include "new_exe/messageService/messages/screenMessage.h"
 #include <new_exe/messageService/messageService.h>
 #include <new_exe/messageService/messages/coreMessage.h>
 #include <new_exe/imguiManager.h>
@@ -29,6 +30,11 @@ ImguiManager::ImguiManager(GLFWwindow* window)
     // Setup Platform/Renderer backends
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init("#version 330 core");
+
+    // Get the current format
+    GetFormatMessage message;
+    DispatchMessageServiceSingleton::GetInstance().Push(message);
+    m_currentFormat = message.GetTypedPayload().m_format;
 }
 
 ImguiManager::~ImguiManager()

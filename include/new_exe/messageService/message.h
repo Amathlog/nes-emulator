@@ -10,8 +10,11 @@ namespace NesEmulatorGL {
 
     enum DefaultMessageType : MessageType
     {
-        CORE,
-        IMGUI
+        CORE = 0,
+        IMGUI = 1,
+        SCREEN = 2,
+
+        INVALID = 0xFFFFFFFF
     };
 
     class Payload{};
@@ -36,6 +39,8 @@ namespace NesEmulatorGL {
     class Message
     {
     public:
+        Message() = default;
+
         Message(MessageType type_, Payload* payload_)
             : m_type(type_)
             , m_payload(payload_)
@@ -48,8 +53,8 @@ namespace NesEmulatorGL {
         const Payload* GetPayload() const { return m_payload; }
 
     private:
-        MessageType m_type;
-        Payload* m_payload;
+        MessageType m_type = DefaultMessageType::INVALID;
+        Payload* m_payload = nullptr;
     };
 
     template<MessageType Type, typename PayloadType, typename = std::enable_if_t<std::is_base_of_v<Payload, PayloadType>>>
@@ -61,6 +66,8 @@ namespace NesEmulatorGL {
             : ownPayload(std::forward<Args>(args)...)
             , Message(Type, &ownPayload)
         {}
+
+        const PayloadType& GetTypedPayload() { return ownPayload; }
 
     private:
         PayloadType ownPayload;
