@@ -33,6 +33,9 @@ namespace NesEmulatorGL
         GLFWwindow* GetWindow() {return m_window;}
         bool RequestedClose();
 
+        bool ShouldSaveState();
+        bool ShouldLoadState();
+
         void Enable(bool enable) {m_enable = enable;}
         bool IsEnabled() {return m_enable;}
 

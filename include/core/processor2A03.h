@@ -1,5 +1,7 @@
 #pragma once
+#include <core/serializable.h>
 #include <cstdint>
+#include <core/utils/visitor.h>
 
 namespace NesEmulator
 {
@@ -29,6 +31,34 @@ namespace NesEmulator
             timer = 0;
             lengthCounter = 0;
         }
+
+        void SerializeTo(Utils::IWriteVisitor& visitor) const
+        {
+            visitor.WriteValue(duty);
+            visitor.WriteValue(enveloppeLoop);
+            visitor.WriteValue(constantVolume);
+            visitor.WriteValue(volumeEnveloppe);
+            visitor.WriteValue(sweepEnable);
+            visitor.WriteValue(sweepPeriod);
+            visitor.WriteValue(sweepNegate);
+            visitor.WriteValue(sweepShift);
+            visitor.WriteValue(timer);
+            visitor.WriteValue(lengthCounter);
+        }
+
+        void DeserializeFrom(Utils::IReadVisitor& visitor)
+        {
+            visitor.ReadValue(duty);
+            visitor.ReadValue(enveloppeLoop);
+            visitor.ReadValue(constantVolume);
+            visitor.ReadValue(volumeEnveloppe);
+            visitor.ReadValue(sweepEnable);
+            visitor.ReadValue(sweepPeriod);
+            visitor.ReadValue(sweepNegate);
+            visitor.ReadValue(sweepShift);
+            visitor.ReadValue(timer);
+            visitor.ReadValue(lengthCounter);
+        }
     };
 
     struct TriangleRegister
@@ -44,6 +74,22 @@ namespace NesEmulator
             linearCounterLoad = 0;
             timer = 0;
             lengthCounterLoad = 0;
+        }
+
+        void SerializeTo(Utils::IWriteVisitor& visitor) const
+        {
+            visitor.WriteValue(control);
+            visitor.WriteValue(linearCounterLoad);
+            visitor.WriteValue(timer);
+            visitor.WriteValue(lengthCounterLoad);
+        }
+
+        void DeserializeFrom(Utils::IReadVisitor& visitor)
+        {
+            visitor.ReadValue(control);
+            visitor.ReadValue(linearCounterLoad);
+            visitor.ReadValue(timer);
+            visitor.ReadValue(lengthCounterLoad);
         }
     };
 
@@ -65,6 +111,26 @@ namespace NesEmulator
             noisePeriod = 0;
             lengthCounterLoad = 0;
         }
+
+        void SerializeTo(Utils::IWriteVisitor& visitor) const
+        {
+            visitor.WriteValue(enveloppeLoop);
+            visitor.WriteValue(constantVolume);
+            visitor.WriteValue(volumeEnveloppe);
+            visitor.WriteValue(loopNoise);
+            visitor.WriteValue(noisePeriod);
+            visitor.WriteValue(lengthCounterLoad);
+        }
+
+        void DeserializeFrom(Utils::IReadVisitor& visitor)
+        {
+            visitor.ReadValue(enveloppeLoop);
+            visitor.ReadValue(constantVolume);
+            visitor.ReadValue(volumeEnveloppe);
+            visitor.ReadValue(loopNoise);
+            visitor.ReadValue(noisePeriod);
+            visitor.ReadValue(lengthCounterLoad);
+        }
     };
 
     struct DMCRegister
@@ -84,6 +150,26 @@ namespace NesEmulator
             loadCounter = 0;
             sampleAddress = 0;
             sampleLength = 0;
+        }
+
+        void SerializeTo(Utils::IWriteVisitor& visitor) const
+        {
+            visitor.WriteValue(irqEnable);
+            visitor.WriteValue(loop);
+            visitor.WriteValue(frequency);
+            visitor.WriteValue(loadCounter);
+            visitor.WriteValue(sampleAddress);
+            visitor.WriteValue(sampleLength);
+        }
+
+        void DeserializeFrom(Utils::IReadVisitor& visitor)
+        {
+            visitor.ReadValue(irqEnable);
+            visitor.ReadValue(loop);
+            visitor.ReadValue(frequency);
+            visitor.ReadValue(loadCounter);
+            visitor.ReadValue(sampleAddress);
+            visitor.ReadValue(sampleLength);
         }
     };
 
@@ -116,7 +202,7 @@ namespace NesEmulator
         uint8_t flags;
     };
 
-    class Processor2A03
+    class Processor2A03 : public ISerializable
     {
     public:
         Processor2A03() = default;
@@ -128,6 +214,9 @@ namespace NesEmulator
         uint8_t ReadCPU(uint16_t addr);
 
         void Reset();
+
+        void SerializeTo(Utils::IWriteVisitor& visitor) const override;
+        void DeserializeFrom(Utils::IReadVisitor& visitor) override;
 
     private:
         PulseRegister m_pulseRegister1;

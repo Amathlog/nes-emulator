@@ -217,3 +217,33 @@ void Mapper_004::ClearIRQ()
 {
     m_IRQActive = false;
 }
+
+void Mapper_004::SerializeTo(Utils::IWriteVisitor& visitor) const
+{
+    IMapper::SerializeTo(visitor);
+
+    visitor.Write(m_indexes.data(), m_indexes.size());
+    visitor.WriteValue(m_prgRomBankMode);
+    visitor.WriteValue(m_chrRomBankMode);
+    visitor.WriteValue(m_nextIndexToUpdate);
+    visitor.WriteValue(m_prgRamEnabled);
+    visitor.WriteValue(m_IRQEnabled);
+    visitor.WriteValue(m_IRQActive);
+    visitor.WriteValue(m_IRQCounter);
+    visitor.WriteValue(m_IRQReload);
+}
+
+void Mapper_004::DeserializeFrom(Utils::IReadVisitor& visitor)
+{
+    IMapper::DeserializeFrom(visitor);
+
+    visitor.Read(m_indexes.data(), m_indexes.size());
+    visitor.ReadValue(m_prgRomBankMode);
+    visitor.ReadValue(m_chrRomBankMode);
+    visitor.ReadValue(m_nextIndexToUpdate);
+    visitor.ReadValue(m_prgRamEnabled);
+    visitor.ReadValue(m_IRQEnabled);
+    visitor.ReadValue(m_IRQActive);
+    visitor.ReadValue(m_IRQCounter);
+    visitor.ReadValue(m_IRQReload);
+}

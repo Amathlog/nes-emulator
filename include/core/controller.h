@@ -1,10 +1,12 @@
 #pragma once
 
+#include <core/utils/visitor.h>
+#include <core/serializable.h>
 #include <cstdint>
 
 namespace NesEmulator 
 {
-    class Controller
+    class Controller : ISerializable
     {
     public:
         union Buttons
@@ -36,6 +38,16 @@ namespace NesEmulator
         void ToggleRight(bool value) { m_buttons.Right = value; }
 
         uint8_t GetButtonsState() const { return m_buttons.reg; }
+
+        void SerializeTo(Utils::IWriteVisitor& visitor) const override
+        {
+            visitor.WriteValue(m_buttons.reg);
+        }
+
+        void DeserializeFrom(Utils::IReadVisitor& visitor) override
+        {
+            visitor.ReadValue(m_buttons.reg);
+        }
 
     protected:
         Buttons m_buttons;

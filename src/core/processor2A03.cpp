@@ -133,3 +133,27 @@ void Processor2A03::Reset()
 	m_statusRegister.flags = 0;
 	m_frameCounterRegister.flags = 0;
 }
+
+void Processor2A03::SerializeTo(Utils::IWriteVisitor& visitor) const
+{
+	m_pulseRegister1.SerializeTo(visitor);
+	m_pulseRegister2.SerializeTo(visitor);
+	m_triangleRegister.SerializeTo(visitor);
+	m_noiseRegister.SerializeTo(visitor);
+	m_dmcRegister.SerializeTo(visitor);
+
+	visitor.WriteValue(m_statusRegister.flags);
+	visitor.WriteValue(m_frameCounterRegister.flags);
+}
+
+void Processor2A03::DeserializeFrom(Utils::IReadVisitor& visitor)
+{
+	m_pulseRegister1.DeserializeFrom(visitor);
+	m_pulseRegister2.DeserializeFrom(visitor);
+	m_triangleRegister.DeserializeFrom(visitor);
+	m_noiseRegister.DeserializeFrom(visitor);
+	m_dmcRegister.DeserializeFrom(visitor);
+
+	visitor.ReadValue(m_statusRegister.flags);
+	visitor.ReadValue(m_frameCounterRegister.flags);
+}
