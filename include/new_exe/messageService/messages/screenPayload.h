@@ -13,13 +13,14 @@ namespace NesEmulatorGL
         GET_FORMAT,
     };
 
-    enum Format
+    enum Format : unsigned
     {
-        STRETCH,
-        ORIGINAL,
-        FOUR_THIRD,
+        STRETCH = 0,
+        ORIGINAL = 1,
+        FOUR_THIRD = 2,
 
-        UNDEFINED
+        COUNT = 3,
+        UNDEFINED = 0xFFFFFFFF
     };
 
     class ScreenPayload : public Payload
