@@ -50,7 +50,7 @@ namespace NesEmulator
             template<typename Container>
             void ReadContainer(Container& data)
             {
-                size_t size;
+                size_t size = 0;
                 ReadValue(size);
                 data.resize(size);
                 Read(data.data(), size);

@@ -4,10 +4,12 @@
 #include <core/bus.h>
 #include <cstddef>
 #include <cstdint>
+#include <filesystem>
 #include <iostream>
 
 #include <core/cartridge.h>
 #include <core/constants.h>
+#include <string>
 
 
 using NesEmulator::Bus;
@@ -339,4 +341,96 @@ void Bus::DeserializeFrom(Utils::IReadVisitor& visitor)
 
     visitor.ReadValue(m_dmaTransfer);
     visitor.ReadValue(m_dmaWaitForCPU);
+}
+
+void Bus::SaveRAM(Utils::IWriteVisitor& visitor) const
+{
+    // If there is no cartridge loaded, do nothing
+    if (m_cartridge.get() == nullptr)
+        return;
+
+    // If there is no persistent memory, do nothing
+    if (!m_cartridge->GetMapper()->HasPersistantMemory())
+        return;
+
+    // Compute SHA-1 to link this state save to a given game
+    std::string hash = m_cartridge->GetSHA1();
+    visitor.WriteValue(hash.size());
+    visitor.Write(hash.c_str(), hash.size());
+
+    m_cartridge->GetMapper()->SaveRAM(visitor);
+}
+
+void Bus::LoadRAM(Utils::IReadVisitor& visitor)
+{
+    // If there is no cartridge loaded, do nothing
+    if (m_cartridge.get() == nullptr)
+    {
+        std::cerr << "No game loaded, can't load the RAM" << std::endl;
+        return;
+    }
+
+    // If there is no persistent memory, do nothing
+    if (!m_cartridge->GetMapper()->HasPersistantMemory())
+        return;
+
+    // Get SHA-1 to verify this state save is linked to the right game
+    std::string hash = m_cartridge->GetSHA1();
+    std::string readHash;
+    size_t hashSize;
+    visitor.ReadValue(hashSize);
+    if (hashSize != hash.size())
+    {
+        std::cerr << "Hashes for the loaded game and the RAM saved are not the same size" << std::endl;
+        std::cerr << "RAM saved: " << hashSize << " Game: " << hash.size() << std::endl;
+        return;
+    }
+
+    readHash.resize(hashSize);
+    visitor.Read(readHash.data(), readHash.size());
+
+    if (readHash != hash)
+    {
+        std::cerr << "Hashes for the loaded game and the RAM saved are not the same" << std::endl;
+        std::cerr << "RAM saved: " << readHash << " Game: " << hash << std::endl;
+        return;
+    }
+
+    m_cartridge->GetMapper()->LoadRAM(visitor);
+}
+
+std::filesystem::path Bus::GetSaveStateFile(std::filesystem::path exeDir, int number)
+{
+    if (m_cartridge.get() == nullptr)
+        return std::filesystem::path();
+
+    auto saveFolder = GetSaveFolder(exeDir);
+    std::string saveFile = std::to_string(number);
+    saveFile += ".nesSaveState";
+    return saveFolder / saveFile;
+}
+
+std::filesystem::path Bus::GetSaveFile(std::filesystem::path exeDir)
+{
+    if (m_cartridge.get() == nullptr)
+        return std::filesystem::path();
+
+    // If there is no persistent memory, do nothing
+    if (!m_cartridge->GetMapper()->HasPersistantMemory())
+        return std::filesystem::path();
+
+    auto saveFolder = GetSaveFolder(exeDir);
+    std::string saveFile = "save.nesSave";
+    return saveFolder / saveFile;
+}
+
+std::filesystem::path Bus::GetSaveFolder(std::filesystem::path exeDir)
+{
+    if (m_cartridge.get() == nullptr)
+        return std::filesystem::path();
+
+    std::string hash = m_cartridge->GetSHA1();
+    exeDir /= "saves";
+    exeDir /= hash;
+    return exeDir;
 }

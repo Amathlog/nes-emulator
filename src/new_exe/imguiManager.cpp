@@ -150,13 +150,13 @@ void ImguiManager::Update()
 
     if (m_requestSaveState)
     {
-        DispatchMessageServiceSingleton::GetInstance().Push(SaveStateMessage());
+        DispatchMessageServiceSingleton::GetInstance().Push(SaveStateMessage("", 0));
         m_requestSaveState = false;
     }
 
     if (m_requestLoadState)
     {
-        DispatchMessageServiceSingleton::GetInstance().Push(LoadStateMessage());
+        DispatchMessageServiceSingleton::GetInstance().Push(LoadStateMessage("", 0));
         m_requestLoadState = false;
     }
 

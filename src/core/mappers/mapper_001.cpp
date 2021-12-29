@@ -247,8 +247,6 @@ void Mapper_001::SerializeTo(Utils::IWriteVisitor& visitor) const
     visitor.WriteValue(m_currentChrBank1);
     visitor.WriteValue(m_32kBModePrgBank);
     visitor.WriteValue(m_8kBModeChrBank);
-
-    visitor.WriteContainer(m_staticRAM);
 }
 
 void Mapper_001::DeserializeFrom(Utils::IReadVisitor& visitor)
@@ -266,6 +264,4 @@ void Mapper_001::DeserializeFrom(Utils::IReadVisitor& visitor)
     visitor.ReadValue(m_currentChrBank1);
     visitor.ReadValue(m_32kBModePrgBank);
     visitor.ReadValue(m_8kBModeChrBank);
-
-    visitor.ReadContainer(m_staticRAM);
 }

@@ -39,7 +39,5 @@ namespace NesEmulator
         uint8_t m_IRQReload = 0;
         bool m_IRQEnabled = false;
         bool m_IRQActive = false;
-
-        std::vector<uint8_t> m_staticRAM;
     };
 }

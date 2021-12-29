@@ -36,6 +36,8 @@ public:
     void Write(const uint8_t* data, size_t size) override;
     size_t Written() const override;
 
+    bool IsValid() const { return m_file.is_open(); }
+
 private:
     std::ofstream m_file;
     size_t m_ptr;

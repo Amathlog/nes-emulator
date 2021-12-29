@@ -14,17 +14,35 @@ namespace NesEmulatorGL
         {}
     };
 
+    struct SaveGameMessage : CoreMessage
+    {
+        // Can be empty to get the default file
+        SaveGameMessage(std::string file = "")
+            : CoreMessage(DefaultCoreMessageType::SAVE_GAME, file)
+        {}
+    };    
+    
+    struct LoadSaveMessage : CoreMessage
+    {
+        // Can be empty to get the default file
+        LoadSaveMessage(std::string file = "")
+            : CoreMessage(DefaultCoreMessageType::LOAD_SAVE, file)
+        {}
+    };
+
     struct SaveStateMessage : CoreMessage
     {
-        SaveStateMessage()
-            : CoreMessage(DefaultCoreMessageType::SAVE_STATE, "")
+        // Can be empty to get the default file
+        SaveStateMessage(std::string file = "", int number = 0)
+            : CoreMessage(DefaultCoreMessageType::SAVE_STATE, file, number)
         {}
     };
 
     struct LoadStateMessage : CoreMessage
     {
-        LoadStateMessage()
-            : CoreMessage(DefaultCoreMessageType::LOAD_STATE, "")
+        // Can be empty to get the default file
+        LoadStateMessage(std::string file = "", int number = 0)
+            : CoreMessage(DefaultCoreMessageType::LOAD_STATE, file, number)
         {}
     };
 }

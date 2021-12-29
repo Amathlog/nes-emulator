@@ -71,6 +71,8 @@ Screen::~Screen()
     glDeleteBuffers(1, &m_EBO);
     glDeleteProgram(m_programId);
     glDeleteTextures(1, &m_texture);
+
+    DispatchMessageServiceSingleton::GetInstance().Disconnect(m_screenMessageService.get());
 }
 
 void Screen::SetScreenFormat(Format format)

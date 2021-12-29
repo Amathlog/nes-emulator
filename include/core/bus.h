@@ -10,6 +10,7 @@
 #include <core/processor2C02.h>
 #include <core/processor2A03.h>
 #include <core/controller.h>
+#include <filesystem>
 
 namespace NesEmulator
 {      
@@ -38,6 +39,13 @@ namespace NesEmulator
 
         void SerializeTo(Utils::IWriteVisitor& visitor) const override;
         void DeserializeFrom(Utils::IReadVisitor& visitor) override;
+
+        void SaveRAM(Utils::IWriteVisitor& visitor) const;
+        void LoadRAM(Utils::IReadVisitor& visitor);
+
+        std::filesystem::path GetSaveStateFile(std::filesystem::path exeDir, int number);
+        std::filesystem::path GetSaveFile(std::filesystem::path exeDir);
+        std::filesystem::path GetSaveFolder(std::filesystem::path exeDir);
 
     private:
         Processor6502 m_cpu;

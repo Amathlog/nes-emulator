@@ -10,6 +10,8 @@ namespace NesEmulatorGL
     enum DefaultCoreMessageType : CoreMessageType
     {
         LOAD_NEW_GAME,
+        SAVE_GAME,
+        LOAD_SAVE,
         SAVE_STATE,
         LOAD_STATE
     };
@@ -17,12 +19,14 @@ namespace NesEmulatorGL
     class CorePayload : public Payload
     {
     public:
-        CorePayload(CoreMessageType type, std::string data)
+        CorePayload(CoreMessageType type, std::string data, int saveStateNumber = 0)
             : m_type(type)
             , m_data(data)
+            , m_saveStateNumber(saveStateNumber)
         {}
 
         CoreMessageType m_type;
         std::string m_data;
+        int m_saveStateNumber;
     };
 }

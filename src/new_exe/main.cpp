@@ -40,7 +40,7 @@ int main(int argc, char **argv)
     NesEmulator::Bus bus;
 
     // Create the core message service and connect it
-    CoreMessageService messageService(bus);
+    CoreMessageService messageService(bus, dir.string());
     DispatchMessageServiceSingleton::GetInstance().Connect(&messageService);
 
     // Load a new game
@@ -60,6 +60,12 @@ int main(int argc, char **argv)
             mainWindow.Update(bus);
         }
     }
+
+    // Save the game before closing
+    DispatchMessageServiceSingleton::GetInstance().Push(SaveGameMessage());
+
+    // Cleanup
+    DispatchMessageServiceSingleton::GetInstance().Disconnect(&messageService);
 
     return 0;
 }

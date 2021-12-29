@@ -4,6 +4,7 @@
 #include <core/ines.h>
 #include <core/serializable.h>
 #include <cstdint>
+#include <vector>
 
 namespace NesEmulator
 {
@@ -50,14 +51,28 @@ namespace NesEmulator
         // Clear the IRQ state
         virtual void ClearIRQ() {}
 
+        bool HasPersistantMemory() const { return m_header.flag6.hasPersistentMemory; }
+
+        void SaveRAM(Utils::IWriteVisitor& visitor) const
+        {
+            visitor.WriteContainer(m_staticRAM);
+        }
+
+        void LoadRAM(Utils::IReadVisitor& visitor)
+        {
+            visitor.ReadContainer(m_staticRAM);
+        }
+
         void SerializeTo(Utils::IWriteVisitor& visitor) const override
         {
             visitor.WriteValue(m_mirroring);
+            SaveRAM(visitor);
         }
 
         void DeserializeFrom(Utils::IReadVisitor& visitor) override
         {
             visitor.ReadValue(m_mirroring);
+            LoadRAM(visitor);
         }
 
     protected:
@@ -66,5 +81,7 @@ namespace NesEmulator
         uint16_t m_nbChrBanks;
         Mirroring m_originalMirroring;
         Mirroring m_mirroring;
+
+        std::vector<uint8_t> m_staticRAM;
     };
 }

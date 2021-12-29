@@ -38,7 +38,5 @@ namespace NesEmulator
         uint8_t m_currentChrBank1 = 1;
         bool m_32kBModePrgBank = false;
         bool m_8kBModeChrBank = false;
-
-        std::vector<uint8_t> m_staticRAM;
     };
 }
