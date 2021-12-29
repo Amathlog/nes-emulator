@@ -2,6 +2,7 @@
 
 #include <new_exe/messageService/messageService.h>
 #include <vector>
+#include <string>
 
 namespace NesEmulator 
 {
