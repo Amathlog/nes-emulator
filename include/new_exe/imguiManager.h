@@ -24,11 +24,13 @@ namespace NesEmulatorGL
         bool m_showFileExplorer = false;
         bool m_closeRequested = false;
         bool m_showMainMenu = true;
-        bool m_requestSaveState = false;
-        bool m_requestLoadState = false;
 
         Format m_currentFormat = Format::ORIGINAL;
 
         std::array<bool, Format::COUNT> m_changeFormats;
+        
+        inline static constexpr unsigned MAX_SAVE_STATES = 4;
+        std::array<bool, MAX_SAVE_STATES> m_requestSaveState;
+        std::array<bool, MAX_SAVE_STATES> m_requestLoadState;
     };
 }

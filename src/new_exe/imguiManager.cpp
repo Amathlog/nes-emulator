@@ -1,4 +1,5 @@
 #include "new_exe/messageService/messages/screenMessage.h"
+#include <cstddef>
 #include <new_exe/messageService/messageService.h>
 #include <new_exe/messageService/messages/coreMessage.h>
 #include <new_exe/imguiManager.h>
@@ -9,6 +10,7 @@
 
 #include <glad/glad.h>
 #include <ImGuiFileBrowser.h>
+#include <string>
 
 using NesEmulatorGL::ImguiManager;
 using NesEmulatorGL::DispatchMessageServiceSingleton;
@@ -91,8 +93,29 @@ void ImguiManager::Update()
         {
             ImGui::MenuItem("Open File", nullptr, &m_showFileExplorer);
             ImGui::Separator();
-            ImGui::MenuItem("Save state", nullptr, &m_requestSaveState);
-            ImGui::MenuItem("Load state", nullptr, &m_requestLoadState);
+
+            if (ImGui::BeginMenu("State states"))
+            {
+                for (auto i = 0; i < MAX_SAVE_STATES; ++i)
+                {
+                    std::string label = "State State ";
+                    label += std::to_string(i);
+                    ImGui::MenuItem(label.c_str(), nullptr, &m_requestSaveState[i]);
+                }
+                ImGui::EndMenu();
+            }
+
+            if (ImGui::BeginMenu("Load states"))
+            {
+                for (auto i = 0; i < MAX_SAVE_STATES; ++i)
+                {
+                    std::string label = "State State ";
+                    label += std::to_string(i);
+                    ImGui::MenuItem(label.c_str(), nullptr, &m_requestLoadState[i]);
+                }
+                ImGui::EndMenu();
+            }
+
             ImGui::Separator();
             ImGui::MenuItem("Exit", nullptr, &m_closeRequested);
             ImGui::EndMenu();
@@ -148,16 +171,21 @@ void ImguiManager::Update()
         ImGui::End();
     }
 
-    if (m_requestSaveState)
+    for (auto i = 0; i < MAX_SAVE_STATES; ++i)
     {
-        DispatchMessageServiceSingleton::GetInstance().Push(SaveStateMessage("", 0));
-        m_requestSaveState = false;
-    }
+        if (m_requestSaveState[i])
+        {
+            DispatchMessageServiceSingleton::GetInstance().Push(SaveStateMessage("", (int)i));
+            m_requestSaveState[i] = false;
+            break;
+        }
 
-    if (m_requestLoadState)
-    {
-        DispatchMessageServiceSingleton::GetInstance().Push(LoadStateMessage("", 0));
-        m_requestLoadState = false;
+        if (m_requestLoadState[i])
+        {
+            DispatchMessageServiceSingleton::GetInstance().Push(LoadStateMessage("", (int)i));
+            m_requestLoadState[i] = false;
+            break;
+        }
     }
 
     // Check format
