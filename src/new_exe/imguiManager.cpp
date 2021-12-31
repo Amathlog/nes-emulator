@@ -1,4 +1,5 @@
-#include "new_exe/messageService/messages/screenMessage.h"
+#include <new_exe/messageService/messages/audioMessage.h>
+#include <new_exe/messageService/messages/screenMessage.h>
 #include <cstddef>
 #include <new_exe/messageService/messageService.h>
 #include <new_exe/messageService/messages/coreMessage.h>
@@ -33,12 +34,22 @@ ImguiManager::ImguiManager(GLFWwindow* window)
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init("#version 330 core");
 
+    m_changeFormats.fill(false);
+
     // Get the current format
     GetFormatMessage message;
     if (DispatchMessageServiceSingleton::GetInstance().Pull(message))
     {
         m_currentFormat = message.GetTypedPayload().m_format;
         m_changeFormats[(unsigned)m_currentFormat] = true;
+    }
+
+    // Get is sound enabled
+    IsAudioEnabledMessage audioMessage;
+    if (DispatchMessageServiceSingleton::GetInstance().Pull(audioMessage))
+    {
+        m_isSoundEnabled = audioMessage.GetTypedPayload().m_data;
+        m_previousSoundState = m_isSoundEnabled;
     }
 }
 
@@ -121,7 +132,7 @@ void ImguiManager::Update()
             ImGui::EndMenu();
         }
 
-        if (ImGui::BeginMenu("Graphics"))
+        if (ImGui::BeginMenu("Options"))
         {
             if (ImGui::BeginMenu("Screen Format"))
             {
@@ -130,6 +141,7 @@ void ImguiManager::Update()
                 ImGui::MenuItem("4/3", nullptr, &m_changeFormats[(unsigned)Format::FOUR_THIRD]);
                 ImGui::EndMenu();
             }
+            ImGui::MenuItem("Enable Audio", nullptr, &m_isSoundEnabled);
             ImGui::EndMenu();
         }
 
@@ -200,6 +212,13 @@ void ImguiManager::Update()
             DispatchMessageServiceSingleton::GetInstance().Push(ChangeFormatMessage(m_currentFormat));
             break;
         }
+    }
+
+    // Check audio
+    if (m_previousSoundState != m_isSoundEnabled)
+    {
+        m_previousSoundState = m_isSoundEnabled;
+        DispatchMessageServiceSingleton::GetInstance().Push(EnableAudioMessage(m_isSoundEnabled));
     }
 
     ImGui::Render();

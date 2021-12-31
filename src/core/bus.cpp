@@ -140,6 +140,7 @@ void Bus::Clock()
 
     // PPU runs 3 times faster than the CPU
     m_ppu.Clock();
+    m_apu.Clock();
     if (m_clockCounter % 3 == 0)
     {
         if constexpr (verbose)
@@ -433,4 +434,11 @@ std::filesystem::path Bus::GetSaveFolder(std::filesystem::path exeDir)
     exeDir /= "saves";
     exeDir /= hash;
     return exeDir;
+}
+
+void Bus::SetMode(Mode mode)
+{
+    // For now we only support NTSC
+    mode = Mode::NTSC;
+    m_apu.SetMode(mode);
 }

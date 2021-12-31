@@ -1,3 +1,4 @@
+#include <new_exe/audio/nesAudioSystem.h>
 #include <new_exe/messageService/coreMessageService.h>
 #include <new_exe/messageService/messageService.h>
 #include <new_exe/messageService/messages/coreMessage.h>
@@ -14,6 +15,8 @@
 namespace fs = std::filesystem;
 using namespace NesEmulatorGL;
 
+static bool enableAudioByDefault = false;
+
 int main(int argc, char **argv)
 {
     // Load a rom from a file
@@ -27,7 +30,7 @@ int main(int argc, char **argv)
     // Mapper 000 also
     auto path = root / "tests" / "test_roms" / "nestest.nes";
 
-    //path = root / "roms" / "smb.nes";
+    // path = root / "roms" / "zelda1.nes";
 
     // Check the arg, if there is a file to load
     if (argc > 1)
@@ -38,6 +41,9 @@ int main(int argc, char **argv)
     }
 
     NesEmulator::Bus bus;
+
+    NesAudioSystem audioSystem(bus, 1);
+    audioSystem.Enable(enableAudioByDefault);
 
     // Create the core message service and connect it
     CoreMessageService messageService(bus, dir.string());
@@ -50,15 +56,20 @@ int main(int argc, char **argv)
         NesEmulatorGL::MainWindow mainWindow(256*3, 240*3, bus.GetPPU().GetWidth(), bus.GetPPU().GetHeight());
         mainWindow.ConnectController(bus);
 
-        while (!mainWindow.RequestedClose())
-        {
-            do
+        if (audioSystem.Initialize() || !enableAudioByDefault)
+        {            
+            while (!mainWindow.RequestedClose())
             {
-                bus.Clock();
-            } while (!bus.GetPPU().IsFrameComplete());
+                do
+                {
+                    bus.Clock();
+                } while (!bus.GetPPU().IsFrameComplete());
 
-            mainWindow.Update(bus);
+                mainWindow.Update(bus);
+            }
         }
+
+        audioSystem.Shutdown();
     }
 
     // Save the game before closing

@@ -24,6 +24,8 @@ namespace NesEmulatorGL
         bool m_showFileExplorer = false;
         bool m_closeRequested = false;
         bool m_showMainMenu = true;
+        bool m_isSoundEnabled = false;
+        bool m_previousSoundState = false;
 
         Format m_currentFormat = Format::ORIGINAL;
 

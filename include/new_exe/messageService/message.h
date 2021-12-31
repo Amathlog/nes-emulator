@@ -13,6 +13,7 @@ namespace NesEmulatorGL {
         CORE = 0,
         IMGUI = 1,
         SCREEN = 2,
+        AUDIO = 3,
 
         INVALID = 0xFFFFFFFF
     };

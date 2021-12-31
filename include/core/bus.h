@@ -11,6 +11,7 @@
 #include <core/processor2A03.h>
 #include <core/controller.h>
 #include <filesystem>
+#include <MyTonic.h>
 
 namespace NesEmulator
 {      
@@ -46,6 +47,10 @@ namespace NesEmulator
         std::filesystem::path GetSaveStateFile(std::filesystem::path exeDir, int number);
         std::filesystem::path GetSaveFile(std::filesystem::path exeDir);
         std::filesystem::path GetSaveFolder(std::filesystem::path exeDir);
+
+        Tonic::Synth* GetSynth() { return m_apu.GetSynth(); }
+
+        void SetMode(Mode mode);
 
     private:
         Processor6502 m_cpu;

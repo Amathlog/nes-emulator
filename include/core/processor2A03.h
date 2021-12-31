@@ -2,6 +2,8 @@
 #include <core/serializable.h>
 #include <cstdint>
 #include <core/utils/visitor.h>
+#include <MyTonic.h>
+#include <core/constants.h>
 
 namespace NesEmulator
 {
@@ -17,6 +19,10 @@ namespace NesEmulator
         uint8_t sweepShift;
         uint16_t timer;
         uint8_t lengthCounter;
+
+        Tonic::RectWave wave;
+        double frequency = 0.0;
+        double dutyCycle = 0.0;
 
         void Reset()
         {
@@ -177,14 +183,14 @@ namespace NesEmulator
     {
         struct
         {
-            uint8_t dmcInterrupt : 1;
-            uint8_t frameInterrupt : 1;
-            uint8_t unused : 1;
-            uint8_t enableActivedmc : 1;
-            uint8_t enableLengthCounterNoise : 1;
-            uint8_t enableLengthCounterTriangle : 1;
-            uint8_t enableLengthCounterPulse2 : 1;
             uint8_t enableLengthCounterPulse1 : 1;
+            uint8_t enableLengthCounterPulse2 : 1;
+            uint8_t enableLengthCounterTriangle : 1;
+            uint8_t enableLengthCounterNoise : 1;
+            uint8_t enableActivedmc : 1;
+            uint8_t unused : 1;
+            uint8_t frameInterrupt : 1;
+            uint8_t dmcInterrupt : 1;
         };
 
         uint8_t flags;
@@ -194,9 +200,9 @@ namespace NesEmulator
     {
         struct
         {
-            uint8_t mode : 1;
-            uint8_t irqInhibit : 1;
             uint8_t unused : 6;
+            uint8_t irqInhibit : 1;
+            uint8_t mode : 1;
         };
 
         uint8_t flags;
@@ -218,6 +224,9 @@ namespace NesEmulator
         void SerializeTo(Utils::IWriteVisitor& visitor) const override;
         void DeserializeFrom(Utils::IReadVisitor& visitor) override;
 
+        Tonic::Synth* GetSynth() { return &m_synth; }
+        void SetMode(Mode mode) { m_mode = mode ;}
+
     private:
         PulseRegister m_pulseRegister1;
         PulseRegister m_pulseRegister2;
@@ -226,5 +235,10 @@ namespace NesEmulator
         DMCRegister m_dmcRegister;
         APUStatus m_statusRegister;
         FrameCounter m_frameCounterRegister;
+
+        Tonic::Synth m_synth;
+        size_t m_clockCounter = 0;
+        size_t m_frameClockCounter = 0;
+        Mode m_mode; // NTSC or PAL
     };
 }

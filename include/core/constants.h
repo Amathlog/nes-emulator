@@ -7,6 +7,12 @@ using std::size_t;
 
 namespace NesEmulator
 {
+    enum Mode
+    {
+        NTSC,
+        PAL
+    };
+
 namespace Cst
 {
     // Bus addresses
@@ -55,5 +61,8 @@ namespace Cst
     constexpr uint16_t CONTROLLER_2_ADDR = 0x4017;
 
     constexpr uint16_t DMA_REGISTER_ADDR = 0x4014;
+
+    constexpr double NTSC_CPU_FREQUENCY = 1789733.0;
+    constexpr double PAL_CPU_FREQUENCY = 1662607.0; 
 }
 }
