@@ -21,6 +21,8 @@ There is no rom included in this project. You need to dump your original games t
 - OpenGL
 - sfml
 - googletest
+- Tonic
+- RTAudio
 
 ## Implemented features
 - Full support for offical opcodes for the 6502 CPU (and some illegal opcodes)
@@ -31,9 +33,10 @@ There is no rom included in this project. You need to dump your original games t
 - Can play from start to finish some games.
 - Basic load/save state (in memory only)
 - Rom loading in UI
+- Basic sound
 
 ## TODO
-- Sound
+- Support sound fully
 - More mappers
 - Better UI
 - ...
