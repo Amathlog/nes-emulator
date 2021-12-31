@@ -10,7 +10,7 @@ file(GLOB_RECURSE TESTS_SRC
 )
 
 add_executable(NesEmulatorUnitTests ${TESTS_SRC})
-target_link_libraries(NesEmulatorUnitTests NesEmulator_Core)
+target_link_libraries(NesEmulatorUnitTests NesEmulator_Core Tonic)
 target_link_libraries(NesEmulatorUnitTests gtest_main)
 
 #include(GoogleTest)

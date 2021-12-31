@@ -6,6 +6,11 @@ endif(UNIX)
 find_package(OpenGL REQUIRED)
 include_directories(${OPENGL_INCLUDE_DIRS})
 
+# Include RTAudio
+set(RTAUDIO_API_PULSE ON)
+add_subdirectory("${NesEmulator_SOURCE_DIR}/external/rtaudio" rtaudio)
+include_directories("${NesEmulator_SOURCE_DIR}/external/rtaudio")
+
 
 # Include GLUT
 # if(WIN32)
@@ -66,4 +71,4 @@ file(GLOB_RECURSE NEW_EXE_INCLUDE
 
 link_directories(${NesEmulator_SOURCE_DIR}/LibProject/src)
 add_executable(NesEmulatorGL ${NEW_EXE_SRC} ${IMGUI_SRC} ${IMGUI_FE_SRC} ${NEW_EXE_INCLUDE})
-target_link_libraries(NesEmulatorGL NesEmulator_Core ${OPENGL_LIBRARIES} glfw ${CMAKE_DL_LIBS})
+target_link_libraries(NesEmulatorGL NesEmulator_Core ${OPENGL_LIBRARIES} glfw ${CMAKE_DL_LIBS} Tonic rtaudio)

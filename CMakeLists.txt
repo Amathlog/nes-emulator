@@ -20,5 +20,23 @@ set(CMAKE_CXX_FLAGS_DEBUG "-g")
 set(CMAKE_CXX_FLAGS_RELEASE "-O2")
 endif(WIN32)
 
+# Generate Tonic lib
+include_directories(${NesEmulator_SOURCE_DIR}/external/Tonic/src Tonic)
+file(GLOB_RECURSE TONIC_SRC
+    ${NesEmulator_SOURCE_DIR}/external/Tonic/src/*
+)
+
+set(TONIC_DIR ${NesEmulator_SOURCE_DIR}/external/Tonic/src)
+include_directories(${TONIC_DIR})
+include_directories(${NesEmulator_SOURCE_DIR}/external/include)
+file(GLOB_RECURSE TONIC_SRC
+    "${TONIC_DIR}/*"
+)
+
+add_library(Tonic STATIC ${TONIC_SRC})
+if(UNIX)
+  target_compile_options(Tonic PRIVATE "-Wimplicit-int-float-conversion")
+endif(UNIX)
+
 add_subdirectory("src")
 add_subdirectory("tests")
