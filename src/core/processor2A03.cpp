@@ -1,32 +1,18 @@
+#include "core/audio/pulseChannel.h"
 #include "core/constants.h"
 #include <core/processor2A03.h>
 #include <string>
 
 using NesEmulator::Processor2A03;
 
-uint8_t length_table[] = {  10, 254, 20,  2, 40,  4, 80,  6,
-                            160,   8, 60, 10, 14, 12, 26, 14,
-                            12,  16, 24, 18, 48, 20, 96, 22,
-                            192,  24, 72, 26, 16, 28, 32, 30 };
-
 Processor2A03::Processor2A03()
+    : m_synth()
+    , m_pulseChannel1(m_synth, 1)
+    , m_pulseChannel2(m_synth, 2)
+    , m_triangleChannel(m_synth)
 {
     // Create all the waves
-    Tonic::ControlGenerator controlDutyPulse1 = m_synth.addParameter("dutyCyclePulse1");
-    Tonic::ControlGenerator controlFreqPulse1 = m_synth.addParameter("freqPulse1");
-    Tonic::ControlGenerator controlOutputPulse1 = m_synth.addParameter("outputPulse1");
-    Tonic::Generator pulse1 = controlOutputPulse1 * Tonic::RectWave().freq(controlFreqPulse1).pwm(controlDutyPulse1);
-
-    Tonic::ControlGenerator controlDutyPulse2 = m_synth.addParameter("dutyCyclePulse2");
-    Tonic::ControlGenerator controlFreqPulse2 = m_synth.addParameter("freqPulse2");
-    Tonic::ControlGenerator controlOutputPulse2 = m_synth.addParameter("outputPulse2");
-    Tonic::Generator pulse2 = controlOutputPulse2 * Tonic::RectWave().freq(controlFreqPulse2).pwm(controlDutyPulse2);
-
-    Tonic::ControlGenerator controlFreqTriangle = m_synth.addParameter("freqTriangle");
-    Tonic::ControlGenerator controlOutputTriangle = m_synth.addParameter("outputTriangle");
-    Tonic::Generator triangle = controlOutputTriangle * Tonic::TriangleWave().freq(controlFreqTriangle);
-
-    m_synth.setOutputGen(5.0 * (0.00752 * (pulse1 + pulse2) + 0.00851 * triangle));
+    m_synth.setOutputGen(5.0 * (0.00752 * (m_pulseChannel1.GetWave() + m_pulseChannel2.GetWave()) + 0.00851 * m_triangleChannel.GetWave()));
 }
 
 void Processor2A03::Clock()
@@ -72,7 +58,7 @@ void Processor2A03::Clock()
             // TODO
 
             // Update linear counter for triangle
-            m_triangleRegister.ClockLinear(m_statusRegister.enableLengthCounterTriangle);
+            m_triangleChannel.ClockLinear(m_statusRegister.enableLengthCounterTriangle);
         }
 
         if (halfFrame)
@@ -81,60 +67,16 @@ void Processor2A03::Clock()
             // TODO
 
             // Update Length counters
-            m_pulseRegister1.Clock(m_statusRegister.enableLengthCounterPulse1);
-            m_pulseRegister2.Clock(m_statusRegister.enableLengthCounterPulse2);
-            m_triangleRegister.ClockLength(m_statusRegister.enableLengthCounterTriangle);
+            m_pulseChannel1.Clock(m_statusRegister.enableLengthCounterPulse1);
+            m_pulseChannel2.Clock(m_statusRegister.enableLengthCounterPulse2);
+            m_triangleChannel.ClockLength(m_statusRegister.enableLengthCounterTriangle);
         }
 
         double cpuFrequency = (m_mode == Mode::NTSC) ? Cst::NTSC_CPU_FREQUENCY : Cst::PAL_CPU_FREQUENCY;
 
-        // Pulse 1 and 2
-        auto updatePulse = [this, cpuFrequency](PulseRegister& pulseRegister, bool isEnabled, int number)
-        {
-            double newEnableValue = pulseRegister.lengthCounter > 0 ? 1.0 : 0.0;
-            double newFrequency = isEnabled ? cpuFrequency / (16.0 * (double)(pulseRegister.timer + 1)) : 0.0;
-            double newDutyCycle = 0.0;
-            switch (pulseRegister.duty)
-            {
-                case 0:
-                    newDutyCycle = 0.125;
-                    break;
-                case 1:
-                    newDutyCycle = 0.25;
-                    break;
-                case 2:
-                    newDutyCycle = 0.5;
-                    break;
-                case 3:
-                    newDutyCycle = 0.75;
-                    break;
-            }
-
-            if (newFrequency != pulseRegister.frequency || newDutyCycle != pulseRegister.dutyCycle 
-                || newEnableValue != pulseRegister.enableValue)
-            {
-                pulseRegister.frequency = newFrequency;
-                pulseRegister.dutyCycle = newDutyCycle;
-                pulseRegister.enableValue = newEnableValue;
-                m_synth.setParameter(std::string("dutyCyclePulse") + std::to_string(number), newDutyCycle);
-                m_synth.setParameter(std::string("freqPulse") + std::to_string(number), newFrequency);
-                m_synth.setParameter(std::string("outputPulse") + std::to_string(number), newEnableValue);
-            }
-        };
-
-        updatePulse(m_pulseRegister1, m_statusRegister.enableLengthCounterPulse1, 1);
-        updatePulse(m_pulseRegister2, m_statusRegister.enableLengthCounterPulse2, 2);
-
-        // Triangle
-        double newFrequency = m_statusRegister.enableLengthCounterTriangle ? cpuFrequency / (32.0 * (double)(m_triangleRegister.timer + 1)) : 0.0;
-        double newEnableValue = m_triangleRegister.linearCounter > 0 && m_triangleRegister.lengthCounter > 0;
-        if (newFrequency != m_triangleRegister.frequency || newEnableValue != m_triangleRegister.enableValue)
-        {
-            m_triangleRegister.frequency = newFrequency;
-            m_triangleRegister.enableValue = newEnableValue;
-            m_synth.setParameter("freqTriangle", newFrequency);
-            m_synth.setParameter("outputTriangle", newEnableValue);
-        }
+        m_pulseChannel1.Update(cpuFrequency, m_synth);
+        m_pulseChannel2.Update(cpuFrequency, m_synth);
+        m_triangleChannel.Update(cpuFrequency, m_synth);
     }
 
     m_clockCounter++;
@@ -145,7 +87,8 @@ void Processor2A03::WriteCPU(uint16_t addr, uint8_t data)
     if (addr >= 0x4000 && addr <= 0x4007)
     {
         // Pulse
-        PulseRegister& currPulseRegister = ((addr & 0x0004) > 0) ? m_pulseRegister2 : m_pulseRegister1;
+        PulseChannel& currPulseChannel = ((addr & 0x0004) > 0) ? m_pulseChannel2 : m_pulseChannel1;
+        PulseRegister& currPulseRegister = currPulseChannel.GetRegister();
         switch (addr & 0x0003)
         {
         case 0:
@@ -165,7 +108,7 @@ void Processor2A03::WriteCPU(uint16_t addr, uint8_t data)
             break;
         case 3:
             currPulseRegister.lengthCounterReload = (data & 0xF8) >> 3;
-            currPulseRegister.lengthCounter = length_table[currPulseRegister.lengthCounterReload];
+            currPulseChannel.ReloadCounter();
             currPulseRegister.timer = (uint16_t)(data & 0x07) << 8 | (currPulseRegister.timer & 0x00FF);
             break;
         }
@@ -173,24 +116,25 @@ void Processor2A03::WriteCPU(uint16_t addr, uint8_t data)
     else if (addr >= 0x4008 && addr <= 0x400B)
     {
         // Triangle
+        TriangleRegister& currRegister = m_triangleChannel.GetRegister();
         switch (addr & 0x0003)
         {
         case 0:
-            m_triangleRegister.control = data >> 7;
-            m_triangleRegister.linearCounterLoad = data & 0x7F;
+            currRegister.control = data >> 7;
+            currRegister.linearCounterLoad = data & 0x7F;
             break;
         case 1:
             // Unused
             break;
         case 2:
-            m_triangleRegister.timer = (m_triangleRegister.timer & 0xFF00) | (uint16_t)data;
+            currRegister.timer = ( currRegister.timer & 0xFF00) | (uint16_t)data;
             break;
         case 3:
-            m_triangleRegister.lengthCounterLoad = (data & 0xF8) >> 3;
-            m_triangleRegister.lengthCounter = length_table[m_triangleRegister.lengthCounterLoad];
-            m_triangleRegister.timer = (uint16_t)(data & 0x07) << 8 | (m_triangleRegister.timer & 0x00FF);
+            currRegister.lengthCounterLoad = (data & 0xF8) >> 3;
+            m_triangleChannel.ReloadCounter();
+            currRegister.timer = (uint16_t)(data & 0x07) << 8 | (currRegister.timer & 0x00FF);
             // As a side effect, it also set the linear control flag
-            m_triangleRegister.linearControlFlag = 1;
+            m_triangleChannel.SetLinearControlFlag(1);
             break;
         }
     }
@@ -267,9 +211,9 @@ uint8_t Processor2A03::ReadCPU(uint16_t addr)
 
 void Processor2A03::Reset()
 {
-    m_pulseRegister1.Reset();
-    m_pulseRegister2.Reset();
-    m_triangleRegister.Reset();
+    m_pulseChannel1.Reset();
+    m_pulseChannel2.Reset();
+    m_triangleChannel.Reset();
     m_noiseRegister.Reset();
     m_dmcRegister.Reset();
     m_statusRegister.flags = 0;
@@ -280,9 +224,9 @@ void Processor2A03::Reset()
 
 void Processor2A03::SerializeTo(Utils::IWriteVisitor& visitor) const
 {
-    m_pulseRegister1.SerializeTo(visitor);
-    m_pulseRegister2.SerializeTo(visitor);
-    m_triangleRegister.SerializeTo(visitor);
+    m_pulseChannel1.SerializeTo(visitor);
+    m_pulseChannel2.SerializeTo(visitor);
+    m_triangleChannel.SerializeTo(visitor);
     m_noiseRegister.SerializeTo(visitor);
     m_dmcRegister.SerializeTo(visitor);
 
@@ -294,9 +238,9 @@ void Processor2A03::SerializeTo(Utils::IWriteVisitor& visitor) const
 
 void Processor2A03::DeserializeFrom(Utils::IReadVisitor& visitor)
 {
-    m_pulseRegister1.DeserializeFrom(visitor);
-    m_pulseRegister2.DeserializeFrom(visitor);
-    m_triangleRegister.DeserializeFrom(visitor);
+    m_pulseChannel1.DeserializeFrom(visitor);
+    m_pulseChannel2.DeserializeFrom(visitor);
+    m_triangleChannel.DeserializeFrom(visitor);
     m_noiseRegister.DeserializeFrom(visitor);
     m_dmcRegister.DeserializeFrom(visitor);
 
