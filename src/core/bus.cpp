@@ -192,6 +192,11 @@ void Bus::Clock()
         m_cpu.NMI();
     }
 
+    if (m_apu.ShouldIRQ())
+    {
+        m_cpu.IRQ();
+    }
+
     if (m_cartridge->GetMapper()->ShouldIRQ())
     {
         m_cartridge->GetMapper()->ClearIRQ();

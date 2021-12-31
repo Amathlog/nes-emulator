@@ -1,41 +1,97 @@
 #include "core/constants.h"
 #include <core/processor2A03.h>
+#include <string>
 
 using NesEmulator::Processor2A03;
 
+uint8_t length_table[] = {  10, 254, 20,  2, 40,  4, 80,  6,
+                            160,   8, 60, 10, 14, 12, 26, 14,
+                            12,  16, 24, 18, 48, 20, 96, 22,
+                            192,  24, 72, 26, 16, 28, 32, 30 };
+
+Processor2A03::Processor2A03()
+{
+    // Create all the waves
+    Tonic::ControlGenerator controlDutyPulse1 = m_synth.addParameter("dutyCyclePulse1");
+    Tonic::ControlGenerator controlFreqPulse1 = m_synth.addParameter("freqPulse1");
+    Tonic::ControlGenerator controlOutputPulse1 = m_synth.addParameter("outputPulse1");
+    Tonic::Generator pulse1 = controlOutputPulse1 * Tonic::RectWave().freq(controlFreqPulse1).pwm(controlDutyPulse1);
+
+    Tonic::ControlGenerator controlDutyPulse2 = m_synth.addParameter("dutyCyclePulse2");
+    Tonic::ControlGenerator controlFreqPulse2 = m_synth.addParameter("freqPulse2");
+    Tonic::ControlGenerator controlOutputPulse2 = m_synth.addParameter("outputPulse2");
+    Tonic::Generator pulse2 = controlOutputPulse2 * Tonic::RectWave().freq(controlFreqPulse2).pwm(controlDutyPulse2);
+
+    Tonic::ControlGenerator controlFreqTriangle = m_synth.addParameter("freqTriangle");
+    Tonic::ControlGenerator controlOutputTriangle = m_synth.addParameter("outputTriangle");
+    Tonic::Generator triangle = controlOutputTriangle * Tonic::TriangleWave().freq(controlFreqTriangle);
+
+    m_synth.setOutputGen(5.0 * (0.00752 * (pulse1 + pulse2) + 0.00851 * triangle));
+}
+
 void Processor2A03::Clock()
 {
-    bool bQuarterFrameClock = false;
-    bool bHalfFrameClock = false;
+    bool quarterFrame = false;
+    bool halfFrame = false;
 
     if (m_clockCounter % 6 == 0)
     {
         m_frameClockCounter++;
 
-        if (m_frameClockCounter == 3729 || m_frameClockCounter == 7457 
-        || m_frameClockCounter == 11186 || m_frameClockCounter == 14916)
+        // Step 1 and Step 3 of the sequencer
+        if (m_frameClockCounter == Cst::APU_SEQUENCER_STEP1 || m_frameClockCounter == Cst::APU_SEQUENCER_STEP3)
         {
-            bQuarterFrameClock = true;
-            bHalfFrameClock = m_frameClockCounter == 7457 || m_frameClockCounter == 14916;
-            if (m_frameClockCounter == 14916)
-                m_frameClockCounter = 0;
+            quarterFrame = true;
         }
 
-        if (bQuarterFrameClock)
+        // Step 2 of the sequencer
+        if (m_frameClockCounter == Cst::APU_SEQUENCER_STEP2)
         {
+            quarterFrame = true;
+            halfFrame = true;
+        }
+
+        // In case of 4-Step, reset is on step 4. In case of 5-Step, reset is on step 5
+        // and there is nothing done on step4
+        // Also, we raise the IRQ flag in 4-Step only
+        if ((m_frameCounterRegister.mode == 0 && m_frameClockCounter == Cst::APU_SEQUENCER_STEP4) ||
+            (m_frameCounterRegister.mode == 1 && m_frameClockCounter == Cst::APU_SEQUENCER_STEP5))
+        {
+            // 4-step
+            quarterFrame = true;
+            halfFrame = true;
+            m_frameClockCounter = 0;
+
+            if (m_frameCounterRegister.mode == 0)
+                m_IRQFlag = m_frameCounterRegister.irqInhibit == 0;
+        }
+
+        if (quarterFrame)
+        {
+            // Update volume enveloppe
             // TODO
+
+            // Update linear counter for triangle
+            m_triangleRegister.ClockLinear(m_statusRegister.enableLengthCounterTriangle);
         }
 
-        if (bHalfFrameClock)
+        if (halfFrame)
         {
+            // Update sweep
             // TODO
+
+            // Update Length counters
+            m_pulseRegister1.Clock(m_statusRegister.enableLengthCounterPulse1);
+            m_pulseRegister2.Clock(m_statusRegister.enableLengthCounterPulse2);
+            m_triangleRegister.ClockLength(m_statusRegister.enableLengthCounterTriangle);
         }
 
-        bool hasChanged = false;
+        double cpuFrequency = (m_mode == Mode::NTSC) ? Cst::NTSC_CPU_FREQUENCY : Cst::PAL_CPU_FREQUENCY;
 
-        auto updatePulse = [this](PulseRegister& pulseRegister, bool isEnabled)
+        // Pulse 1 and 2
+        auto updatePulse = [this, cpuFrequency](PulseRegister& pulseRegister, bool isEnabled, int number)
         {
-            double cpuFrequency = (m_mode == Mode::NTSC) ? Cst::NTSC_CPU_FREQUENCY : Cst::PAL_CPU_FREQUENCY;
+            double newEnableValue = pulseRegister.lengthCounter > 0 ? 1.0 : 0.0;
             double newFrequency = isEnabled ? cpuFrequency / (16.0 * (double)(pulseRegister.timer + 1)) : 0.0;
             double newDutyCycle = 0.0;
             switch (pulseRegister.duty)
@@ -54,23 +110,30 @@ void Processor2A03::Clock()
                     break;
             }
 
-            if (newFrequency != pulseRegister.frequency || newDutyCycle != pulseRegister.dutyCycle)
+            if (newFrequency != pulseRegister.frequency || newDutyCycle != pulseRegister.dutyCycle 
+                || newEnableValue != pulseRegister.enableValue)
             {
                 pulseRegister.frequency = newFrequency;
                 pulseRegister.dutyCycle = newDutyCycle;
-                pulseRegister.wave = Tonic::RectWave().freq(newFrequency).pwm(newDutyCycle);
-                return true;
+                pulseRegister.enableValue = newEnableValue;
+                m_synth.setParameter(std::string("dutyCyclePulse") + std::to_string(number), newDutyCycle);
+                m_synth.setParameter(std::string("freqPulse") + std::to_string(number), newFrequency);
+                m_synth.setParameter(std::string("outputPulse") + std::to_string(number), newEnableValue);
             }
-
-            return false;
         };
 
-        hasChanged |= updatePulse(m_pulseRegister1, m_statusRegister.enableLengthCounterPulse1);
-        hasChanged |= updatePulse(m_pulseRegister2, m_statusRegister.enableLengthCounterPulse2);
+        updatePulse(m_pulseRegister1, m_statusRegister.enableLengthCounterPulse1, 1);
+        updatePulse(m_pulseRegister2, m_statusRegister.enableLengthCounterPulse2, 2);
 
-        if (hasChanged)
+        // Triangle
+        double newFrequency = m_statusRegister.enableLengthCounterTriangle ? cpuFrequency / (32.0 * (double)(m_triangleRegister.timer + 1)) : 0.0;
+        double newEnableValue = m_triangleRegister.linearCounter > 0 && m_triangleRegister.lengthCounter > 0;
+        if (newFrequency != m_triangleRegister.frequency || newEnableValue != m_triangleRegister.enableValue)
         {
-            m_synth.setOutputGen(m_pulseRegister1.wave + m_pulseRegister2.wave);
+            m_triangleRegister.frequency = newFrequency;
+            m_triangleRegister.enableValue = newEnableValue;
+            m_synth.setParameter("freqTriangle", newFrequency);
+            m_synth.setParameter("outputTriangle", newEnableValue);
         }
     }
 
@@ -101,7 +164,8 @@ void Processor2A03::WriteCPU(uint16_t addr, uint8_t data)
             currPulseRegister.timer = (currPulseRegister.timer & 0xFF00) | (uint16_t)data;
             break;
         case 3:
-            currPulseRegister.lengthCounter = (data & 0xF8) >> 3;
+            currPulseRegister.lengthCounterReload = (data & 0xF8) >> 3;
+            currPulseRegister.lengthCounter = length_table[currPulseRegister.lengthCounterReload];
             currPulseRegister.timer = (uint16_t)(data & 0x07) << 8 | (currPulseRegister.timer & 0x00FF);
             break;
         }
@@ -123,7 +187,10 @@ void Processor2A03::WriteCPU(uint16_t addr, uint8_t data)
             break;
         case 3:
             m_triangleRegister.lengthCounterLoad = (data & 0xF8) >> 3;
+            m_triangleRegister.lengthCounter = length_table[m_triangleRegister.lengthCounterLoad];
             m_triangleRegister.timer = (uint16_t)(data & 0x07) << 8 | (m_triangleRegister.timer & 0x00FF);
+            // As a side effect, it also set the linear control flag
+            m_triangleRegister.linearControlFlag = 1;
             break;
         }
     }
@@ -178,7 +245,10 @@ void Processor2A03::WriteCPU(uint16_t addr, uint8_t data)
     else if (addr == 0x4017)
     {
         // Frame counter
-        m_frameCounterRegister.flags = data;
+        m_frameCounterRegister.flags = data & 0xC0;
+
+        if (m_frameCounterRegister.irqInhibit)
+            m_IRQFlag = false;
     }
 }
 
@@ -187,6 +257,8 @@ uint8_t Processor2A03::ReadCPU(uint16_t addr)
     if (addr == 0x4015)
     {
         // Status
+        // Also by reading this register, we clear the IRQFlag
+        m_IRQFlag = false;
         return m_statusRegister.flags;
     }
 

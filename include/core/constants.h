@@ -64,5 +64,12 @@ namespace Cst
 
     constexpr double NTSC_CPU_FREQUENCY = 1789733.0;
     constexpr double PAL_CPU_FREQUENCY = 1662607.0; 
+
+    // APU specific
+    constexpr uint16_t APU_SEQUENCER_STEP1 = 3729;
+    constexpr uint16_t APU_SEQUENCER_STEP2 = 7457;
+    constexpr uint16_t APU_SEQUENCER_STEP3 = 11186;
+    constexpr uint16_t APU_SEQUENCER_STEP4 = 14915;
+    constexpr uint16_t APU_SEQUENCER_STEP5 = 18640;
 }
 }

@@ -230,6 +230,8 @@ void ImguiManager::HandleFileExplorer()
     if (m_showFileExplorer)
         ImGui::OpenPopup("Open File");
 
+    m_showFileExplorer = false;
+
     static imgui_addons::ImGuiFileBrowser fileDialog;
 
     if(fileDialog.showFileDialog("Open File", imgui_addons::ImGuiFileBrowser::DialogMode::OPEN, ImVec2(0, 0), ".nes"))
@@ -237,7 +239,5 @@ void ImguiManager::HandleFileExplorer()
         // Load a new file
         if (!fileDialog.selected_path.empty())
             DispatchMessageServiceSingleton::GetInstance().Push(LoadNewGameMessage(fileDialog.selected_path));
-
-        m_showFileExplorer = false;
-    }    
+    }
 }
