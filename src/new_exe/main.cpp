@@ -15,8 +15,8 @@
 namespace fs = std::filesystem;
 using namespace NesEmulatorGL;
 
-static bool enableAudioByDefault = false;
-static bool syncWithAudio = false;
+static bool enableAudioByDefault = true;
+static bool syncWithAudio = true;
 
 int main(int argc, char **argv)
 {
@@ -43,7 +43,7 @@ int main(int argc, char **argv)
 
     NesEmulator::Bus bus;
 
-    NesAudioSystem audioSystem(bus, syncWithAudio, 1);
+    NesAudioSystem audioSystem(bus, syncWithAudio, 2);
     audioSystem.Enable(enableAudioByDefault);
 
     bus.SetSampleFrequency(audioSystem.GetSampleRate());

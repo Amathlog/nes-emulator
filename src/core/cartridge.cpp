@@ -22,7 +22,7 @@ Cartridge::Cartridge(IReadVisitor& visitor)
 
     // Check that the first bytes are the one we expect. If not, perhaps it is not the right
     // format so abort there
-    assert(strncmp(header.nesName, NesEmulator::Cst::NES_HEADER, 4) == 0 && "The NES header is what we expected. Aborting.");
+    assert(header.isValid() && "The NES header is what we expected. Aborting.");
 
     // If there is trainer data, ignore it
     if (header.flag6.hasTrainerData)

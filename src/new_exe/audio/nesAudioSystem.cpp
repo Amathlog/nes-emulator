@@ -10,7 +10,7 @@ NesAudioSystem::NesAudioSystem(NesEmulator::Bus& bus, bool syncWithAudio, unsign
     , m_bus(bus)
     , m_syncWithAudio(syncWithAudio)
 {
-    Tonic::setSampleRate(m_sampleRate);
+    Tonic::setSampleRate((float)m_sampleRate);
 }
 
 int NesAudioSystem::RenderCallback(void *outputBuffer, void* /*inputBuffer*/, unsigned int nBufferFrames,
@@ -29,6 +29,8 @@ int NesAudioSystem::RenderCallback(void *outputBuffer, void* /*inputBuffer*/, un
             //     DispatchMessageServiceSingleton::GetInstance().Push(RenderMessage());
         }
     }
-    m_bus.GetSynth()->fillBufferOfFloats((float*)outputBuffer, nBufferFrames, 1);
+
+    m_bus.GetSynth()->fillBufferOfFloats((float*)outputBuffer, nBufferFrames, m_nbChannels);
+
     return 0;
 }

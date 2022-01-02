@@ -81,7 +81,7 @@ bool CoreMessageService::SaveState(const std::string& file, int number)
     std::string finalFile = file;
     if (file.empty())
     {
-        finalFile = m_bus.GetSaveStateFile(m_exePath, number);
+        finalFile = m_bus.GetSaveStateFile(m_exePath, number).string();
     }
 
     if (finalFile.empty())
@@ -106,7 +106,7 @@ bool CoreMessageService::LoadState(const std::string& file, int number)
     std::string finalFile = file;
     if (file.empty())
     {
-        finalFile = m_bus.GetSaveStateFile(m_exePath, number);
+        finalFile = m_bus.GetSaveStateFile(m_exePath, number).string();
     }
 
     if (finalFile.empty())
@@ -130,7 +130,7 @@ bool CoreMessageService::SaveGame(const std::string& file)
     std::string finalFile = file;
     if (file.empty())
     {
-        finalFile = m_bus.GetSaveFile(m_exePath);
+        finalFile = m_bus.GetSaveFile(m_exePath).string();
     }
 
     // Nothing to do
@@ -155,7 +155,7 @@ bool CoreMessageService::LoadSaveGame(const std::string& file)
     std::string finalFile = file;
     if (file.empty())
     {
-        finalFile = m_bus.GetSaveFile(m_exePath);
+        finalFile = m_bus.GetSaveFile(m_exePath).string();
     }
 
     if (finalFile.empty())

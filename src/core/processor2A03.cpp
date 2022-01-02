@@ -12,7 +12,7 @@ Processor2A03::Processor2A03()
     , m_triangleChannel(m_synth)
 {
     // Create all the waves
-    m_synth.setOutputGen(5.0 * (0.00752 * (m_pulseChannel1.GetWave() + m_pulseChannel2.GetWave()) + 0.00851 * m_triangleChannel.GetWave()));
+    m_synth.setOutputGen(5.0 * (0.00752f * (m_pulseChannel1.GetWave() + m_pulseChannel2.GetWave()) + 0.00851f * m_triangleChannel.GetWave()));
 }
 
 void Processor2A03::Clock()

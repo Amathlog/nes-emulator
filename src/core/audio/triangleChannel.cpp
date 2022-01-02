@@ -116,8 +116,8 @@ void TriangleChannel::Update(double cpuFrequency, Tonic::Synth& synth)
     {
         m_frequency = newFrequency;
         m_enableValue = newEnableValue;
-        synth.setParameter(frequencyParameterName, newFrequency);
-        synth.setParameter(outputParameterName, newEnableValue);
+        synth.setParameter(frequencyParameterName, (float)newFrequency);
+        synth.setParameter(outputParameterName, (float)newEnableValue);
     }
 }
 

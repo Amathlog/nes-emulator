@@ -171,7 +171,7 @@ void PulseChannel::Update(double cpuFrequency, Tonic::Synth& synth)
     // Enveloppe output
     if (m_enveloppe.updated)
     {
-        synth.setParameter(GetEnveloppeOutputParameterName(), (double)(m_enveloppe.output - 1) / 16.0);
+        synth.setParameter(GetEnveloppeOutputParameterName(), (float)(m_enveloppe.output - 1) / 16.0f);
         m_enveloppe.updated = false;
     }
 
@@ -180,9 +180,9 @@ void PulseChannel::Update(double cpuFrequency, Tonic::Synth& synth)
         m_frequency = newFrequency;
         m_dutyCycle = newDutyCycle;
         m_enableValue = newEnableValue;
-        synth.setParameter(GetDutyCycleParameterName(), newDutyCycle);
-        synth.setParameter(GetFrequencyParameterName(), newFrequency);
-        synth.setParameter(GetOutputParameterName(), newEnableValue);
+        synth.setParameter(GetDutyCycleParameterName(), (float)newDutyCycle);
+        synth.setParameter(GetFrequencyParameterName(), (float)newFrequency);
+        synth.setParameter(GetOutputParameterName(), (float)newEnableValue);
     }
 }
 
