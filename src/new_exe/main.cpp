@@ -16,6 +16,7 @@ namespace fs = std::filesystem;
 using namespace NesEmulatorGL;
 
 static bool enableAudioByDefault = false;
+static bool syncWithAudio = false;
 
 int main(int argc, char **argv)
 {
@@ -30,7 +31,7 @@ int main(int argc, char **argv)
     // Mapper 000 also
     auto path = root / "tests" / "test_roms" / "nestest.nes";
 
-    // path = root / "roms" / "zelda1.nes";
+    // path = root / "roms" / "smb.nes";
 
     // Check the arg, if there is a file to load
     if (argc > 1)
@@ -42,8 +43,10 @@ int main(int argc, char **argv)
 
     NesEmulator::Bus bus;
 
-    NesAudioSystem audioSystem(bus, 1);
+    NesAudioSystem audioSystem(bus, syncWithAudio, 1);
     audioSystem.Enable(enableAudioByDefault);
+
+    bus.SetSampleFrequency(audioSystem.GetSampleRate());
 
     // Create the core message service and connect it
     CoreMessageService messageService(bus, dir.string());
@@ -60,12 +63,14 @@ int main(int argc, char **argv)
         {            
             while (!mainWindow.RequestedClose())
             {
-                do
+                if (!syncWithAudio)
                 {
-                    bus.Clock();
-                } while (!bus.GetPPU().IsFrameComplete());
-
-                mainWindow.Update(bus);
+                    do
+                    {
+                        bus.Clock();
+                    } while (!bus.GetPPU().IsFrameComplete());
+                }
+                mainWindow.Update(bus, !syncWithAudio);
             }
         }
 

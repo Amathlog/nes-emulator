@@ -28,7 +28,7 @@ namespace NesEmulatorGL
         MainWindow(unsigned width, unsigned height, unsigned internalResWidth, unsigned internalResHeight, int framerate = NTSC_FRAMERATE);
         ~MainWindow();
 
-        void Update(NesEmulator::Bus& bus);
+        void Update(NesEmulator::Bus& bus, bool waitFramerate = true);
 
         GLFWwindow* GetWindow() {return m_window;}
         bool RequestedClose();

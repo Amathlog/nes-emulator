@@ -34,7 +34,9 @@ namespace NesEmulator
         void ConnectController(const std::shared_ptr<Controller>& controller, uint8_t controllerIndex);
         void DisconnectController(uint8_t controllerIndex);
 
-        void Clock();
+        // Clock will advance 1 PPU clock. Will return true if an audio sample is ready
+        bool Clock();
+
         void Reset();
         void Verbose();
 
@@ -51,6 +53,7 @@ namespace NesEmulator
         Tonic::Synth* GetSynth() { return m_apu.GetSynth(); }
 
         void SetMode(Mode mode);
+        void SetSampleFrequency(unsigned sampleFrequency);
 
     private:
         Processor6502 m_cpu;
@@ -70,7 +73,13 @@ namespace NesEmulator
         uint8_t m_dmaAddr = 0x00;
         uint8_t m_dmaData = 0x00;
 
+        Mode m_mode = Mode::NTSC;
+
         bool m_dmaTransfer = false;
         bool m_dmaWaitForCPU = true;
+        
+        double m_audioTime = 0.0;
+        double m_audioTimePerSystemSample = 0.0;
+        double m_audioTimePerPPUClock = 0.0;
     };
 }

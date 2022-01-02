@@ -11,6 +11,7 @@ namespace NesEmulatorGL
         CHANGE_FORMAT,
         RESIZE,
         GET_FORMAT,
+        RENDER
     };
 
     enum Format : unsigned

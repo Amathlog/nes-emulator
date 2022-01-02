@@ -1,6 +1,7 @@
 #pragma once
 
 #include <new_exe/messageService/messageService.h>
+#include <core/bus.h>
 
 namespace NesEmulatorGL 
 {

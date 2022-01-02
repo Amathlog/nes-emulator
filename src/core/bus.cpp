@@ -25,6 +25,14 @@ Bus::Bus()
 
     // Connect CPU to this bus
     m_cpu.ConnectBus(this);
+
+    // Default mode
+    SetMode(Mode::NTSC);
+}
+
+void Bus::SetSampleFrequency(unsigned int sampleFrequency)
+{
+    m_audioTimePerSystemSample = 1.0 / (double)sampleFrequency;
 }
 
 void Bus::WriteCPU(uint16_t address, uint8_t data)
@@ -134,7 +142,7 @@ void Bus::Verbose()
     std::cout << " CYC:" << m_cpu.GetNbOfTotalCycles() << std::endl;
 }
 
-void Bus::Clock()
+bool Bus::Clock()
 {
     constexpr bool verbose = false;
 
@@ -203,12 +211,24 @@ void Bus::Clock()
         m_cpu.IRQ();
     }
 
+    // Synchronizing with audio
+    bool sampleReady = false;
+    m_audioTime += m_audioTimePerPPUClock;
+    if (m_audioTime >= m_audioTimePerSystemSample)
+    {
+        sampleReady = true;
+        m_audioTime -= m_audioTimePerSystemSample;
+    }
+
     m_clockCounter++;
+
+    return sampleReady;
 }
 
 void Bus::Reset()
 {
     m_clockCounter = 0;
+    m_audioTime = 0.0;
     m_cpu.Reset();
     m_ppu.Reset();
     m_apu.Reset();
@@ -446,4 +466,5 @@ void Bus::SetMode(Mode mode)
     // For now we only support NTSC
     mode = Mode::NTSC;
     m_apu.SetMode(mode);
+    m_audioTimePerPPUClock = 1.0 / (mode == Mode::NTSC ? Cst::NTSC_PPU_FREQUENCY : Cst::PAL_PPU_FREQUENCY);
 }

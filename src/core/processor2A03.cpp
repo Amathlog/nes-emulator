@@ -55,7 +55,8 @@ void Processor2A03::Clock()
         if (quarterFrame)
         {
             // Update volume enveloppe
-            // TODO
+            m_pulseChannel1.ClockEnveloppe();
+            m_pulseChannel2.ClockEnveloppe();
 
             // Update linear counter for triangle
             m_triangleChannel.ClockLinear(m_statusRegister.enableLengthCounterTriangle);
@@ -63,10 +64,7 @@ void Processor2A03::Clock()
 
         if (halfFrame)
         {
-            // Update sweep
-            // TODO
-
-            // Update Length counters
+            // Update Length counters and sweep
             m_pulseChannel1.Clock(m_statusRegister.enableLengthCounterPulse1);
             m_pulseChannel2.Clock(m_statusRegister.enableLengthCounterPulse2);
             m_triangleChannel.ClockLength(m_statusRegister.enableLengthCounterTriangle);
@@ -79,6 +77,9 @@ void Processor2A03::Clock()
         m_triangleChannel.Update(cpuFrequency, m_synth);
     }
 
+    m_pulseChannel1.Track();
+    m_pulseChannel2.Track();
+
     m_clockCounter++;
 }
 
@@ -89,19 +90,22 @@ void Processor2A03::WriteCPU(uint16_t addr, uint8_t data)
         // Pulse
         PulseChannel& currPulseChannel = ((addr & 0x0004) > 0) ? m_pulseChannel2 : m_pulseChannel1;
         PulseRegister& currPulseRegister = currPulseChannel.GetRegister();
+        Sweep& currSweep = currPulseChannel.GetSweep();
+        Enveloppe& currEnv = currPulseChannel.GetEnveloppe();
         switch (addr & 0x0003)
         {
         case 0:
             currPulseRegister.duty = data >> 6;
             currPulseRegister.enveloppeLoop = (data & 0x20) > 0;
-            currPulseRegister.constantVolume = (data & 0x10) > 0;
-            currPulseRegister.volumeEnveloppe = (data & 0x0F);
+            currEnv.disable = (data & 0x10) > 0;
+            currEnv.volume = (data & 0x0F);
             break;
         case 1:
-            currPulseRegister.sweepEnable = (data & 0x80) > 0;
-            currPulseRegister.sweepPeriod = (data & 0x70) >> 4;
-            currPulseRegister.sweepNegate = (data & 0x08) > 0;
-            currPulseRegister.sweepShift = (data & 0x07);
+            currSweep.enabled = (data & 0x80) > 0;
+            currSweep.period = (data & 0x70) >> 4;
+            currSweep.down = (data & 0x08) > 0;
+            currSweep.shift = (data & 0x07);
+            currSweep.reload = true;
             break;
         case 2:
             currPulseRegister.timer = (currPulseRegister.timer & 0xFF00) | (uint16_t)data;
@@ -110,6 +114,7 @@ void Processor2A03::WriteCPU(uint16_t addr, uint8_t data)
             currPulseRegister.lengthCounterReload = (data & 0xF8) >> 3;
             currPulseChannel.ReloadCounter();
             currPulseRegister.timer = (uint16_t)(data & 0x07) << 8 | (currPulseRegister.timer & 0x00FF);
+            currEnv.start = true;
             break;
         }
     }

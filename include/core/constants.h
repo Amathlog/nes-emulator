@@ -64,7 +64,9 @@ namespace Cst
     constexpr uint16_t DMA_REGISTER_ADDR = 0x4014;
 
     constexpr double NTSC_CPU_FREQUENCY = 1789733.0;
-    constexpr double PAL_CPU_FREQUENCY = 1662607.0; 
+    constexpr double NTSC_PPU_FREQUENCY = NTSC_CPU_FREQUENCY * 3.0;
+    constexpr double PAL_CPU_FREQUENCY = 1662607.0;
+    constexpr double PAL_PPU_FREQUENCY = PAL_CPU_FREQUENCY * 3.0;
 
     // APU specific
     constexpr uint16_t APU_SEQUENCER_STEP1 = 3729;

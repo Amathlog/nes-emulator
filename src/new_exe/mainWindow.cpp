@@ -79,7 +79,7 @@ MainWindow::~MainWindow()
     glfwTerminate();
 }
 
-void MainWindow::Update(NesEmulator::Bus& bus)
+void MainWindow::Update(NesEmulator::Bus& bus, bool waitFramerate)
 {
     if (RequestedClose())
         return;
@@ -112,7 +112,7 @@ void MainWindow::Update(NesEmulator::Bus& bus)
     auto currentTime = std::chrono::high_resolution_clock::now();
     auto diff = std::chrono::duration_cast<std::chrono::microseconds>((currentTime - m_lastUpdateTime)).count();
 
-    if (diff < m_frametimeUS)
+    if (waitFramerate && diff < m_frametimeUS)
     {
         std::this_thread::sleep_for(std::chrono::microseconds(m_frametimeUS - diff));
     }
