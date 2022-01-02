@@ -2,6 +2,8 @@
 
 #include <new_exe/messageService/messages/screenPayload.h>
 #include <memory>
+#include <vector>
+#include <cstdint>
 
 namespace NesEmulator
 {
@@ -24,6 +26,8 @@ namespace NesEmulatorGL
         void OnScreenResized(int width, int height);
         void SetScreenFormat(Format format);
         Format GetScreenFormat() const { return m_format; }
+
+        void UpdateScreen(const uint8_t* data, size_t size);
 
     private:
         bool CreateShader();
@@ -49,5 +53,8 @@ namespace NesEmulatorGL
         unsigned m_texture;
 
         std::unique_ptr<ScreenMessageService> m_screenMessageService;
+        std::vector<uint8_t> m_screenBuffer;
+        bool m_screenUpdated;
+        mutable std::mutex m_lock;
     };
 }

@@ -26,7 +26,7 @@ namespace {
     } 
 }
 
-MainWindow::MainWindow(unsigned width, unsigned height, unsigned internalResWidth, unsigned internalResHeight, int framerate)
+MainWindow::MainWindow(const char* name, unsigned width, unsigned height, unsigned internalResWidth, unsigned internalResHeight, int framerate)
 {
     SetFramerate(framerate);
 
@@ -39,7 +39,7 @@ MainWindow::MainWindow(unsigned width, unsigned height, unsigned internalResWidt
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 #endif
 
-    m_window = glfwCreateWindow(width, height, "Renderer", nullptr, nullptr);
+    m_window = glfwCreateWindow(width, height, name, nullptr, nullptr);
     if (m_window == nullptr)
     {
         std::cout << "Failed to create GLFW window" << std::endl;
@@ -79,7 +79,7 @@ MainWindow::~MainWindow()
     glfwTerminate();
 }
 
-void MainWindow::Update(NesEmulator::Bus& bus, bool waitFramerate)
+void MainWindow::Update(NesEmulator::Bus& bus, bool externalSync)
 {
     if (RequestedClose())
         return;
@@ -103,6 +103,9 @@ void MainWindow::Update(NesEmulator::Bus& bus, bool waitFramerate)
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
 
+    if (!externalSync)
+        m_screen->UpdateScreen(bus.GetPPU().GetScreen(), bus.GetPPU().GetHeight() * bus.GetPPU().GetWidth());
+
     m_screen->Update(bus);
     m_imguiManager->Update();
 
@@ -112,7 +115,7 @@ void MainWindow::Update(NesEmulator::Bus& bus, bool waitFramerate)
     auto currentTime = std::chrono::high_resolution_clock::now();
     auto diff = std::chrono::duration_cast<std::chrono::microseconds>((currentTime - m_lastUpdateTime)).count();
 
-    if (waitFramerate && diff < m_frametimeUS)
+    if (!externalSync && diff < m_frametimeUS)
     {
         std::this_thread::sleep_for(std::chrono::microseconds(m_frametimeUS - diff));
     }

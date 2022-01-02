@@ -48,15 +48,17 @@ int main(int argc, char **argv)
 
     bus.SetSampleFrequency(audioSystem.GetSampleRate());
 
+    DispatchMessageServiceSingleton& singleton = DispatchMessageServiceSingleton::GetInstance();
+
     // Create the core message service and connect it
     CoreMessageService messageService(bus, dir.string());
-    DispatchMessageServiceSingleton::GetInstance().Connect(&messageService);
+    singleton.Connect(&messageService);
 
     // Load a new game
-    DispatchMessageServiceSingleton::GetInstance().Push(LoadNewGameMessage(path.string()));
+    singleton.Push(LoadNewGameMessage(path.string()));
 
     {
-        NesEmulatorGL::MainWindow mainWindow(256*3, 240*3, bus.GetPPU().GetWidth(), bus.GetPPU().GetHeight());
+        NesEmulatorGL::MainWindow mainWindow("NES Emulator", 256*3, 240*3, bus.GetPPU().GetWidth(), bus.GetPPU().GetHeight());
         mainWindow.ConnectController(bus);
 
         if (audioSystem.Initialize() || !enableAudioByDefault)
@@ -70,7 +72,8 @@ int main(int argc, char **argv)
                         bus.Clock();
                     } while (!bus.GetPPU().IsFrameComplete());
                 }
-                mainWindow.Update(bus, !syncWithAudio);
+
+                mainWindow.Update(bus, syncWithAudio);
             }
         }
 
@@ -78,10 +81,10 @@ int main(int argc, char **argv)
     }
 
     // Save the game before closing
-    DispatchMessageServiceSingleton::GetInstance().Push(SaveGameMessage());
+    singleton.Push(SaveGameMessage());
 
     // Cleanup
-    DispatchMessageServiceSingleton::GetInstance().Disconnect(&messageService);
+    singleton.Disconnect(&messageService);
 
     return 0;
 }

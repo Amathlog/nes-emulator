@@ -20,6 +20,9 @@ bool ScreenMessageService::Push(const Message& message)
     case DefaultScreenMessageType::RESIZE:
         m_screen.OnScreenResized(payload->m_width, payload->m_height);
         break;
+    case DefaultScreenMessageType::RENDER:
+        m_screen.UpdateScreen(payload->m_screenData, payload->m_screenDataSize);
+        break;
     }
 
     return true;

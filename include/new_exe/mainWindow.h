@@ -25,10 +25,10 @@ namespace NesEmulatorGL
     class MainWindow
     {
     public:
-        MainWindow(unsigned width, unsigned height, unsigned internalResWidth, unsigned internalResHeight, int framerate = NTSC_FRAMERATE);
+        MainWindow(const char* name, unsigned width, unsigned height, unsigned internalResWidth, unsigned internalResHeight, int framerate = NTSC_FRAMERATE);
         ~MainWindow();
 
-        void Update(NesEmulator::Bus& bus, bool waitFramerate = true);
+        void Update(NesEmulator::Bus& bus, bool externalSync = false);
 
         GLFWwindow* GetWindow() {return m_window;}
         bool RequestedClose();

@@ -2,6 +2,7 @@
 #include "new_exe/messageService/messages/screenMessage.h"
 #include <MyTonic.h>
 #include <new_exe/audio/nesAudioSystem.h>
+#include <new_exe/screen.h>
 
 using NesEmulatorGL::NesAudioSystem;
 
@@ -25,8 +26,10 @@ int NesAudioSystem::RenderCallback(void *outputBuffer, void* /*inputBuffer*/, un
             if (m_bus.Clock())
                 count++;
 
-            // if (m_bus.GetPPU().IsFrameComplete())
-            //     DispatchMessageServiceSingleton::GetInstance().Push(RenderMessage());
+            if (m_bus.GetPPU().IsFrameComplete())
+            {
+                DispatchMessageServiceSingleton::GetInstance().Push(RenderMessage(m_bus.GetPPU().GetScreen(), m_bus.GetPPU().GetHeight() * m_bus.GetPPU().GetWidth()));
+            }
         }
     }
 

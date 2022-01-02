@@ -8,6 +8,7 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <iostream>
+#include <cassert>
 
 //////////////////////////// SHADERS ////////////////////////////////
 
@@ -62,6 +63,8 @@ Screen::Screen(unsigned internalResWidth, unsigned internalResHeight)
 
     m_screenMessageService = std::make_unique<ScreenMessageService>(*this);
     DispatchMessageServiceSingleton::GetInstance().Connect(m_screenMessageService.get());
+
+    m_screenBuffer.resize(internalResWidth * internalResHeight);
 }
 
 Screen::~Screen()
@@ -138,8 +141,14 @@ void Screen::Update(NesEmulator::Bus& bus)
 
     glUseProgram(m_programId);
 
-    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, m_internalResWidth, m_internalResHeight, GL_RED, GL_UNSIGNED_BYTE, bus.GetPPU().GetScreen());
+    if (m_screenUpdated)
+    {
+        std::unique_lock<std::mutex> lk(m_lock);
+        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, m_internalResWidth, m_internalResHeight, GL_RED, GL_UNSIGNED_BYTE, m_screenBuffer.data());
+        m_screenUpdated = false;
+    }
+
     glBindVertexArray(m_VAO);
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 }
@@ -240,4 +249,12 @@ bool Screen::CreateImage()
     glBindTexture(GL_TEXTURE_2D, 0);
 
     return true;
+}
+
+void Screen::UpdateScreen(const uint8_t* data, size_t size)
+{
+    std::unique_lock<std::mutex> lk(m_lock);
+    assert(data != nullptr && size == m_screenBuffer.size());
+    std::memcpy(m_screenBuffer.data(), data, m_screenBuffer.size());
+    m_screenUpdated = true;
 }
