@@ -129,7 +129,7 @@ void Screen::Update(NesEmulator::Bus& bus)
 {
     if (!m_initialized)
         return;
-        
+
     int paletteLocation = glGetUniformLocation(m_programId, "palette");
     glUniform3fv(paletteLocation, 64, NesEmulator::Palette::GetPaletteFloat());
 

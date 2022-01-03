@@ -4,6 +4,7 @@
 #include <memory>
 #include <vector>
 #include <cstdint>
+#include <mutex>
 
 namespace NesEmulator
 {
@@ -28,6 +29,7 @@ namespace NesEmulatorGL
         Format GetScreenFormat() const { return m_format; }
 
         void UpdateScreen(const uint8_t* data, size_t size);
+        bool WasScreenUpdated() const { return m_screenUpdated; }
 
     private:
         bool CreateShader();

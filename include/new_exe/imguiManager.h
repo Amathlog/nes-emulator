@@ -34,5 +34,8 @@ namespace NesEmulatorGL
         inline static constexpr unsigned MAX_SAVE_STATES = 4;
         std::array<bool, MAX_SAVE_STATES> m_requestSaveState;
         std::array<bool, MAX_SAVE_STATES> m_requestLoadState;
+
+        std::array<float, 100> m_frametimes = {};
+        size_t m_frametimeOffset = 0;
     };
 }

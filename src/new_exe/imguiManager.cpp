@@ -12,12 +12,17 @@
 #include <glad/glad.h>
 #include <ImGuiFileBrowser.h>
 #include <string>
+#include <chrono>
 
 using NesEmulatorGL::ImguiManager;
 using NesEmulatorGL::DispatchMessageServiceSingleton;
 using NesEmulatorGL::LoadNewGameMessage;
 using NesEmulatorGL::SaveStateMessage;
 using NesEmulatorGL::LoadStateMessage;
+
+using Clock = std::chrono::high_resolution_clock;
+
+static Clock::time_point s_lastTick;
 
 ImguiManager::ImguiManager(GLFWwindow* window)
 {
@@ -51,6 +56,10 @@ ImguiManager::ImguiManager(GLFWwindow* window)
         m_isSoundEnabled = audioMessage.GetTypedPayload().m_data;
         m_previousSoundState = m_isSoundEnabled;
     }
+
+    s_lastTick = Clock::now();
+    m_frametimes.fill(0.0f);
+    m_frametimeOffset = 0;
 }
 
 ImguiManager::~ImguiManager()
@@ -179,6 +188,14 @@ void ImguiManager::Update()
         if (ImGui::Begin("FPS", &showFPS, window_flags))
         {
             ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+            
+            // Frametime
+            auto newTick = Clock::now();
+            float frametime = (float)std::chrono::duration_cast<std::chrono::milliseconds>(newTick - s_lastTick).count();
+            s_lastTick = newTick;
+            m_frametimes[m_frametimeOffset] = frametime;
+            m_frametimeOffset = (m_frametimeOffset + 1) % m_frametimes.size();
+            ImGui::PlotLines("Frametime", m_frametimes.data(), (int)m_frametimes.size(), (int)m_frametimeOffset, nullptr, 0.0f, 100.f, ImVec2(0, 80.0f));
         }
         ImGui::End();
     }

@@ -34,7 +34,10 @@ bool AudioSystem::Initialize()
     rtParams.deviceId = m_dac->getDefaultOutputDevice();
     rtParams.nChannels = m_nbChannels;
 
-    auto res = m_dac->openStream(&rtParams, NULL, RTAUDIO_FLOAT32, m_sampleRate, &m_bufferFrames, &audioCallback, this, nullptr);
+    RtAudio::StreamOptions rtOptions;
+    rtOptions.numberOfBuffers = 4;
+
+    auto res = m_dac->openStream(&rtParams, NULL, RTAUDIO_FLOAT32, m_sampleRate, &m_bufferFrames, &audioCallback, this, &rtOptions);
 
     if (res != RtAudioErrorType::RTAUDIO_NO_ERROR)
     {
