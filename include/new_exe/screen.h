@@ -5,6 +5,7 @@
 #include <vector>
 #include <cstdint>
 #include <mutex>
+#include <chrono>
 
 namespace NesEmulator
 {
@@ -30,6 +31,13 @@ namespace NesEmulatorGL
 
         void UpdateScreen(const uint8_t* data, size_t size);
         bool WasScreenUpdated() const { return m_screenUpdated; }
+
+        const float* GetFrametimes(size_t& offset, size_t& size) const
+        {
+            offset = m_frametimeOffset;
+            size = m_frametimes.size();
+            return m_frametimes.data();
+        }
 
     private:
         bool CreateShader();
@@ -58,5 +66,8 @@ namespace NesEmulatorGL
         std::vector<uint8_t> m_screenBuffer;
         bool m_screenUpdated;
         mutable std::mutex m_lock;
+        std::array<float, 100> m_frametimes = {};
+        size_t m_frametimeOffset = 0;
+        std::chrono::high_resolution_clock::time_point m_lastTick;
     };
 }

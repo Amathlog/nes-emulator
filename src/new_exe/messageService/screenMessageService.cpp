@@ -21,7 +21,7 @@ bool ScreenMessageService::Push(const Message& message)
         m_screen.OnScreenResized(payload->m_width, payload->m_height);
         break;
     case DefaultScreenMessageType::RENDER:
-        m_screen.UpdateScreen(payload->m_screenData, payload->m_screenDataSize);
+        m_screen.UpdateScreen(reinterpret_cast<const uint8_t*>(payload->m_dataPtr), payload->m_dataSize);
         break;
     }
 
@@ -39,6 +39,9 @@ bool ScreenMessageService::Pull(Message& message)
     {
     case DefaultScreenMessageType::GET_FORMAT:
         payload->m_format = m_screen.GetScreenFormat();
+        break;
+    case DefaultScreenMessageType::GET_FRAMETIME:
+        payload->m_dataPtr = m_screen.GetFrametimes(payload->m_offset, payload->m_dataSize);
         break;
     }
 

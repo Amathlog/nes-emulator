@@ -34,4 +34,11 @@ namespace NesEmulatorGL
             : ScreenMessage(DefaultScreenMessageType::RENDER, data, size)
         {}
     };
+
+    struct GetFrametimeMessage : public ScreenMessage
+    {
+        GetFrametimeMessage()
+            : ScreenMessage(DefaultScreenMessageType::GET_FRAMETIME)
+        {}
+    };
 }

@@ -12,7 +12,8 @@ namespace NesEmulatorGL
         CHANGE_FORMAT = 0,
         RESIZE,
         GET_FORMAT,
-        RENDER
+        RENDER,
+        GET_FRAMETIME
     };
 
     enum class Format : unsigned
@@ -35,17 +36,23 @@ namespace NesEmulatorGL
             , m_height(height)
         {}
 
-        ScreenPayload(ScreenMessageType type, const uint8_t* data, size_t size)
+        ScreenPayload(ScreenMessageType type, const void* data, size_t size)
             : m_type(type)
-            , m_screenData(data)
-            , m_screenDataSize(size)
+            , m_dataPtr(data)
+            , m_dataSize(size)
+        {}
+
+        ScreenPayload(ScreenMessageType type)
+            : m_type(type)
         {}
 
         ScreenMessageType m_type;
         Format m_format = Format::UNDEFINED;
         int m_width = 0;
         int m_height = 0;
-        const uint8_t* m_screenData = nullptr;
-        size_t m_screenDataSize = 0;
+        // Render and frametimes
+        const void* m_dataPtr = nullptr;
+        size_t m_dataSize = 0;
+        size_t m_offset = 0;
     };
 }

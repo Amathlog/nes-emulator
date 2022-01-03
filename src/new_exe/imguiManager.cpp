@@ -20,10 +20,6 @@ using NesEmulatorGL::LoadNewGameMessage;
 using NesEmulatorGL::SaveStateMessage;
 using NesEmulatorGL::LoadStateMessage;
 
-using Clock = std::chrono::high_resolution_clock;
-
-static Clock::time_point s_lastTick;
-
 ImguiManager::ImguiManager(GLFWwindow* window)
 {
     // Setup Dear ImGui context
@@ -59,10 +55,6 @@ ImguiManager::ImguiManager(GLFWwindow* window)
         m_isSoundEnabled = audioMessage.GetTypedPayload().m_data;
         m_previousSoundState = m_isSoundEnabled;
     }
-
-    s_lastTick = Clock::now();
-    m_frametimes.fill(0.0f);
-    m_frametimeOffset = 0;
 
     UpdateCurrentMode();
 }
@@ -177,41 +169,7 @@ void ImguiManager::Update()
     }
 
     HandleFileExplorer();
-
-    if (showFPS)
-    {
-        static int corner = 0;
-        ImGuiIO& io = ImGui::GetIO();
-        ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav;
-        if (corner != -1)
-        {
-            const float PAD = 10.0f;
-            const ImGuiViewport* viewport = ImGui::GetMainViewport();
-            ImVec2 work_pos = viewport->WorkPos; // Use work area to avoid menu-bar/task-bar, if any!
-            ImVec2 work_size = viewport->WorkSize;
-            ImVec2 window_pos, window_pos_pivot;
-            window_pos.x = 0.0f;
-            window_pos.y = 30.0f;
-            window_pos_pivot.x = 0.0f;
-            window_pos_pivot.y = 0.0f;
-            ImGui::SetNextWindowPos(window_pos, ImGuiCond_Always, window_pos_pivot);
-            window_flags |= ImGuiWindowFlags_NoMove;
-        }
-        ImGui::SetNextWindowBgAlpha(0.35f); // Transparent background
-        if (ImGui::Begin("FPS", &showFPS, window_flags))
-        {
-            ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-            
-            // Frametime
-            auto newTick = Clock::now();
-            float frametime = (float)std::chrono::duration_cast<std::chrono::milliseconds>(newTick - s_lastTick).count();
-            s_lastTick = newTick;
-            m_frametimes[m_frametimeOffset] = frametime;
-            m_frametimeOffset = (m_frametimeOffset + 1) % m_frametimes.size();
-            ImGui::PlotLines("Frametime", m_frametimes.data(), (int)m_frametimes.size(), (int)m_frametimeOffset, nullptr, 0.0f, 100.f, ImVec2(0, 80.0f));
-        }
-        ImGui::End();
-    }
+    HandlePerf(showFPS);
 
     for (auto i = 0; i < MAX_SAVE_STATES; ++i)
     {
@@ -296,4 +254,48 @@ void ImguiManager::UpdateCurrentMode()
         m_currentMode = modeMessage.GetTypedPayload().m_mode;
         m_requestChangeMode[(unsigned)m_currentMode] = true;
     }
+}
+
+void ImguiManager::HandlePerf(bool showFPS)
+{
+    if(!showFPS)
+        return;
+
+    ImGuiIO& io = ImGui::GetIO();
+    ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav;
+    {
+        const float PAD = 10.0f;
+        const ImGuiViewport* viewport = ImGui::GetMainViewport();
+        ImVec2 work_pos = viewport->WorkPos; // Use work area to avoid menu-bar/task-bar, if any!
+        ImVec2 work_size = viewport->WorkSize;
+        ImVec2 window_pos, window_pos_pivot;
+        window_pos.x = 0.0f;
+        window_pos.y = 30.0f;
+        window_pos_pivot.x = 0.0f;
+        window_pos_pivot.y = 0.0f;
+        ImGui::SetNextWindowPos(window_pos, ImGuiCond_Always, window_pos_pivot);
+        window_flags |= ImGuiWindowFlags_NoMove;
+    }
+    ImGui::SetNextWindowBgAlpha(0.35f); // Transparent background
+    if (ImGui::Begin("FPS", &showFPS, window_flags))
+    {
+        ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+        GetFrametimeMessage message;
+        if(DispatchMessageServiceSingleton::GetInstance().Pull(message))
+        {
+            const float* frametimes = reinterpret_cast<const float*>(message.GetTypedPayload().m_dataPtr);
+            size_t size = message.GetTypedPayload().m_dataSize;
+            float mean = 0.0f;
+            for (auto i = 0; i < size; ++i)
+            {
+                mean += frametimes[i];
+            }
+            mean /= (float)size;
+            float fps = 1000.0f / mean;
+
+            ImGui::Text("Game average %.3f ms/frame (%.1f FPS)", mean, fps);
+            ImGui::PlotLines("33 ms\n\n\n\n\n0ms", frametimes, (int)size, (int)message.GetTypedPayload().m_offset, nullptr, 0.0f, 33.f, ImVec2(0, 80.0f));
+        }
+    }
+    ImGui::End();
 }

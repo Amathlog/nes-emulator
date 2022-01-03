@@ -1,4 +1,4 @@
-#include "new_exe/messageService/messageService.h"
+#include <new_exe/messageService/messageService.h>
 #include <memory>
 #include <new_exe/screen.h>
 #include <new_exe/messageService/screenMessageService.h>
@@ -65,6 +65,7 @@ Screen::Screen(unsigned internalResWidth, unsigned internalResHeight)
     DispatchMessageServiceSingleton::GetInstance().Connect(m_screenMessageService.get());
 
     m_screenBuffer.resize(internalResWidth * internalResHeight);
+    m_lastTick = std::chrono::high_resolution_clock::now();
 }
 
 Screen::~Screen()
@@ -147,6 +148,11 @@ void Screen::Update(NesEmulator::Bus& bus)
         glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
         glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, m_internalResWidth, m_internalResHeight, GL_RED, GL_UNSIGNED_BYTE, m_screenBuffer.data());
         m_screenUpdated = false;
+        auto newTick = std::chrono::high_resolution_clock::now();
+        float frametime = (float)std::chrono::duration_cast<std::chrono::milliseconds>(newTick - m_lastTick).count();
+        m_lastTick = newTick;
+        m_frametimes[m_frametimeOffset] = frametime;
+        m_frametimeOffset = (m_frametimeOffset + 1) % m_frametimes.size();
     }
 
     glBindVertexArray(m_VAO);

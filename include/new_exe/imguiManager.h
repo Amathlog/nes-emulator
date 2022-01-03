@@ -23,6 +23,7 @@ namespace NesEmulatorGL
 
     private:
         void HandleFileExplorer();
+        void HandlePerf(bool showFPS);
         void UpdateCurrentMode();
 
         bool m_showFileExplorer = false;
@@ -41,8 +42,5 @@ namespace NesEmulatorGL
 
         std::array<bool, (unsigned)NesEmulator::Mode::COUNT> m_requestChangeMode;
         NesEmulator::Mode m_currentMode;
-
-        std::array<float, 100> m_frametimes = {};
-        size_t m_frametimeOffset = 0;
     };
 }
