@@ -27,7 +27,7 @@ There is no rom included in this project. You need to dump your original games t
 ## Implemented features
 - Full support for offical opcodes for the 6502 CPU (and some illegal opcodes)
 - Keyboard support
-- NTSC roms only (no PAL yet)
+- NTSC/PAL roms only
 - Some mappers (list bellow)
 - Basic debugging with "gotos" and disassembly
 - Can play from start to finish some games.
