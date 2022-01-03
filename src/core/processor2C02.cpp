@@ -684,6 +684,18 @@ void Processor2C02::Clock()
             }
         }
 
+        // HACK FOR SMB3
+        // In SMB3, the 8 left most pixels can be some mirror of the rightmost pixels
+        // It is because of a limitation of the NES for horizontal scrolling and named tables
+        // In order to "hide" this, we can do this hack.
+        // Set the first 8 pixels of each scanline to the background color
+        static bool SMB3Hack = false;
+        if (SMB3Hack && m_cycles <= 9)
+        {
+            pixel = 0;
+            palette = bg_palette;
+        }
+
         size_t index = m_scanlines * 256 + m_cycles - 1;
         m_screen[index] = GetColorFromPaletteRam(palette, pixel);
     }
