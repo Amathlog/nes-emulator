@@ -1,5 +1,6 @@
 #pragma once
 
+#include <core/constants.h>
 #include <new_exe/messageService/messageService.h>
 #include <vector>
 #include <string>
@@ -20,7 +21,7 @@ namespace NesEmulatorGL
         {}
 
         bool Push(const Message& message) override;
-        bool Pull(Message& message) override { return true; }
+        bool Pull(Message& message) override;
 
     private:
         // Handlers
@@ -29,6 +30,7 @@ namespace NesEmulatorGL
         bool SaveGame(const std::string& file);
         bool SaveState(const std::string& file, int number);
         bool LoadState(const std::string& file, int number);
+        void ChangeMode(NesEmulator::Mode mode);
 
         NesEmulator::Bus& m_bus;
         std::string m_exePath;

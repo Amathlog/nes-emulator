@@ -1,5 +1,6 @@
 #pragma once
 
+#include <core/constants.h>
 #include <new_exe/messageService/message.h>
 #include <new_exe/messageService/messages/corePayload.h>
 
@@ -43,6 +44,20 @@ namespace NesEmulatorGL
         // Can be empty to get the default file
         LoadStateMessage(std::string file = "", int number = 0)
             : CoreMessage(DefaultCoreMessageType::LOAD_STATE, file, number)
+        {}
+    };
+
+    struct ChangeModeMessage : CoreMessage
+    {
+        ChangeModeMessage(NesEmulator::Mode mode)
+            : CoreMessage(DefaultCoreMessageType::CHANGE_MODE, "", 0, mode)
+        {}
+    };
+
+    struct GetModeMessage : CoreMessage
+    {
+        GetModeMessage()
+            : CoreMessage(DefaultCoreMessageType::GET_MODE, "")
         {}
     };
 }

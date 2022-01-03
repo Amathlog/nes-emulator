@@ -36,7 +36,7 @@ bool CoreMessageService::Push(const Message &message)
     if (message.GetType() != DefaultMessageType::CORE)
         return true;
     
-    const CorePayload* payload = reinterpret_cast<const CorePayload*>(message.GetPayload());
+    auto payload = reinterpret_cast<const CorePayload*>(message.GetPayload());
 
     switch(payload->m_type)
     {
@@ -50,6 +50,27 @@ bool CoreMessageService::Push(const Message &message)
         return LoadState(payload->m_data, payload->m_saveStateNumber);
     case DefaultCoreMessageType::SAVE_STATE:
         return SaveState(payload->m_data, payload->m_saveStateNumber);
+    case DefaultCoreMessageType::CHANGE_MODE:
+        ChangeMode(payload->m_mode);
+        return true;
+    }
+
+    return true;
+}
+
+bool CoreMessageService::Pull(Message &message)
+{
+    if (message.GetType() != DefaultMessageType::CORE)
+        return true;
+    
+    auto payload = reinterpret_cast<CorePayload*>(message.GetPayload());
+
+    switch(payload->m_type)
+    {
+    case DefaultCoreMessageType::GET_MODE:
+        payload->m_mode = m_bus.GetMode();
+        ChangeMode(payload->m_mode);
+        return true;
     }
 
     return true;
@@ -170,4 +191,9 @@ bool CoreMessageService::LoadSaveGame(const std::string& file)
 
     m_bus.LoadRAM(visitor);
     return true;
+}
+
+void CoreMessageService::ChangeMode(NesEmulator::Mode mode)
+{
+    m_bus.SetMode(mode);
 }

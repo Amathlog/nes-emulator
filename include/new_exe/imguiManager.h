@@ -1,4 +1,5 @@
 #pragma once
+#include <core/constants.h>
 #include <string>
 #include <new_exe/messageService/messages/screenPayload.h>
 #include <array>
@@ -16,10 +17,13 @@ namespace NesEmulatorGL
         bool ShouldClose() const { return m_closeRequested; }
         void ToggleMainMenu() { m_showMainMenu = !m_showMainMenu; }
 
+        NesEmulator::Mode GetCurrentMode() { return m_currentMode; }
+
         void Update();
 
     private:
         void HandleFileExplorer();
+        void UpdateCurrentMode();
 
         bool m_showFileExplorer = false;
         bool m_closeRequested = false;
@@ -34,6 +38,9 @@ namespace NesEmulatorGL
         inline static constexpr unsigned MAX_SAVE_STATES = 4;
         std::array<bool, MAX_SAVE_STATES> m_requestSaveState;
         std::array<bool, MAX_SAVE_STATES> m_requestLoadState;
+
+        std::array<bool, (unsigned)NesEmulator::Mode::COUNT> m_requestChangeMode;
+        NesEmulator::Mode m_currentMode;
 
         std::array<float, 100> m_frametimes = {};
         size_t m_frametimeOffset = 0;

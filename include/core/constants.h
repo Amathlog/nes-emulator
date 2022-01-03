@@ -8,10 +8,12 @@ using std::size_t;
 
 namespace NesEmulator
 {
-    enum Mode
+    enum Mode : unsigned
     {
-        NTSC,
-        PAL
+        NTSC = 0,
+        PAL = 1,
+
+        COUNT = 2
     };
 
 namespace Cst

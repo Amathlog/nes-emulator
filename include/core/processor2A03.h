@@ -136,7 +136,7 @@ namespace NesEmulator
         void DeserializeFrom(Utils::IReadVisitor& visitor) override;
 
         Tonic::Synth* GetSynth() { return &m_synth; }
-        void SetMode(Mode mode) { m_mode = mode ;}
+        void SetMode(Mode mode) { m_mode = mode; }
 
     private:
         Tonic::Synth m_synth;

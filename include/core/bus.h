@@ -1,5 +1,6 @@
 #pragma once
 
+#include <core/constants.h>
 #include <core/utils/visitor.h>
 #include <core/serializable.h>
 #include <cstdint>
@@ -53,6 +54,7 @@ namespace NesEmulator
         Tonic::Synth* GetSynth() { return m_apu.GetSynth(); }
 
         void SetMode(Mode mode);
+        NesEmulator::Mode GetMode() const { return m_mode; }
         void SetSampleFrequency(unsigned sampleFrequency);
 
     private:

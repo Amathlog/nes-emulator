@@ -242,6 +242,7 @@ void Bus::InsertCartridge(const std::shared_ptr<Cartridge>& cartridge)
 {
     m_cartridge = cartridge;
     m_ppu.ConnectCartridge(cartridge);
+    SetMode(m_cartridge->GetMapper()->GetMode());
 }
 
 void Bus::ConnectController(const std::shared_ptr<Controller>& controller, uint8_t controllerIndex)
@@ -463,8 +464,7 @@ std::filesystem::path Bus::GetSaveFolder(std::filesystem::path exeDir)
 
 void Bus::SetMode(Mode mode)
 {
-    // For now we only support NTSC
-    mode = Mode::NTSC;
+    m_mode = mode;
     m_apu.SetMode(mode);
     m_audioTimePerPPUClock = 1.0 / (mode == Mode::NTSC ? Cst::NTSC_PPU_FREQUENCY : Cst::PAL_PPU_FREQUENCY);
 }

@@ -63,6 +63,8 @@ ImguiManager::ImguiManager(GLFWwindow* window)
     s_lastTick = Clock::now();
     m_frametimes.fill(0.0f);
     m_frametimeOffset = 0;
+
+    UpdateCurrentMode();
 }
 
 ImguiManager::~ImguiManager()
@@ -153,7 +155,15 @@ void ImguiManager::Update()
                 ImGui::MenuItem("4/3", nullptr, &m_changeFormats[(unsigned)Format::FOUR_THIRD]);
                 ImGui::EndMenu();
             }
+
             ImGui::MenuItem("Enable Audio", nullptr, &m_isSoundEnabled);
+
+            if (ImGui::BeginMenu("Region"))
+            {
+                ImGui::MenuItem("NTSC", nullptr, &m_requestChangeMode[(unsigned)NesEmulator::Mode::NTSC]);
+                ImGui::MenuItem("PAL", nullptr, &m_requestChangeMode[(unsigned)NesEmulator::Mode::PAL]);
+                ImGui::EndMenu();
+            }
             ImGui::EndMenu();
         }
 
@@ -241,6 +251,16 @@ void ImguiManager::Update()
         DispatchMessageServiceSingleton::GetInstance().Push(EnableAudioMessage(m_isSoundEnabled));
     }
 
+    // Check region
+    for (auto i = 0; i < m_requestChangeMode.size(); ++i)
+    {
+        if (m_requestChangeMode[i] && (unsigned)i != (unsigned)m_currentMode)
+        {
+            DispatchMessageServiceSingleton::GetInstance().Push(ChangeModeMessage(NesEmulator::Mode((unsigned)i)));
+            UpdateCurrentMode();
+        }
+    }
+
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
@@ -258,6 +278,22 @@ void ImguiManager::HandleFileExplorer()
     {
         // Load a new file
         if (!fileDialog.selected_path.empty())
+        {
             DispatchMessageServiceSingleton::GetInstance().Push(LoadNewGameMessage(fileDialog.selected_path));
+            UpdateCurrentMode();
+        }
+    }
+}
+
+void ImguiManager::UpdateCurrentMode()
+{
+    // Get mode status
+    m_requestChangeMode.fill(false);
+    m_currentMode = NesEmulator::Mode::NTSC;
+    GetModeMessage modeMessage;
+    if (DispatchMessageServiceSingleton::GetInstance().Pull(modeMessage))
+    {
+        m_currentMode = modeMessage.GetTypedPayload().m_mode;
+        m_requestChangeMode[(unsigned)m_currentMode] = true;
     }
 }

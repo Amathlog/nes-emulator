@@ -1,5 +1,6 @@
 #pragma once
 
+#include <core/constants.h>
 #include <core/utils/visitor.h>
 #include <core/ines.h>
 #include <core/serializable.h>
@@ -32,6 +33,8 @@ namespace NesEmulator
         virtual bool MapReadPPU(uint16_t address, uint32_t& mappedAddress, uint8_t& data) = 0;
         virtual bool MapWritePPU(uint16_t address, uint32_t& mappedAddress, uint8_t data) = 0;
         virtual Mirroring GetMirroring() const { return m_mirroring; }
+
+        NesEmulator::Mode GetMode() const { return m_header.GetRegion(); }
 
         virtual void Reset() 
         {
