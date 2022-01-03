@@ -49,6 +49,9 @@ ImguiManager::ImguiManager(GLFWwindow* window)
         m_changeFormats[(unsigned)m_currentFormat] = true;
     }
 
+    m_requestSaveState.fill(false);
+    m_requestLoadState.fill(false);
+
     // Get is sound enabled
     IsAudioEnabledMessage audioMessage;
     if (DispatchMessageServiceSingleton::GetInstance().Pull(audioMessage))

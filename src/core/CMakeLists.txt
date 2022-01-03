@@ -15,3 +15,4 @@ file(GLOB_RECURSE CORELIB_SRC
 add_library(NesEmulator_Core STATIC ${CORELIB_SRC})
 # target_link_libraries(NesEmulator_Core sfml-system sfml-window sfml-audio sfml-graphics)
 target_link_libraries(NesEmulator_Core Tonic)
+set_target_properties(NesEmulator_Core PROPERTIES FOLDER ${MAIN_FOLDER})
