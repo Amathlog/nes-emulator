@@ -12,7 +12,7 @@ Processor2A03::Processor2A03()
     , m_triangleChannel(m_synth)
 {
     // Create all the waves
-    m_synth.setOutputGen(5.0 * (0.00752f * (m_pulseChannel1.GetWave() + m_pulseChannel2.GetWave()) + 0.00851f * m_triangleChannel.GetWave()));
+    m_synth.setOutputGen(20.0f * (0.00752f * (m_pulseChannel1.GetWave() + m_pulseChannel2.GetWave()) + 0.00851f * m_triangleChannel.GetWave()));
 }
 
 void Processor2A03::Clock()
@@ -190,6 +190,21 @@ void Processor2A03::WriteCPU(uint16_t addr, uint8_t data)
     {
         // Status
         m_statusRegister.flags = (m_statusRegister.flags & 0xE0) | (data & 0x1F);
+        // Silence length counters if we disable a channel
+        if (!m_statusRegister.enableLengthCounterPulse1)
+            m_pulseChannel1.Reset();
+        if (!m_statusRegister.enableLengthCounterPulse2)
+            m_pulseChannel2.Reset();
+        if (!m_statusRegister.enableLengthCounterTriangle)
+            m_triangleChannel.Reset();
+        if (!m_statusRegister.enableLengthCounterNoise)
+        {
+            // TODO
+        }
+        if (!m_statusRegister.enableActivedmc)
+        {
+            // TODO
+        }
     }
     else if (addr == 0x4017)
     {
