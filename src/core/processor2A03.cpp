@@ -92,6 +92,7 @@ void Processor2A03::WriteCPU(uint16_t addr, uint8_t data)
         PulseRegister& currPulseRegister = currPulseChannel.GetRegister();
         Sweep& currSweep = currPulseChannel.GetSweep();
         Enveloppe& currEnv = currPulseChannel.GetEnveloppe();
+        bool isEnabled = ((addr & 0x0004) > 0) ? m_statusRegister.enableLengthCounterPulse2 > 0 : m_statusRegister.enableLengthCounterPulse1 > 0;
         switch (addr & 0x0003)
         {
         case 0:
@@ -112,7 +113,8 @@ void Processor2A03::WriteCPU(uint16_t addr, uint8_t data)
             break;
         case 3:
             currPulseRegister.lengthCounterReload = (data & 0xF8) >> 3;
-            currPulseChannel.ReloadCounter();
+            if (isEnabled)
+                currPulseChannel.ReloadCounter();
             currPulseRegister.timer = (uint16_t)(data & 0x07) << 8 | (currPulseRegister.timer & 0x00FF);
             currEnv.start = true;
             break;
@@ -136,7 +138,8 @@ void Processor2A03::WriteCPU(uint16_t addr, uint8_t data)
             break;
         case 3:
             currRegister.lengthCounterLoad = (data & 0xF8) >> 3;
-            m_triangleChannel.ReloadCounter();
+            if (m_statusRegister.enableLengthCounterTriangle)
+                m_triangleChannel.ReloadCounter();
             currRegister.timer = (uint16_t)(data & 0x07) << 8 | (currRegister.timer & 0x00FF);
             // As a side effect, it also set the linear control flag
             m_triangleChannel.SetLinearControlFlag(1);

@@ -60,7 +60,7 @@ void Enveloppe::Reset()
     volume = 0;
     output = 0;
     decayCount = 0;
-    updated = false;
+    updated = true;
 }
 
 void Enveloppe::SerializeTo(Utils::IWriteVisitor& visitor) const

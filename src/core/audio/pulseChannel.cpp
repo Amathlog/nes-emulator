@@ -171,7 +171,8 @@ void PulseChannel::Update(double cpuFrequency, Tonic::Synth& synth)
     // Enveloppe output
     if (m_enveloppe.updated)
     {
-        synth.setParameter(GetEnveloppeOutputParameterName(), (float)(m_enveloppe.output - 1) / 16.0f);
+        float envOutput = m_enveloppe.output > 2 ? (float)(m_enveloppe.output - 1) / 16.0f : 0.0f;
+        synth.setParameter(GetEnveloppeOutputParameterName(), envOutput);
         m_enveloppe.updated = false;
     }
 
