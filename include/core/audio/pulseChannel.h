@@ -57,6 +57,7 @@ namespace NesEmulator {
         void Reset();
 
         void ReloadCounter();
+        uint8_t GetCounter() const { return m_lengthCounter; }
 
         void SerializeTo(Utils::IWriteVisitor& visitor) const;
         void DeserializeFrom(Utils::IReadVisitor& visitor);

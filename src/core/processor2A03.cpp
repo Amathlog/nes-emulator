@@ -200,10 +200,12 @@ void Processor2A03::WriteCPU(uint16_t addr, uint8_t data)
         if (!m_statusRegister.enableLengthCounterNoise)
         {
             // TODO
+            // m_noiseChannel.Reset();
         }
         if (!m_statusRegister.enableActivedmc)
         {
             // TODO
+            m_statusRegister.dmcInterrupt = false;
         }
     }
     else if (addr == 0x4017)
@@ -218,12 +220,18 @@ void Processor2A03::WriteCPU(uint16_t addr, uint8_t data)
 
 uint8_t Processor2A03::ReadCPU(uint16_t addr)
 {
+    // Status
     if (addr == 0x4015)
     {
-        // Status
+        APUStatus statusCopy = m_statusRegister;
+        statusCopy.enableLengthCounterPulse1 &= m_pulseChannel1.GetCounter() != 0;
+        statusCopy.enableLengthCounterPulse2 &= m_pulseChannel2.GetCounter() != 0;
+        statusCopy.enableLengthCounterTriangle &= m_triangleChannel.GetCounter() != 0;
+        // statusCopy.enableLengthCounterNoise &= m_noiseChannel.GetCounter() != 0;
+        // statusCopy.enableActivedmc &= m_dmcChannel.Remaining() > 0;
         // Also by reading this register, we clear the IRQFlag
         m_IRQFlag = false;
-        return m_statusRegister.flags;
+        return statusCopy.flags;
     }
 
     return 0;
