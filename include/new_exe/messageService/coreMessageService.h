@@ -30,7 +30,6 @@ namespace NesEmulatorGL
         bool SaveGame(const std::string& file);
         bool SaveState(const std::string& file, int number);
         bool LoadState(const std::string& file, int number);
-        void ChangeMode(NesEmulator::Mode mode);
 
         NesEmulator::Bus& m_bus;
         std::string m_exePath;

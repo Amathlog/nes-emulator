@@ -51,7 +51,10 @@ bool CoreMessageService::Push(const Message &message)
     case DefaultCoreMessageType::SAVE_STATE:
         return SaveState(payload->m_data, payload->m_saveStateNumber);
     case DefaultCoreMessageType::CHANGE_MODE:
-        ChangeMode(payload->m_mode);
+        m_bus.SetMode(payload->m_mode);
+        return true;
+    case DefaultCoreMessageType::RESET:
+        m_bus.Reset();
         return true;
     }
 
@@ -69,7 +72,6 @@ bool CoreMessageService::Pull(Message &message)
     {
     case DefaultCoreMessageType::GET_MODE:
         payload->m_mode = m_bus.GetMode();
-        ChangeMode(payload->m_mode);
         return true;
     }
 
@@ -78,21 +80,30 @@ bool CoreMessageService::Pull(Message &message)
 
 bool CoreMessageService::LoadNewGame(const std::string& file)
 {
+    // First stop the game
+    m_bus.Stop();
+
     // Try to save the previous game before loading
     SaveGame("");
 
     NesEmulator::Utils::FileReadVisitor visitor(file);
 
     if (!visitor.IsValid())
+    {
+        m_bus.Resume();
         return false;
+    }
 
     auto cartridge = std::make_shared<NesEmulator::Cartridge>(visitor);
 
+    // Insert a new cartridge also reset the bus
     m_bus.InsertCartridge(cartridge);
-    m_bus.Reset();
 
     // Try to load an existing save
     LoadSaveGame("");
+
+    // When all is done, restart the game
+    m_bus.Resume();
 
     return true;
 }
@@ -140,8 +151,16 @@ bool CoreMessageService::LoadState(const std::string& file, int number)
         return false; 
     }
 
+    // When loading a state, we will reset the game then load
+    // To start from a clean state.
+    // To avoid multi threading issues, we stop the bus while doing so.
+    // We don't want the bus to be clocked between a Reset and the deserialization
+    m_bus.Stop();
+
     m_bus.Reset();
     m_bus.DeserializeFrom(visitor);
+
+    m_bus.Resume();
 
     return true;
 }
@@ -189,11 +208,8 @@ bool CoreMessageService::LoadSaveGame(const std::string& file)
         return false; 
     }
 
+    // Loading the RAM is guarded by a lock, so there is no need to stop
+    // the game.
     m_bus.LoadRAM(visitor);
     return true;
-}
-
-void CoreMessageService::ChangeMode(NesEmulator::Mode mode)
-{
-    m_bus.SetMode(mode);
 }

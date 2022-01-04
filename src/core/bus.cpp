@@ -28,6 +28,8 @@ Bus::Bus()
 
     // Default mode
     SetMode(Mode::NTSC);
+
+    m_enabled = true;
 }
 
 void Bus::SetSampleFrequency(unsigned int sampleFrequency)
@@ -144,6 +146,11 @@ void Bus::Verbose()
 
 bool Bus::Clock()
 {
+    if (!m_enabled)
+        return false;
+
+    std::unique_lock<std::mutex> lk(m_lock);
+
     constexpr bool verbose = false;
 
     // PPU runs 3 times faster than the CPU
@@ -227,6 +234,9 @@ bool Bus::Clock()
 
 void Bus::Reset()
 {
+    bool shouldResume = IsEnabled();
+    Stop();
+
     m_clockCounter = 0;
     m_audioTime = 0.0;
     m_cpu.Reset();
@@ -236,13 +246,23 @@ void Bus::Reset()
     m_controllersState[1] = 0x00;
     if (m_cartridge)
         m_cartridge->Reset();
+
+    if (shouldResume)
+        Resume();
 }
 
 void Bus::InsertCartridge(const std::shared_ptr<Cartridge>& cartridge)
 {
+    bool shouldResume = IsEnabled();
+    Stop();
+
     m_cartridge = cartridge;
     m_ppu.ConnectCartridge(cartridge);
+    Reset();
     SetMode(m_cartridge->GetMapper()->GetMode());
+
+    if (shouldResume)
+        Resume();
 }
 
 void Bus::ConnectController(const std::shared_ptr<Controller>& controller, uint8_t controllerIndex)
@@ -258,6 +278,8 @@ void Bus::DisconnectController(uint8_t controllerIndex)
 
 void Bus::SerializeTo(Utils::IWriteVisitor& visitor) const
 {
+    std::unique_lock<std::mutex> lk(m_lock);
+
     // If there is no cartridge loaded, do nothing
     if (m_cartridge.get() == nullptr)
         return;
@@ -308,6 +330,8 @@ void Bus::SerializeTo(Utils::IWriteVisitor& visitor) const
 
 void Bus::DeserializeFrom(Utils::IReadVisitor& visitor)
 {
+    std::unique_lock<std::mutex> lk(m_lock);
+
     // If there is no cartridge loaded, do nothing
     if (m_cartridge.get() == nullptr)
     {
@@ -372,6 +396,8 @@ void Bus::DeserializeFrom(Utils::IReadVisitor& visitor)
 
 void Bus::SaveRAM(Utils::IWriteVisitor& visitor) const
 {
+    std::unique_lock<std::mutex> lk(m_lock);
+
     // If there is no cartridge loaded, do nothing
     if (m_cartridge.get() == nullptr)
         return;
@@ -390,6 +416,8 @@ void Bus::SaveRAM(Utils::IWriteVisitor& visitor) const
 
 void Bus::LoadRAM(Utils::IReadVisitor& visitor)
 {
+    std::unique_lock<std::mutex> lk(m_lock);
+
     // If there is no cartridge loaded, do nothing
     if (m_cartridge.get() == nullptr)
     {
@@ -464,7 +492,13 @@ std::filesystem::path Bus::GetSaveFolder(std::filesystem::path exeDir)
 
 void Bus::SetMode(Mode mode)
 {
+    bool shouldResume = IsEnabled();
+    Stop();
+
     m_mode = mode;
     m_apu.SetMode(mode);
     m_audioTimePerPPUClock = 1.0 / (mode == Mode::NTSC ? Cst::NTSC_PPU_FREQUENCY : Cst::PAL_PPU_FREQUENCY);
+
+    if (shouldResume)
+        Resume();
 }

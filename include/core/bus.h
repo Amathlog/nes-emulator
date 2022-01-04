@@ -13,6 +13,7 @@
 #include <core/controller.h>
 #include <filesystem>
 #include <MyTonic.h>
+#include <mutex>
 
 namespace NesEmulator
 {      
@@ -37,6 +38,12 @@ namespace NesEmulator
 
         // Clock will advance 1 PPU clock. Will return true if an audio sample is ready
         bool Clock();
+
+        // Stop will disable the bus, wait for the lock to be released.
+        void Stop() { m_enabled = false; m_lock.lock(); m_lock.unlock();}
+        void Resume() { m_enabled = true; }
+
+        bool IsEnabled() const { return m_enabled; }
 
         void Reset();
         void Verbose();
@@ -83,5 +90,9 @@ namespace NesEmulator
         double m_audioTime = 0.0;
         double m_audioTimePerSystemSample = 0.0;
         double m_audioTimePerPPUClock = 0.0;
+
+        bool m_enabled = true;
+
+        mutable std::mutex m_lock;
     };
 }

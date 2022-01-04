@@ -60,4 +60,11 @@ namespace NesEmulatorGL
             : CoreMessage(DefaultCoreMessageType::GET_MODE, "")
         {}
     };
+
+    struct ResetMessage : CoreMessage
+    {
+        ResetMessage()
+            : CoreMessage(DefaultCoreMessageType::RESET, "")
+        {}
+    };
 }

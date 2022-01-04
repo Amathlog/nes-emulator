@@ -16,7 +16,8 @@ namespace NesEmulatorGL
         SAVE_STATE,
         LOAD_STATE,
         GET_MODE,
-        CHANGE_MODE
+        CHANGE_MODE,
+        RESET
     };
 
     class CorePayload : public Payload

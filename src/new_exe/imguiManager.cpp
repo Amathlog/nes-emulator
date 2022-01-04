@@ -101,6 +101,7 @@ void ImguiManager::Update()
     ImGui::NewFrame();
 
     static bool showFPS = false;
+    static bool reset = false;
 
     if (m_showMainMenu)
     {
@@ -134,6 +135,7 @@ void ImguiManager::Update()
             }
 
             ImGui::Separator();
+            ImGui::MenuItem("Reset", nullptr, &reset);
             ImGui::MenuItem("Exit", nullptr, &m_closeRequested);
             ImGui::EndMenu();
         }
@@ -217,6 +219,13 @@ void ImguiManager::Update()
             DispatchMessageServiceSingleton::GetInstance().Push(ChangeModeMessage(NesEmulator::Mode((unsigned)i)));
             UpdateCurrentMode();
         }
+    }
+
+    // Check reset
+    if (reset)
+    {
+        DispatchMessageServiceSingleton::GetInstance().Push(ResetMessage());
+        reset = false;
     }
 
     ImGui::Render();
