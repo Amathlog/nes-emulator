@@ -27,64 +27,28 @@ namespace {
 }
 
 MainWindow::MainWindow(const char* name, unsigned width, unsigned height, unsigned internalResWidth, unsigned internalResHeight, int framerate)
+    : Window(name, width, height, framerate)
 {
-    SetFramerate(framerate);
-
-    glfwInit();
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-
-#ifdef __APPLE__
-    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-#endif
-
-    m_window = glfwCreateWindow(width, height, name, nullptr, nullptr);
-    if (m_window == nullptr)
-    {
-        std::cout << "Failed to create GLFW window" << std::endl;
-        glfwTerminate();
+    if (!m_enable)
+        // Something went wrong
         return;
-    }
-    glfwMakeContextCurrent(m_window);
-
-    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
-    {
-        std::cout << "Failed to initialize GLAD" << std::endl;
-        return;
-    }
 
     m_controller = std::make_shared<NesEmulatorGL::Controller>(m_window, 0);
 
-    m_screen = new Screen(internalResWidth, internalResHeight);
-    m_imguiManager = new ImguiManager(m_window);
-
-    glfwSetWindowUserPointer(m_window, this);
-    framebuffer_size_callback(m_window, width, height);
-    glfwSetFramebufferSizeCallback(m_window, framebuffer_size_callback);
+    m_screen = std::make_unique<Screen>(internalResWidth, internalResHeight);
+    m_screen->OnScreenResized(width, height);
+    m_imguiManager = std::make_unique<ImguiManager>(m_window);
 
     m_enable = m_screen->IsInitialized();
-    m_lastUpdateTime = std::chrono::high_resolution_clock::now();
 }
 
-MainWindow::~MainWindow()
+void MainWindow::InternalUpdate(bool externalSync)
 {
-    for (auto window : m_childrenWindows)
-        glfwDestroyWindow(window);
-
-    delete m_screen;
-    delete m_imguiManager;
-
-    glfwDestroyWindow(m_window);
-    glfwTerminate();
-}
-
-void MainWindow::Update(NesEmulator::Bus& bus, bool externalSync)
-{
-    if (RequestedClose())
+    if (m_userData == nullptr)
+        // No user data, something is wrong
         return;
 
-    glfwPollEvents();
+    NesEmulator::Bus* bus = reinterpret_cast<NesEmulator::Bus*>(m_userData);
 
     m_controller->Update();
 
@@ -100,27 +64,11 @@ void MainWindow::Update(NesEmulator::Bus& bus, bool externalSync)
         m_imguiManager->ToggleMainMenu();
     }
 
-    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT);
-
     if (!externalSync)
-        m_screen->UpdateScreen(bus.GetPPU().GetScreen(), bus.GetPPU().GetHeight() * bus.GetPPU().GetWidth());
+        m_screen->UpdateScreen(bus->GetPPU().GetScreen(), bus->GetPPU().GetHeight() * bus->GetPPU().GetWidth());
 
-    m_screen->Update(bus);
+    m_screen->Update(*bus);
     m_imguiManager->Update();
-
-    // Swap buffers
-    glfwSwapBuffers(m_window);
-
-    auto currentTime = std::chrono::high_resolution_clock::now();
-    auto diff = std::chrono::duration_cast<std::chrono::microseconds>((currentTime - m_lastUpdateTime)).count();
-
-    if (!externalSync && diff < m_frametimeUS)
-    {
-        std::this_thread::sleep_for(std::chrono::microseconds(m_frametimeUS - diff));
-    }
-
-    m_lastUpdateTime = currentTime;
 }
 
 bool MainWindow::RequestedClose()
@@ -131,9 +79,14 @@ bool MainWindow::RequestedClose()
     return m_imguiManager->ShouldClose() || glfwWindowShouldClose(m_window);
 }
 
-void MainWindow::ConnectController(NesEmulator::Bus& bus)
+void MainWindow::ConnectController()
 {
-    bus.ConnectController(m_controller, 0);
+    if (m_userData == nullptr)
+        // No user data, something is wrong
+        return;
+
+    NesEmulator::Bus* bus = reinterpret_cast<NesEmulator::Bus*>(m_userData);
+    bus->ConnectController(m_controller, 0);
 }
 
 void MainWindow::OnScreenResized(int width, int height)

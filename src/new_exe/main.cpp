@@ -59,7 +59,8 @@ int main(int argc, char **argv)
 
     {
         NesEmulatorGL::MainWindow mainWindow("NES Emulator", 256*3, 240*3, bus.GetPPU().GetWidth(), bus.GetPPU().GetHeight());
-        mainWindow.ConnectController(bus);
+        mainWindow.SetUserData(&bus);
+        mainWindow.ConnectController();
 
         if (audioSystem.Initialize() || !enableAudioByDefault)
         {            
@@ -73,7 +74,7 @@ int main(int argc, char **argv)
                     } while (!bus.GetPPU().IsFrameComplete());
                 }
 
-                mainWindow.Update(bus, syncWithAudio);
+                mainWindow.Update(syncWithAudio);
             }
         }
 
