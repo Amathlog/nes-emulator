@@ -6,49 +6,10 @@
 #include <core/constants.h>
 #include <core/audio/pulseChannel.h>
 #include <core/audio/triangleChannel.h>
+#include <core/audio/noiseChannel.h>
 
 namespace NesEmulator
 {
-    struct NoiseRegister
-    {
-        uint8_t enveloppeLoop;
-        uint8_t constantVolume;
-        uint8_t volumeEnveloppe;
-        uint8_t loopNoise;
-        uint8_t noisePeriod;
-        uint8_t lengthCounterLoad;
-
-        void Reset()
-        {
-            enveloppeLoop = 0;
-            constantVolume = 0;
-            volumeEnveloppe = 0;
-            loopNoise = 0;
-            noisePeriod = 0;
-            lengthCounterLoad = 0;
-        }
-
-        void SerializeTo(Utils::IWriteVisitor& visitor) const
-        {
-            visitor.WriteValue(enveloppeLoop);
-            visitor.WriteValue(constantVolume);
-            visitor.WriteValue(volumeEnveloppe);
-            visitor.WriteValue(loopNoise);
-            visitor.WriteValue(noisePeriod);
-            visitor.WriteValue(lengthCounterLoad);
-        }
-
-        void DeserializeFrom(Utils::IReadVisitor& visitor)
-        {
-            visitor.ReadValue(enveloppeLoop);
-            visitor.ReadValue(constantVolume);
-            visitor.ReadValue(volumeEnveloppe);
-            visitor.ReadValue(loopNoise);
-            visitor.ReadValue(noisePeriod);
-            visitor.ReadValue(lengthCounterLoad);
-        }
-    };
-
     struct DMCRegister
     {
         uint8_t irqEnable;
@@ -137,13 +98,14 @@ namespace NesEmulator
 
         Tonic::Synth* GetSynth() { return &m_synth; }
         void SetMode(Mode mode) { m_mode = mode; }
+        void SampleRequested();
 
     private:
         Tonic::Synth m_synth;
         PulseChannel m_pulseChannel1;
         PulseChannel m_pulseChannel2;
         TriangleChannel m_triangleChannel;
-        NoiseRegister m_noiseRegister;
+        NoiseChannel m_noiseChannel;
         DMCRegister m_dmcRegister;
         APUStatus m_statusRegister;
         FrameCounter m_frameCounterRegister;

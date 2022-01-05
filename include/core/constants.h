@@ -79,11 +79,24 @@ namespace Cst
     constexpr uint16_t APU_SEQUENCER_STEP4 = 14915;
     constexpr uint16_t APU_SEQUENCER_STEP5 = 18640;
 
-    constexpr std::array<uint8_t, 32> APU_LENGTH_TABLE = {
+    constexpr std::array<uint8_t, 32> APU_LENGTH_TABLE = 
+    {
       10, 254, 20,  2, 40,  4, 80,  6,
       160,  8, 60, 10, 14, 12, 26, 14,
       12,  16, 24, 18, 48, 20, 96, 22,
       192, 24, 72, 26, 16, 28, 32, 30 
+    };
+
+    constexpr std::array<uint16_t, 16> APU_NOISE_PERIOD_NTSC = 
+    {
+        4,   8,   16,  32,  64,  96,   128,  160,
+        202, 254, 380, 508, 762, 1016, 2034, 4068
+    };
+
+    constexpr std::array<uint16_t, 16> APU_NOISE_PERIOD_PAL = 
+    {
+        4,   8,   14,  30,  60,  88,  118,  148,
+        188, 236, 354, 472, 708, 944, 1890, 3778
     };
 }
 }

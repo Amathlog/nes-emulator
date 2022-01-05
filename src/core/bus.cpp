@@ -224,6 +224,7 @@ bool Bus::Clock()
     if (m_audioTime >= m_audioTimePerSystemSample)
     {
         sampleReady = true;
+        m_apu.SampleRequested();
         m_audioTime -= m_audioTimePerSystemSample;
     }
 

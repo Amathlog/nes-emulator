@@ -10,9 +10,14 @@ Processor2A03::Processor2A03()
     , m_pulseChannel1(m_synth, 1)
     , m_pulseChannel2(m_synth, 2)
     , m_triangleChannel(m_synth)
+    , m_noiseChannel(m_synth)
 {
     // Create all the waves
-    m_synth.setOutputGen(20.0f * (0.00752f * (m_pulseChannel1.GetWave() + m_pulseChannel2.GetWave()) + 0.00851f * m_triangleChannel.GetWave()));
+    m_synth.setOutputGen(20.0f * 
+        (0.00752f * (m_pulseChannel1.GetWave() + m_pulseChannel2.GetWave()) 
+        + 0.00851f * m_triangleChannel.GetWave()
+        + 0.00494f * m_noiseChannel.GetWave()
+        ));
 }
 
 void Processor2A03::Clock()
@@ -57,6 +62,7 @@ void Processor2A03::Clock()
             // Update volume enveloppe
             m_pulseChannel1.ClockEnveloppe();
             m_pulseChannel2.ClockEnveloppe();
+            m_noiseChannel.ClockEnveloppe();
 
             // Update linear counter for triangle
             m_triangleChannel.ClockLinear(m_statusRegister.enableLengthCounterTriangle);
@@ -68,6 +74,7 @@ void Processor2A03::Clock()
             m_pulseChannel1.Clock(m_statusRegister.enableLengthCounterPulse1);
             m_pulseChannel2.Clock(m_statusRegister.enableLengthCounterPulse2);
             m_triangleChannel.ClockLength(m_statusRegister.enableLengthCounterTriangle);
+            m_noiseChannel.Clock(m_statusRegister.enableLengthCounterNoise);
         }
 
         double cpuFrequency = (m_mode == Mode::NTSC) ? Cst::NTSC_CPU_FREQUENCY : Cst::PAL_CPU_FREQUENCY;
@@ -75,6 +82,7 @@ void Processor2A03::Clock()
         m_pulseChannel1.Update(cpuFrequency, m_synth);
         m_pulseChannel2.Update(cpuFrequency, m_synth);
         m_triangleChannel.Update(cpuFrequency, m_synth);
+        //m_noiseChannel.Update(cpuFrequency, m_synth);
     }
 
     m_pulseChannel1.Track();
@@ -149,22 +157,26 @@ void Processor2A03::WriteCPU(uint16_t addr, uint8_t data)
     else if (addr >= 0x400C && addr <= 0x400F)
     {
         // Noise
+        NoiseRegister& noiseRegister = m_noiseChannel.GetRegister();
         switch (addr & 0x0003)
         {
         case 0:
-            m_noiseRegister.enveloppeLoop = (data & 0x20) >> 5;
-            m_noiseRegister.constantVolume = (data & 0x10) > 0;
-            m_noiseRegister.volumeEnveloppe = (data & 0x0F);
+            noiseRegister.enveloppeLoop = (data & 0x20) > 0;
+            m_noiseChannel.GetEnveloppe().disable = (data & 0x10) > 0;
+            m_noiseChannel.GetEnveloppe().volume = (data & 0x0F);
             break;
         case 1:
             // Unused
             break;
         case 2:
-            m_noiseRegister.loopNoise = (data & 0x80) > 0;
-            m_noiseRegister.noisePeriod = (data & 0x0F);
+            noiseRegister.mode = (data & 0x80) > 0;
+            noiseRegister.SetNoisePeriod((data & 0x0F), m_mode);
             break;
         case 3:
-            m_noiseRegister.lengthCounterLoad = (data & 0xF8) >> 3;
+            noiseRegister.lengthCounterLoad = (data & 0xF8) >> 3;
+            if (m_statusRegister.enableLengthCounterNoise)
+                m_noiseChannel.ReloadCounter();
+            m_noiseChannel.GetEnveloppe().start = true;
             break;
         }
     }
@@ -201,10 +213,7 @@ void Processor2A03::WriteCPU(uint16_t addr, uint8_t data)
         if (!m_statusRegister.enableLengthCounterTriangle)
             m_triangleChannel.Reset();
         if (!m_statusRegister.enableLengthCounterNoise)
-        {
-            // TODO
-            // m_noiseChannel.Reset();
-        }
+            m_noiseChannel.Reset();
         if (!m_statusRegister.enableActivedmc)
         {
             // TODO
@@ -230,7 +239,7 @@ uint8_t Processor2A03::ReadCPU(uint16_t addr)
         statusCopy.enableLengthCounterPulse1 &= m_pulseChannel1.GetCounter() != 0;
         statusCopy.enableLengthCounterPulse2 &= m_pulseChannel2.GetCounter() != 0;
         statusCopy.enableLengthCounterTriangle &= m_triangleChannel.GetCounter() != 0;
-        // statusCopy.enableLengthCounterNoise &= m_noiseChannel.GetCounter() != 0;
+        statusCopy.enableLengthCounterNoise &= m_noiseChannel.GetCounter() != 0;
         // statusCopy.enableActivedmc &= m_dmcChannel.Remaining() > 0;
         // Also by reading this register, we clear the IRQFlag
         m_IRQFlag = false;
@@ -240,12 +249,17 @@ uint8_t Processor2A03::ReadCPU(uint16_t addr)
     return 0;
 }
 
+void Processor2A03::SampleRequested()
+{
+    m_noiseChannel.SampleRequested();
+}
+
 void Processor2A03::Reset()
 {
     m_pulseChannel1.Reset();
     m_pulseChannel2.Reset();
     m_triangleChannel.Reset();
-    m_noiseRegister.Reset();
+    m_noiseChannel.Reset();
     m_dmcRegister.Reset();
     m_statusRegister.flags = 0;
     m_frameCounterRegister.flags = 0;
@@ -258,7 +272,7 @@ void Processor2A03::SerializeTo(Utils::IWriteVisitor& visitor) const
     m_pulseChannel1.SerializeTo(visitor);
     m_pulseChannel2.SerializeTo(visitor);
     m_triangleChannel.SerializeTo(visitor);
-    m_noiseRegister.SerializeTo(visitor);
+    m_noiseChannel.SerializeTo(visitor);
     m_dmcRegister.SerializeTo(visitor);
 
     visitor.WriteValue(m_statusRegister.flags);
@@ -272,7 +286,7 @@ void Processor2A03::DeserializeFrom(Utils::IReadVisitor& visitor)
     m_pulseChannel1.DeserializeFrom(visitor);
     m_pulseChannel2.DeserializeFrom(visitor);
     m_triangleChannel.DeserializeFrom(visitor);
-    m_noiseRegister.DeserializeFrom(visitor);
+    m_noiseChannel.DeserializeFrom(visitor);
     m_dmcRegister.DeserializeFrom(visitor);
 
     visitor.ReadValue(m_statusRegister.flags);
