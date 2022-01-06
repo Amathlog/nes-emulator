@@ -87,13 +87,13 @@ namespace Cst
       192, 24, 72, 26, 16, 28, 32, 30 
     };
 
-    constexpr std::array<uint16_t, 16> APU_NOISE_PERIOD_NTSC = 
+    constexpr std::array<int16_t, 16> APU_NOISE_PERIOD_NTSC = 
     {
         4,   8,   16,  32,  64,  96,   128,  160,
         202, 254, 380, 508, 762, 1016, 2034, 4068
     };
 
-    constexpr std::array<uint16_t, 16> APU_NOISE_PERIOD_PAL = 
+    constexpr std::array<int16_t, 16> APU_NOISE_PERIOD_PAL = 
     {
         4,   8,   14,  30,  60,  88,  118,  148,
         188, 236, 354, 472, 708, 944, 1890, 3778

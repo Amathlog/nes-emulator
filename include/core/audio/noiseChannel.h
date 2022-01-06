@@ -15,7 +15,7 @@ namespace NesEmulator
         uint8_t constantVolume;
         uint8_t volumeEnveloppe;
         uint8_t mode;
-        uint8_t noisePeriod;
+        int16_t noisePeriod;
         uint8_t lengthCounterLoad;
 
         void Reset();
@@ -47,7 +47,8 @@ namespace NesEmulator
         void SampleRequested();
         
     private:
-        MyNoise m_wave;
+        //MyNoise m_wave;
+        Tonic::Generator m_wave;
         NoiseRegister m_register;
         Enveloppe m_enveloppe;
 

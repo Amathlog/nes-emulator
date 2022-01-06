@@ -82,7 +82,7 @@ void Processor2A03::Clock()
         m_pulseChannel1.Update(cpuFrequency, m_synth);
         m_pulseChannel2.Update(cpuFrequency, m_synth);
         m_triangleChannel.Update(cpuFrequency, m_synth);
-        //m_noiseChannel.Update(cpuFrequency, m_synth);
+        m_noiseChannel.Update(cpuFrequency, m_synth);
     }
 
     m_pulseChannel1.Track();

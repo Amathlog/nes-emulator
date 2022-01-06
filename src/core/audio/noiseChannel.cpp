@@ -48,8 +48,10 @@ void NoiseRegister::SetNoisePeriod(uint8_t index, Mode mode)
 // Noise Channel
 //////////////////////////////////////////////////////
 
-NoiseChannel::NoiseChannel(Tonic::Synth&)
+NoiseChannel::NoiseChannel(Tonic::Synth& synth)
 {
+    Tonic::ControlParameter volume = synth.addParameter("noiseVolume");
+    m_wave = volume * Tonic::Noise();
 }
 
 void NoiseChannel::Clock(bool isEnabled)
@@ -86,29 +88,36 @@ void NoiseChannel::ClockEnveloppe()
     m_enveloppe.Clock(m_register.enveloppeLoop);
 }
 
-void NoiseChannel::Update(double, Tonic::Synth&)
+void NoiseChannel::Update(double, Tonic::Synth& synth)
 {
+    float temp;
     if (m_lengthCounter > 0 && m_register.noisePeriod > 0)
     {
         float volume = m_enveloppe.output > 1 ? (float)(m_enveloppe.output - 1) / 16.0f : 0.0f;
-        m_currentOutput = (m_shiftRegister & 0x0001) > 0 ? volume : 0.0f;
+        temp = (m_shiftRegister & 0x0001) > 0 ? volume : -volume;
     }
     else
     {
-        m_currentOutput = 0.0f;
+        temp = 0.0f;
+    }
+
+    if (m_currentOutput != temp)
+    {
+        m_currentOutput = temp;
+        synth.setParameter("noiseVolume", temp);
     }
 }
 
 void NoiseChannel::SampleRequested()
 {
-    m_wave.setOutput(m_currentOutput);
+    //m_wave.setOutput(m_currentOutput);
 }
 
 void NoiseChannel::Reset()
 {
     m_register.Reset();
     m_enveloppe.Reset();
-    m_wave.reset();
+    //m_wave.reset();
     m_shiftRegister = 0x0001;
     m_lengthCounter = 0;
     m_timer = 0;
