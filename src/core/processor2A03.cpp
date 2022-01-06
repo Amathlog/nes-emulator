@@ -1,3 +1,4 @@
+#include "MyTonic.h"
 #include "core/audio/pulseChannel.h"
 #include "core/constants.h"
 #include <core/processor2A03.h>
@@ -13,11 +14,14 @@ Processor2A03::Processor2A03()
     , m_noiseChannel(m_synth)
 {
     // Create all the waves
-    m_synth.setOutputGen(20.0f * 
+    auto rawOutput = 20.0f * 
         (0.00752f * (m_pulseChannel1.GetWave() + m_pulseChannel2.GetWave()) 
         + 0.00851f * m_triangleChannel.GetWave()
         + 0.00494f * m_noiseChannel.GetWave()
-        ));
+        );
+
+    auto filter = MyFilter().input(rawOutput);
+    m_synth.setOutputGen(filter);
 }
 
 void Processor2A03::Clock()

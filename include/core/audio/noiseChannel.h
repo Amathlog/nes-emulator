@@ -17,6 +17,7 @@ namespace NesEmulator
         uint8_t mode;
         int16_t noisePeriod;
         uint8_t lengthCounterLoad;
+        bool noisePeriodChanged;
 
         void Reset();
         void SerializeTo(Utils::IWriteVisitor& visitor) const;

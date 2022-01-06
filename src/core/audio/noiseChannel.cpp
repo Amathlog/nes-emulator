@@ -1,3 +1,4 @@
+#include "MyTonic.h"
 #include "core/constants.h"
 #include <core/audio/noiseChannel.h>
 
@@ -16,6 +17,7 @@ void NoiseRegister::Reset()
     mode = 0;
     noisePeriod = 0;
     lengthCounterLoad = 0;
+    noisePeriodChanged = true;
 }
 
 void NoiseRegister::SerializeTo(Utils::IWriteVisitor& visitor) const
@@ -42,6 +44,7 @@ void NoiseRegister::SetNoisePeriod(uint8_t index, Mode mode)
 {
     auto noisePeriodTable = mode == Mode::PAL ? Cst::APU_NOISE_PERIOD_PAL : Cst::APU_NOISE_PERIOD_NTSC;
     noisePeriod = noisePeriodTable[index & 0x0F];
+    noisePeriodChanged = true;
 }
 
 //////////////////////////////////////////////////////
@@ -51,7 +54,9 @@ void NoiseRegister::SetNoisePeriod(uint8_t index, Mode mode)
 NoiseChannel::NoiseChannel(Tonic::Synth& synth)
 {
     Tonic::ControlParameter volume = synth.addParameter("noiseVolume");
-    m_wave = volume * Tonic::Noise();
+    // Tonic::ControlParameter freq = synth.addParameter("noiseFreq");
+    m_wave = volume * Tonic::Noise();// * Tonic::SineWave().freq(freq);
+    //m_wave = MyNoise();
 }
 
 void NoiseChannel::Clock(bool isEnabled)
@@ -88,13 +93,13 @@ void NoiseChannel::ClockEnveloppe()
     m_enveloppe.Clock(m_register.enveloppeLoop);
 }
 
-void NoiseChannel::Update(double, Tonic::Synth& synth)
+void NoiseChannel::Update(double cpuFrequency, Tonic::Synth& synth)
 {
     float temp;
     if (m_lengthCounter > 0 && m_register.noisePeriod > 0)
     {
-        float volume = m_enveloppe.output > 1 ? (float)(m_enveloppe.output - 1) / 16.0f : 0.0f;
-        temp = (m_shiftRegister & 0x0001) > 0 ? volume : -volume;
+        temp = m_enveloppe.output > 1 ? (float)(m_enveloppe.output - 1) / 16.0f : 0.0f;
+        // temp = (m_shiftRegister & 0x0001) > 0 ? volume : -volume;
     }
     else
     {
@@ -105,6 +110,14 @@ void NoiseChannel::Update(double, Tonic::Synth& synth)
     {
         m_currentOutput = temp;
         synth.setParameter("noiseVolume", temp);
+        ///m_wave.setVolume(temp);
+    }
+    
+    if (m_register.noisePeriodChanged && m_register.noisePeriod > 0)
+    {
+        m_register.noisePeriodChanged = false;
+        //double newFrequency = cpuFrequency / (16.0 * (double)(m_register.noisePeriod + 1));
+        //m_wave.setFreq((float)newFrequency);
     }
 }
 
@@ -118,6 +131,7 @@ void NoiseChannel::Reset()
     m_register.Reset();
     m_enveloppe.Reset();
     //m_wave.reset();
+    //m_wave.setVolume(0);
     m_shiftRegister = 0x0001;
     m_lengthCounter = 0;
     m_timer = 0;

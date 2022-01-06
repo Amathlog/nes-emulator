@@ -22,41 +22,82 @@ class MyNoise_ : public Tonic::Tonic_::Generator_
 {
     protected:
         void computeSynthesisBlock( const Tonic::Tonic_::SynthesisContext_ & context );
+        unsigned nbSamplesPerRandomValue = 1;
+        float volume = 0.0f;
 
     public:
-        MyNoise_() { std::memset(buffer, 0, sizeof(buffer)); }
-        void reset() { std::memset(buffer, 0, sizeof(buffer)); lastCall = 0; ptr = 0; }
-        float buffer[2048];
-        size_t ptr = 0;
-        size_t lastCall = 0;
+        void setFreq(float value)
+        {
+            nbSamplesPerRandomValue = 0;
+            if (value != 0.0f)
+            {
+                double sampleDuration = 1.0 / Tonic::sampleRate();
+                double signalPeriod = 1.0 / value;
+                nbSamplesPerRandomValue = (unsigned)(floor(signalPeriod / sampleDuration));
+            }
+
+            if (nbSamplesPerRandomValue == 0)
+            {
+                nbSamplesPerRandomValue = 1;
+                volume = 0.0f;
+            }
+        }
+
+        void setVolume(float value)
+        {
+            volume = value;
+        }
 };
 
-inline void MyNoise_::computeSynthesisBlock( const Tonic::Tonic_::SynthesisContext_ & context ){
+inline void MyNoise_::computeSynthesisBlock( const Tonic::Tonic_::SynthesisContext_ & context )
+{
     TonicFloat* fdata = &outputFrames_[0];
-    if (lastCall + outputFrames_.size() > 2048)
+    float value = 0.0f;
+    for (unsigned int i=0; i<outputFrames_.size(); i++)
     {
-        std::memcpy(fdata, buffer + lastCall, 2048 - lastCall);
-        lastCall = outputFrames_.size() - (2048 - lastCall);
-        std::memcpy(fdata, buffer, lastCall);
-    }
-    else
-    {
-        std::memcpy(fdata, buffer + lastCall, outputFrames_.size());
-        lastCall += outputFrames_.size();
+        if (i % nbSamplesPerRandomValue == 0)
+            value = Tonic::randomSample() > 0.0f ? volume : -volume;
+        *fdata++ = value;
     }
 }
 
 class MyNoise : public Tonic::TemplatedGenerator<MyNoise_>
 {
-    public:
-        void setOutput(float value)
-        {
-            gen()->buffer[gen()->ptr] = value;
-            gen()->ptr = (gen()->ptr + 1) % 2048;
-        }
-
-        void reset() { gen()->reset(); }
+public:
+    void setFreq(float value) { gen()->setFreq(value); }
+    void setVolume(float value) { gen()->setVolume(value); }
 };
+
+class MyFilter_ : public Tonic::Tonic_::Effect_
+{
+protected:
+    void computeSynthesisBlock( const Tonic::Tonic_::SynthesisContext_ & context );
+    float LP_Out = 0.0f;
+    float HPA_Out = 0.0f, HPA_Prev = 0.0f;
+    float HPB_Out = 0.0f, HPB_Prev = 0.0f;
+};
+
+inline void MyFilter_::computeSynthesisBlock( const Tonic::Tonic_::SynthesisContext_ & context )
+{
+    TonicFloat* fdata = &outputFrames_[0];
+    TonicFloat* idata = &dryFrames_[0];
+    for (unsigned int i=0; i<outputFrames_.size(); i++)
+    {
+        float LP_in = *idata++;
+        LP_Out = (LP_in - LP_Out) * 0.815686f;
+
+        HPA_Out = HPA_Out * 0.996039f + LP_Out - HPA_Prev;
+        HPA_Prev = LP_Out;
+
+        HPB_Out = HPB_Out * 0.999835f + HPA_Out - HPB_Prev;
+        HPB_Prev = HPA_Out;
+
+        *fdata++ = HPB_Out;
+    }
+}
+
+class MyFilter : public Tonic::TemplatedEffect<MyFilter, MyFilter_>
+{};
 
 #if defined(__clang__)
 #pragma clang diagnostic pop
