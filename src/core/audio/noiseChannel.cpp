@@ -79,7 +79,7 @@ void NoiseChannel::Update(double cpuFrequency, Tonic::Synth& synth)
     float temp;
     if (m_lengthCounter > 0 && m_register.noisePeriod > 0)
     {
-        temp = m_enveloppe.output > 1 ? (float)(m_enveloppe.output - 1) / 16.0f : 0.0f;
+        temp = (float)(m_enveloppe.output) / 15.0f;
     }
     else
     {

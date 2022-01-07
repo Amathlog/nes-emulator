@@ -75,11 +75,13 @@ void Sweep::DeserializeFrom(Utils::IReadVisitor& visitor)
 
 void Sweep::Track(uint16_t target)
 {
-    if (enabled)
-    {
-        change = target >> shift;
-        mute = (target < 8) || (target > 0x7FF);
-    }
+    // if (enabled)
+    // {
+    //     change = target >> shift;
+    //     mute = (target < 8) || (target > 0x7FF);
+    // }
+    change = target >> shift;
+    mute = (target < 8) | (target > 0x7FF);
 }
 
 void Sweep::Clock(uint16_t& target, bool isChannel1)
@@ -89,7 +91,7 @@ void Sweep::Clock(uint16_t& target, bool isChannel1)
         if (target >= 8 && change < 0x07FF)
         {
             int16_t temp = down ? -change : change;
-            if (isChannel1)
+            if (isChannel1 && down)
                 temp--;
 
             target += temp;
@@ -171,7 +173,7 @@ void PulseChannel::Update(double cpuFrequency, Tonic::Synth& synth)
     // Enveloppe output
     if (m_enveloppe.updated)
     {
-        float envOutput = m_enveloppe.output > 2 ? (float)(m_enveloppe.output - 1) / 16.0f : 0.0f;
+        float envOutput = (float)(m_enveloppe.output) / 15.0f;
         synth.setParameter(GetEnveloppeOutputParameterName(), envOutput);
         m_enveloppe.updated = false;
     }

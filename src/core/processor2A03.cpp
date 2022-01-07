@@ -14,9 +14,23 @@ Processor2A03::Processor2A03()
     , m_triangleChannel(m_synth)
     , m_noiseChannel(m_synth)
 {
+    // Based on the linear approximation
+    // output = square_out + tnd_out
+    // square_out = 0.00752 * (square1 + square2)
+    // tnd_out = 0.00851 * triangle + 0.00494 * noise + 0.00335 * dmc
+    // To compute the final output, we sum all the coefficients as
+    // a scale factor
+    // With this, it is close to 26% for a pulse channel 29% for triangle
+    // and 17% for noise
+    // (not implementing DMC for now)
+    constexpr float pulseCoeff = 0.00752f;
+    constexpr float triangleCoeff = 0.00851f;
+    constexpr float noiseCoeff = 0.00494f;
+    constexpr float maxCoeff = 2 * pulseCoeff + triangleCoeff + noiseCoeff;
 
-    auto rawOutput = 0.25f * (m_pulseChannel1.GetWave() + m_pulseChannel2.GetWave() 
-                            + m_triangleChannel.GetWave() + m_noiseChannel.GetWave());
+
+    auto rawOutput = (pulseCoeff * (m_pulseChannel1.GetWave() + m_pulseChannel2.GetWave())
+                            + triangleCoeff * m_triangleChannel.GetWave() + noiseCoeff * m_noiseChannel.GetWave()) / maxCoeff;
 
     // A first-order high-pass filter at 90 Hz
     // Another first-order high-pass filter at 440 Hz
