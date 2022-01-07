@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <core/utils/visitor.h>
 #include <MyTonic.h>
+#include <maximilian.h>
 
 namespace NesEmulator 
 {
@@ -38,10 +39,12 @@ namespace NesEmulator
 
         void SerializeTo(Utils::IWriteVisitor& visitor) const;
         void DeserializeFrom(Utils::IReadVisitor& visitor);
+        float GetAudioSample();
         
     private:
         Tonic::Generator m_wave;
         TriangleRegister m_register;
+        maxiOsc m_triangle;
 
         double m_frequency = 0.0;
         double m_enableValue = 0.0;

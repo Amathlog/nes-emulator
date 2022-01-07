@@ -187,6 +187,12 @@ void PulseChannel::Update(double cpuFrequency, Tonic::Synth& synth)
     }
 }
 
+float PulseChannel::GetAudioSample()
+{
+    float envOutput = m_enveloppe.output > 2 ? (float)(m_enveloppe.output - 1) / 16.0f : 0.0f;
+    return m_enableValue == 1.0 ? envOutput * (float)myPulse.rect(m_frequency, m_dutyCycle) : 0.0f;
+}
+
 void PulseChannel::SerializeTo(Utils::IWriteVisitor &visitor) const
 {
     m_register.SerializeTo(visitor);

@@ -46,6 +46,8 @@ namespace NesEmulator
         void SerializeTo(Utils::IWriteVisitor& visitor) const;
         void DeserializeFrom(Utils::IReadVisitor& visitor);
         void SampleRequested();
+
+        float GetAudioSample();
         
     private:
         //MyNoise m_wave;

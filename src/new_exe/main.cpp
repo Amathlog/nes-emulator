@@ -10,6 +10,7 @@
 #include <core/bus.h>
 #include <core/cartridge.h>
 #include <vector>
+#include <maximilian.h>
 
 
 namespace fs = std::filesystem;

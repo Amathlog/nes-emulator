@@ -1,3 +1,4 @@
+#include "RtAudio.h"
 #include <new_exe/audio/audioSystem.h>
 
 using NesEmulatorGL::AudioSystem;

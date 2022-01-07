@@ -70,22 +70,6 @@ void NoiseChannel::Clock(bool isEnabled)
     {
         m_lengthCounter--;
     }
-
-    if (isEnabled)
-    {
-        if(--m_timer == -1)
-        {
-            m_timer = m_register.noisePeriod;
-            uint16_t otherFeedback = 0;
-            if (m_register.mode == 0)
-                otherFeedback = (m_shiftRegister >> 1) & 0x0001;
-            else
-                otherFeedback = (m_shiftRegister >> 5) & 0x0001;
-
-            uint16_t feedback = ((m_shiftRegister & 0x0001) ^ otherFeedback) & 0x0001;
-            m_shiftRegister = (feedback << 14) | (m_shiftRegister >> 1);
-        }
-    }
 }
 
 void NoiseChannel::ClockEnveloppe()
@@ -95,6 +79,19 @@ void NoiseChannel::ClockEnveloppe()
 
 void NoiseChannel::Update(double cpuFrequency, Tonic::Synth& synth)
 {
+    if(--m_timer == -1)
+    {
+        m_timer = m_register.noisePeriod;
+        uint16_t otherFeedback = 0;
+        if (m_register.mode == 0)
+            otherFeedback = (m_shiftRegister >> 1) & 0x0001;
+        else
+            otherFeedback = (m_shiftRegister >> 5) & 0x0001;
+
+        uint16_t feedback = (m_shiftRegister ^ otherFeedback) & 0x0001;
+        m_shiftRegister = (feedback << 14) | (m_shiftRegister >> 1);
+    }
+
     float temp;
     if (m_lengthCounter > 0 && m_register.noisePeriod > 0)
     {
@@ -159,4 +156,14 @@ void NoiseChannel::DeserializeFrom(Utils::IReadVisitor& visitor)
 void NoiseChannel::ReloadCounter()
 {
     m_lengthCounter = Cst::APU_LENGTH_TABLE[m_register.lengthCounterLoad];
+}
+
+float NoiseChannel::GetAudioSample()
+{
+    if (m_register.noisePeriod == 0 || m_lengthCounter == 0)
+        return 0.0f;
+
+    float volume = m_enveloppe.output > 1 ? (float)(m_enveloppe.output - 1) / 16.0f : 0.0f;
+
+    return (m_shiftRegister & 0x0001) ? volume : -volume;
 }

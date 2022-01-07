@@ -298,3 +298,23 @@ void Processor2A03::DeserializeFrom(Utils::IReadVisitor& visitor)
     visitor.ReadValue(m_clockCounter);
     visitor.ReadValue(m_frameClockCounter);
 }
+
+float Processor2A03::GetAudioSample()
+{
+    auto rawOutput = 20.0f * 
+        (0.00752f * (m_pulseChannel1.GetAudioSample() + m_pulseChannel2.GetAudioSample()) 
+        + 0.00851f * m_triangleChannel.GetAudioSample()
+        + 0.00494f * m_noiseChannel.GetAudioSample()
+        );
+
+    float LP_in = rawOutput;
+    LP_Out = (LP_in - LP_Out) * 0.815686f;
+
+    HPA_Out = HPA_Out * 0.996039f + LP_Out - HPA_Prev;
+    HPA_Prev = LP_Out;
+
+    HPB_Out = HPB_Out * 0.999835f + HPA_Out - HPB_Prev;
+    HPB_Prev = HPA_Out;
+
+    return rawOutput;
+}

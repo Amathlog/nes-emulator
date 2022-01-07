@@ -89,5 +89,5 @@ file(GLOB_RECURSE NEW_EXE_SRC
 
 link_directories(${NesEmulator_SOURCE_DIR}/LibProject/src)
 add_executable(NesEmulatorGL ${NEW_EXE_SRC})
-target_link_libraries(NesEmulatorGL NesEmulator_Core ${OPENGL_LIBRARIES} glfw ${CMAKE_DL_LIBS} Tonic rtaudio ImGuiFE ImGui)
+target_link_libraries(NesEmulatorGL NesEmulator_Core ${OPENGL_LIBRARIES} glfw ${CMAKE_DL_LIBS} Tonic Maximilian rtaudio ImGuiFE ImGui)
 set_target_properties(NesEmulatorGL PROPERTIES FOLDER ${MAIN_FOLDER})

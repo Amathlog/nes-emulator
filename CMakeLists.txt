@@ -49,5 +49,15 @@ if(WIN32)
 endif(WIN32)
 set_target_properties(Tonic PROPERTIES FOLDER ${EXTERNAL_FOLDER})
 
+
+# Generate Maximilian lib
+include_directories(${NesEmulator_SOURCE_DIR}/external/Maximilian/src Maximilian)
+set(MAXIMILIAN_DIR ${NesEmulator_SOURCE_DIR}/external/Maximilian/src)
+file(GLOB_RECURSE MAXIMILIAN_SRC
+    ${MAXIMILIAN_DIR}/*
+)
+
+add_library(Maximilian STATIC ${MAXIMILIAN_SRC})
+
 add_subdirectory("src")
 add_subdirectory("tests")

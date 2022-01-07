@@ -121,6 +121,14 @@ void TriangleChannel::Update(double cpuFrequency, Tonic::Synth& synth)
     }
 }
 
+float TriangleChannel::GetAudioSample()
+{
+    if (m_register.timer == 0)
+        return 0.f;
+    
+    return (float)(m_enableValue * m_triangle.triangle(m_frequency));
+}
+
 void TriangleChannel::ReloadCounter()
 {
     m_lengthCounter = Cst::APU_LENGTH_TABLE[m_register.lengthCounterLoad];

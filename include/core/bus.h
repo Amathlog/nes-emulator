@@ -64,6 +64,8 @@ namespace NesEmulator
         NesEmulator::Mode GetMode() const { return m_mode; }
         void SetSampleFrequency(unsigned sampleFrequency);
 
+        float GetAudioSample() { return m_apu.GetAudioSample(); }
+
     private:
         Processor6502 m_cpu;
         Processor2C02 m_ppu;

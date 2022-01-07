@@ -5,6 +5,7 @@
 #include <core/utils/visitor.h>
 #include <cstdint>
 #include <string>
+#include <maximilian.h>
 
 namespace NesEmulator {
 
@@ -61,6 +62,7 @@ namespace NesEmulator {
 
         void SerializeTo(Utils::IWriteVisitor& visitor) const;
         void DeserializeFrom(Utils::IReadVisitor& visitor);
+        float GetAudioSample();
 
     private:
         std::string GetDutyCycleParameterName();
@@ -73,6 +75,7 @@ namespace NesEmulator {
         PulseRegister m_register;
         Sweep m_sweep;
         Enveloppe m_enveloppe;
+        maxiOsc myPulse;
 
         double m_frequency = 0.0;
         double m_dutyCycle = 0.0;
