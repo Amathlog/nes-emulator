@@ -1,8 +1,7 @@
 #pragma once
 
-
-
 #include <core/utils/visitor.h>
+
 namespace NesEmulator
 {
     namespace Utils 

@@ -51,12 +51,9 @@ void NoiseRegister::SetNoisePeriod(uint8_t index, Mode mode)
 // Noise Channel
 //////////////////////////////////////////////////////
 
-NoiseChannel::NoiseChannel(Tonic::Synth& synth)
+NoiseChannel::NoiseChannel(Tonic::Synth&)
 {
-    Tonic::ControlParameter volume = synth.addParameter("noiseVolume");
-    // Tonic::ControlParameter freq = synth.addParameter("noiseFreq");
-    m_wave = volume * Tonic::Noise();// * Tonic::SineWave().freq(freq);
-    //m_wave = MyNoise();
+    m_wave = MyNoise();
 }
 
 void NoiseChannel::Clock(bool isEnabled)
@@ -69,22 +66,6 @@ void NoiseChannel::Clock(bool isEnabled)
     else if (m_lengthCounter > 0 && !halt) 
     {
         m_lengthCounter--;
-    }
-
-    if (isEnabled)
-    {
-        if(--m_timer == -1)
-        {
-            m_timer = m_register.noisePeriod;
-            uint16_t otherFeedback = 0;
-            if (m_register.mode == 0)
-                otherFeedback = (m_shiftRegister >> 1) & 0x0001;
-            else
-                otherFeedback = (m_shiftRegister >> 5) & 0x0001;
-
-            uint16_t feedback = ((m_shiftRegister & 0x0001) ^ otherFeedback) & 0x0001;
-            m_shiftRegister = (feedback << 14) | (m_shiftRegister >> 1);
-        }
     }
 }
 
@@ -99,7 +80,6 @@ void NoiseChannel::Update(double cpuFrequency, Tonic::Synth& synth)
     if (m_lengthCounter > 0 && m_register.noisePeriod > 0)
     {
         temp = m_enveloppe.output > 1 ? (float)(m_enveloppe.output - 1) / 16.0f : 0.0f;
-        // temp = (m_shiftRegister & 0x0001) > 0 ? volume : -volume;
     }
     else
     {
@@ -109,15 +89,14 @@ void NoiseChannel::Update(double cpuFrequency, Tonic::Synth& synth)
     if (m_currentOutput != temp)
     {
         m_currentOutput = temp;
-        synth.setParameter("noiseVolume", temp);
-        ///m_wave.setVolume(temp);
+        m_wave.setVolume(temp);
     }
     
     if (m_register.noisePeriodChanged && m_register.noisePeriod > 0)
     {
         m_register.noisePeriodChanged = false;
-        //double newFrequency = cpuFrequency / (16.0 * (double)(m_register.noisePeriod + 1));
-        //m_wave.setFreq((float)newFrequency);
+        double newFrequency = cpuFrequency / ((double)m_register.noisePeriod);
+        m_wave.setFreq((float)newFrequency);
     }
 }
 
@@ -130,9 +109,7 @@ void NoiseChannel::Reset()
 {
     m_register.Reset();
     m_enveloppe.Reset();
-    //m_wave.reset();
-    //m_wave.setVolume(0);
-    m_shiftRegister = 0x0001;
+    m_wave.reset();
     m_lengthCounter = 0;
     m_timer = 0;
     m_currentOutput = 0.0f;
@@ -142,7 +119,6 @@ void NoiseChannel::SerializeTo(Utils::IWriteVisitor& visitor) const
 {
     m_register.SerializeTo(visitor);
     m_enveloppe.SerializeTo(visitor);
-    visitor.WriteValue(m_shiftRegister);
     visitor.WriteValue(m_lengthCounter);
     visitor.WriteValue(m_timer);
 }
@@ -151,7 +127,6 @@ void NoiseChannel::DeserializeFrom(Utils::IReadVisitor& visitor)
 {
     m_register.DeserializeFrom(visitor);
     m_enveloppe.DeserializeFrom(visitor);
-    visitor.ReadValue(m_shiftRegister);
     visitor.ReadValue(m_lengthCounter);
     visitor.ReadValue(m_timer);
 }

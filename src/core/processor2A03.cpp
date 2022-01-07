@@ -1,4 +1,5 @@
 #include "MyTonic.h"
+#include "Tonic/Filters.h"
 #include "core/audio/pulseChannel.h"
 #include "core/constants.h"
 #include <core/processor2A03.h>
@@ -13,15 +14,21 @@ Processor2A03::Processor2A03()
     , m_triangleChannel(m_synth)
     , m_noiseChannel(m_synth)
 {
-    // Create all the waves
-    auto rawOutput = 20.0f * 
-        (0.00752f * (m_pulseChannel1.GetWave() + m_pulseChannel2.GetWave()) 
-        + 0.00851f * m_triangleChannel.GetWave()
-        + 0.00494f * m_noiseChannel.GetWave()
-        );
 
-    auto filter = MyFilter().input(rawOutput);
-    m_synth.setOutputGen(filter);
+    auto rawOutput = 0.25f * (m_pulseChannel1.GetWave() + m_pulseChannel2.GetWave() 
+                            + m_triangleChannel.GetWave() + m_noiseChannel.GetWave());
+
+    // A first-order high-pass filter at 90 Hz
+    // Another first-order high-pass filter at 440 Hz
+    // A first-order low-pass filter at 14 kHz
+
+    auto lpf = Tonic::LPF6().cutoff(14000);
+    auto hpf1 = Tonic::HPF6().cutoff(90);
+    auto hpf2 = Tonic::HPF6().cutoff(440);
+
+    auto output = hpf2.input(hpf1.input(lpf.input(rawOutput)));
+
+    m_synth.setOutputGen(output);
 }
 
 void Processor2A03::Clock()

@@ -48,13 +48,11 @@ namespace NesEmulator
         void SampleRequested();
         
     private:
-        //MyNoise m_wave;
-        Tonic::Generator m_wave;
+        MyNoise m_wave;
         NoiseRegister m_register;
         Enveloppe m_enveloppe;
 
         uint8_t m_lengthCounter = 0;
-        uint16_t m_shiftRegister = 0;
         int16_t m_timer = 0;
         float m_currentOutput = 0.0f;
     };
