@@ -95,7 +95,7 @@ void NoiseChannel::Update(double cpuFrequency, Tonic::Synth& synth)
     float temp;
     if (m_lengthCounter > 0 && m_register.noisePeriod > 0)
     {
-        temp = m_enveloppe.output > 1 ? (float)(m_enveloppe.output - 1) / 16.0f : 0.0f;
+        temp = (float)(m_enveloppe.output) / 15.0f;
         // temp = (m_shiftRegister & 0x0001) > 0 ? volume : -volume;
     }
     else
@@ -158,12 +158,12 @@ void NoiseChannel::ReloadCounter()
     m_lengthCounter = Cst::APU_LENGTH_TABLE[m_register.lengthCounterLoad];
 }
 
-float NoiseChannel::GetAudioSample()
+double NoiseChannel::GetAudioSample()
 {
     if (m_register.noisePeriod == 0 || m_lengthCounter == 0)
-        return 0.0f;
+        return 0.0;
 
-    float volume = m_enveloppe.output > 1 ? (float)(m_enveloppe.output - 1) / 16.0f : 0.0f;
+    double volume = (m_enveloppe.output) / 15.0;
 
     return (m_shiftRegister & 0x0001) ? volume : -volume;
 }

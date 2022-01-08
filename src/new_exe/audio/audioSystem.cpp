@@ -38,7 +38,7 @@ bool AudioSystem::Initialize()
     RtAudio::StreamOptions rtOptions;
     rtOptions.numberOfBuffers = 4;
 
-    auto res = m_dac->openStream(&rtParams, NULL, RTAUDIO_FLOAT32, m_sampleRate, &m_bufferFrames, &audioCallback, this, &rtOptions);
+    auto res = m_dac->openStream(&rtParams, NULL, RTAUDIO_FLOAT64, m_sampleRate, &m_bufferFrames, &audioCallback, this, &rtOptions);
 
     if (res != RtAudioErrorType::RTAUDIO_NO_ERROR)
     {

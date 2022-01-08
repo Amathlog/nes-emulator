@@ -38,9 +38,9 @@ int NesAudioSystem::RenderCallback(void *outputBuffer, void* /*inputBuffer*/, un
             if (m_bus.Clock())
             {
                 count++;
-                float value = m_bus.GetAudioSample();
-                ((float*)outputBuffer)[2 * count] = value;
-                ((float*)outputBuffer)[2 * count + 1] = value;
+                double value = m_bus.GetAudioSample();
+                ((double*)outputBuffer)[2 * count] = value;
+                ((double*)outputBuffer)[2 * count + 1] = value;
             }
 
             if (m_bus.GetPPU().IsFrameComplete())

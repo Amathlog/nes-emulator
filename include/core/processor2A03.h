@@ -100,7 +100,7 @@ namespace NesEmulator
         void SetMode(Mode mode) { m_mode = mode; }
         void SampleRequested();
 
-        float GetAudioSample();
+        double GetAudioSample();
 
     private:
         Tonic::Synth m_synth;
@@ -117,8 +117,8 @@ namespace NesEmulator
         Mode m_mode; // NTSC or PAL
         bool m_IRQFlag = false;
 
-        float LP_Out = 0.0f;
-        float HPA_Out = 0.0f, HPA_Prev = 0.0f;
-        float HPB_Out = 0.0f, HPB_Prev = 0.0f;
+        double LP_Out = 0.0;
+        double HPA_Out = 0.0, HPA_Prev = 0.0;
+        double HPB_Out = 0.0, HPB_Prev = 0.0;
     };
 }

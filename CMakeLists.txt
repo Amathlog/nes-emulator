@@ -58,6 +58,10 @@ file(GLOB_RECURSE MAXIMILIAN_SRC
 )
 
 add_library(Maximilian STATIC ${MAXIMILIAN_SRC})
+if(WIN32)
+  target_compile_options(Maximilian PRIVATE /wd4244 /wd4996 /wd4267 /wd4305 /wd4018 )
+endif(WIN32)
+set_target_properties(Maximilian PROPERTIES FOLDER ${EXTERNAL_FOLDER})
 
 add_subdirectory("src")
 add_subdirectory("tests")

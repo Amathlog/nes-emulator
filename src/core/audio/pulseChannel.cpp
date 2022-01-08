@@ -142,6 +142,7 @@ PulseChannel::PulseChannel(Tonic::Synth& synth, int number)
     Tonic::ControlGenerator controlOutputEnvPulse = synth.addParameter(GetEnveloppeOutputParameterName());
 
     m_wave = controlOutputEnvPulse * controlOutputPulse * Tonic::RectWave().freq(controlFreqPulse).pwm(controlDutyPulse);
+    myPulse.setWaveform(PolyBLEP::Waveform::RECTANGLE);
 }
 
 void PulseChannel::Update(double cpuFrequency, Tonic::Synth& synth)
@@ -184,13 +185,14 @@ void PulseChannel::Update(double cpuFrequency, Tonic::Synth& synth)
         synth.setParameter(GetDutyCycleParameterName(), (float)newDutyCycle);
         synth.setParameter(GetFrequencyParameterName(), (float)newFrequency);
         synth.setParameter(GetOutputParameterName(), (float)newEnableValue);
+        myPulse.setPulseWidth(m_dutyCycle);
     }
 }
 
-float PulseChannel::GetAudioSample()
+double PulseChannel::GetAudioSample()
 {
-    float envOutput = m_enveloppe.output > 2 ? (float)(m_enveloppe.output - 1) / 16.0f : 0.0f;
-    return m_enableValue == 1.0 ? envOutput * (float)myPulse.rect(m_frequency, m_dutyCycle) : 0.0f;
+    double envOutput = (m_enveloppe.output) / 15.0;
+    return m_enableValue == 1.0 ? envOutput * myPulse.play(m_frequency) : 0.0;
 }
 
 void PulseChannel::SerializeTo(Utils::IWriteVisitor &visitor) const

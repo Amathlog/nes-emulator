@@ -299,22 +299,26 @@ void Processor2A03::DeserializeFrom(Utils::IReadVisitor& visitor)
     visitor.ReadValue(m_frameClockCounter);
 }
 
-float Processor2A03::GetAudioSample()
+double Processor2A03::GetAudioSample()
 {
-    auto rawOutput = 20.0f * 
-        (0.00752f * (m_pulseChannel1.GetAudioSample() + m_pulseChannel2.GetAudioSample()) 
-        + 0.00851f * m_triangleChannel.GetAudioSample()
-        + 0.00494f * m_noiseChannel.GetAudioSample()
-        );
+    constexpr double pulseCoeff = 0.00752;
+    constexpr double triCoeff = 0.00851;
+    constexpr double noiseCoeff = 0.00494;
+    constexpr double maxCoeff = 2 * pulseCoeff + triCoeff + noiseCoeff;
 
-    float LP_in = rawOutput;
-    LP_Out = (LP_in - LP_Out) * 0.815686f;
+    auto rawOutput = (pulseCoeff * (m_pulseChannel1.GetAudioSample() + m_pulseChannel2.GetAudioSample())  + triCoeff * m_triangleChannel.GetAudioSample() + noiseCoeff * m_noiseChannel.GetAudioSample() ) / maxCoeff;
 
-    HPA_Out = HPA_Out * 0.996039f + LP_Out - HPA_Prev;
+    static maxiFilter lpf, hpf1, hpf2;
+
+    double LP_in = rawOutput;
+    LP_Out = (LP_in - LP_Out) * 0.815686;
+
+    HPA_Out = HPA_Out * 0.996039 + LP_Out - HPA_Prev;
     HPA_Prev = LP_Out;
 
-    HPB_Out = HPB_Out * 0.999835f + HPA_Out - HPB_Prev;
+    HPB_Out = HPB_Out * 0.999835 + HPA_Out - HPB_Prev;
     HPB_Prev = HPA_Out;
+    //auto output = hpf2.hipass(hpf1.hipass(lpf.lopass(rawOutput, 1.0 - 14000.0 / 44100.0), 1.0 - 440.0 / 44100.0), 1.0 - 90.0 / 44100.0);
 
-    return rawOutput;
+    return HPB_Out;
 }

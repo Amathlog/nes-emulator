@@ -167,7 +167,7 @@ public:
 		sampleIdx = 0;
 		finished = 0;
 		freq = 1.0 / dur;
-		sampleEndPos = min(static_cast<unsigned long>(sample->getLength()), sampleStartPos + sampleDur);
+		sampleEndPos = min(sample->getLength(), sampleStartPos + sampleDur);
 		frequency = freq * speed;
 		if (frequency > 0) {
 			pos = sampleStartPos;

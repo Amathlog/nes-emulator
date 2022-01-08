@@ -42,6 +42,7 @@ TriangleChannel::TriangleChannel(Tonic::Synth& synth)
     Tonic::ControlGenerator controlFreqTriangle = synth.addParameter(frequencyParameterName);
     Tonic::ControlGenerator controlOutputTriangle = synth.addParameter(outputParameterName);
     m_wave = controlOutputTriangle * Tonic::TriangleWave().freq(controlFreqTriangle);
+    m_triangle.setWaveform(PolyBLEP::Waveform::MODIFIED_TRIANGLE);
 }
 
 void TriangleChannel::Reset()
@@ -121,12 +122,12 @@ void TriangleChannel::Update(double cpuFrequency, Tonic::Synth& synth)
     }
 }
 
-float TriangleChannel::GetAudioSample()
+double TriangleChannel::GetAudioSample()
 {
     if (m_register.timer == 0)
-        return 0.f;
+        return 0.0;
     
-    return (float)(m_enableValue * m_triangle.triangle(m_frequency));
+    return (m_enableValue * m_triangle.play(m_frequency));
 }
 
 void TriangleChannel::ReloadCounter()
