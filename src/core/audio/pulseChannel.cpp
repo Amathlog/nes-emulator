@@ -137,9 +137,10 @@ std::string PulseChannel::GetEnveloppeOutputParameterName()
 
 PulseChannel::PulseChannel(Tonic::Synth& synth, int number)
     : m_number(number)
+    , m_frequency(440.0f)
 {
     Tonic::ControlGenerator controlDutyPulse = synth.addParameter(GetDutyCycleParameterName());
-    Tonic::ControlGenerator controlFreqPulse = synth.addParameter(GetFrequencyParameterName());
+    Tonic::ControlGenerator controlFreqPulse = synth.addParameter(GetFrequencyParameterName(), 440.0f);
     Tonic::ControlGenerator controlOutputPulse = synth.addParameter(GetOutputParameterName());
     Tonic::ControlGenerator controlOutputEnvPulse = synth.addParameter(GetEnveloppeOutputParameterName());
 
@@ -149,10 +150,10 @@ PulseChannel::PulseChannel(Tonic::Synth& synth, int number)
 void PulseChannel::Update(double cpuFrequency, Tonic::Synth& synth)
 {
     double newEnableValue = m_lengthCounter > 0 ? 1.0 : 0.0;
-    if (m_sweep.mute)
+    if (m_sweep.mute || m_register.timer > 8)
         newEnableValue = 0.0;
 
-    double newFrequency = cpuFrequency / (16.0 * (double)(m_register.timer + 1));
+    double newFrequency = m_register.timer > 8 ? cpuFrequency / (16.0 * (double)(m_register.timer + 1)) : m_frequency;
     double newDutyCycle = 0.0;
     switch (m_register.duty)
     {
@@ -248,7 +249,7 @@ void PulseChannel::Reset()
     m_sweep.Reset();
     m_enveloppe.Reset();
 
-    m_frequency = 0.0;
+    m_frequency = 440.0f;
     m_dutyCycle = 0.0;
     m_enableValue = 0.0;
     m_lengthCounter = 0;
