@@ -65,7 +65,7 @@ bool CoreMessageService::Push(const Message &message)
 
 bool CoreMessageService::Pull(Message &message)
 {
-    if (message.GetType() != DefaultMessageType::CORE || message.GetType() != DefaultMessageType::DEBUG)
+    if (message.GetType() != DefaultMessageType::CORE && message.GetType() != DefaultMessageType::DEBUG)
         return true;
     
     if (message.GetType() == DefaultMessageType::CORE)

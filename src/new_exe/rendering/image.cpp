@@ -12,12 +12,15 @@ Image::Image(unsigned widthRes, unsigned heightRes)
     , m_internalResHeight(heightRes)
     , m_shader(vertexShaderPrg, fragmentShaderPrg)
     , m_initialized(false)
+    , m_currentWidth(widthRes)
+    , m_currentHeight(heightRes)
 {
     if (!InitializeImage())
         return;
 
     m_initialized = true;
 
+    m_format = Format::STRETCH;
     m_imageFormat[0] = 1.0f;
     m_imageFormat[1] = 1.0f;
 
@@ -50,14 +53,19 @@ void Image::Draw()
 
     if (m_bufferWasUpdated)
     {
-        std::unique_lock<std::mutex> lk(m_lock);
-        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, m_internalResWidth, m_internalResHeight, GL_RED, GL_UNSIGNED_BYTE, m_imageBuffer.data());
-        m_bufferWasUpdated = false;
+        UpdateGLTexture();
     }
 
     glBindVertexArray(m_VAO);
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+}
+
+void Image::UpdateGLTexture()
+{
+    std::unique_lock<std::mutex> lk(m_lock);
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, m_internalResWidth, m_internalResHeight, GL_RED, GL_UNSIGNED_BYTE, m_imageBuffer.data());
+    m_bufferWasUpdated = false;
 }
 
 void Image::UpdateInternalBuffer(const uint8_t* data, size_t size)

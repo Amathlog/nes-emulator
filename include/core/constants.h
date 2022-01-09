@@ -60,6 +60,10 @@ namespace Cst
 
     constexpr uint16_t PPU_MASK_MIRROR = 0x3FFF;
 
+    // Sizes
+    constexpr uint16_t SCREEN_WIDTH = 256;
+    constexpr uint16_t SCREEN_HEIGHT = 240;
+
     constexpr uint16_t CONTROLLER_1_ADDR = 0x4016;
     constexpr uint16_t CONTROLLER_2_ADDR = 0x4017;
 

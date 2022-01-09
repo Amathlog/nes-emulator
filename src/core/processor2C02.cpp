@@ -804,16 +804,19 @@ void Processor2C02::FillFromNameTable(uint8_t index, uint8_t selectedPalette, ui
 
 void Processor2C02::CompleteReadOfNameTables(uint8_t *buffer)
 {
-    constexpr uint16_t nameTableSize = 256 * 240;
+    constexpr uint16_t nameTableWidth = 256;
+    constexpr uint16_t nameTableHeight = 240;
     for (uint16_t y = 0; y < 2; ++y)
     {
         for (uint16_t x = 0; x < 2; ++x)
         {
-            uint16_t bufferOffset = ((y << 1) + x) * nameTableSize;
             // Nametable addr
             uint16_t nameTableYOffset = y ? 0x0800 : 0x0000;
             uint16_t nameTableXOffset = x ? 0x0400 : 0x0000;
             uint16_t nameTableAddr = Cst::PPU_START_VRAM + nameTableYOffset + nameTableXOffset;
+
+            uint32_t pixelXOffset = x ? nameTableWidth : 0;
+            uint32_t pixelYOffset = y ? nameTableWidth * 2 * nameTableHeight : 0;
 
             // Then iterate on all the nametable
             for (uint16_t tileY = 0; tileY < 30; ++tileY)
@@ -855,7 +858,7 @@ void Processor2C02::CompleteReadOfNameTables(uint8_t *buffer)
 
                             uint16_t x_pixel = tileX * 8 + (7 - col);
                             uint16_t y_pixel = tileY * 8 + row;
-                            uint16_t value = bufferOffset + y_pixel * 256 + x_pixel;
+                            uint32_t value = pixelYOffset + pixelXOffset + y_pixel * 2 * nameTableWidth + x_pixel;
                             uint8_t pixelColor = GetColorFromPaletteRam(tileAttr, pixelValue);
                             buffer[value] = pixelColor;
                         }

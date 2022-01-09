@@ -183,7 +183,7 @@ void ImguiManager::Update()
     if (openNameTableWindow)
     {
         //ImGui::OpenPopup("Hey");
-        m_window->CreateNewChildWindow<NameTableWindow>(300, 300);
+        m_window->CreateNewChildWindow<NameTableWindow>(1024, 960);
         openNameTableWindow = false;
     }
 
