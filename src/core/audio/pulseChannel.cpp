@@ -150,7 +150,7 @@ PulseChannel::PulseChannel(Tonic::Synth& synth, int number)
 void PulseChannel::Update(double cpuFrequency, Tonic::Synth& synth)
 {
     double newEnableValue = m_lengthCounter > 0 ? 1.0 : 0.0;
-    if (m_sweep.mute || m_register.timer > 8)
+    if (m_sweep.mute || m_register.timer <= 8)
         newEnableValue = 0.0;
 
     double newFrequency = m_register.timer > 8 ? cpuFrequency / (16.0 * (double)(m_register.timer + 1)) : m_frequency;
