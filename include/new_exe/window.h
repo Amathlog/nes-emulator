@@ -44,7 +44,7 @@ namespace NesEmulatorGL
         template <typename T, typename... Args, typename = std::enable_if_t<std::is_base_of_v<Window, T>>>
         Window* CreateNewChildWindow(Args&& ...args)
         {
-            m_childrenWindows.push_back(std::make_unique<T>(std::forward<Args...>(args...)));
+            m_childrenWindows.push_back(std::make_unique<T>(std::forward<Args>(args)...));
             return m_childrenWindows.back().get();
         }
 
@@ -58,6 +58,7 @@ namespace NesEmulatorGL
         GLFWwindow* m_window = nullptr;
         std::vector<std::unique_ptr<Window>> m_childrenWindows;
         bool m_enable = true;
+        bool m_isMainWindow = false;
 
         int m_framerate = -1;
         int64_t m_frametimeUS;

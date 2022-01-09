@@ -1,6 +1,7 @@
 #pragma once
 
 #include <new_exe/messageService/message.h>
+#include <new_exe/rendering/image.h>
 #include <cstdint>
 
 namespace NesEmulatorGL
@@ -14,16 +15,6 @@ namespace NesEmulatorGL
         GET_FORMAT,
         RENDER,
         GET_FRAMETIME
-    };
-
-    enum class Format : unsigned
-    {
-        STRETCH = 0,
-        ORIGINAL = 1,
-        FOUR_THIRD = 2,
-
-        COUNT = 3,
-        UNDEFINED = 0xFFFFFFFF
     };
 
     class ScreenPayload : public Payload

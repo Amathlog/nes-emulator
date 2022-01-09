@@ -42,7 +42,7 @@ file(GLOB_RECURSE TONIC_SRC
 
 add_library(Tonic STATIC ${TONIC_SRC})
 if(UNIX)
-  target_compile_options(Tonic PRIVATE "-Wimplicit-int-float-conversion")
+  target_compile_options(Tonic PRIVATE "-Wno-implicit-int-float-conversion")
 endif(UNIX)
 if(WIN32)
   target_compile_options(Tonic PRIVATE /wd4068 /wd4267 /wd4244 /wd4305 /wd4018)

@@ -1,17 +1,21 @@
 #pragma once
+
 #include <core/constants.h>
 #include <string>
 #include <new_exe/messageService/messages/screenPayload.h>
 #include <array>
 
-struct GLFWwindow;
+
+class ImGuiContext;
 
 namespace NesEmulatorGL
 {
+    class Window;
+    
     class ImguiManager
     {
     public:
-        ImguiManager(GLFWwindow* window);
+        ImguiManager(Window* window);
         ~ImguiManager();
 
         bool ShouldClose() const { return m_closeRequested; }
@@ -25,6 +29,9 @@ namespace NesEmulatorGL
         void HandleFileExplorer();
         void HandlePerf(bool showFPS);
         void UpdateCurrentMode();
+
+        Window* m_window;
+        ImGuiContext* m_context;
 
         bool m_showFileExplorer = false;
         bool m_closeRequested = false;

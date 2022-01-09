@@ -97,8 +97,10 @@ bool Mapper_001::MapWriteCPU(uint16_t address, uint32_t& mappedAddress, uint8_t 
                 switch (mirroring) 
                 {
                 case 0:
+                    m_mirroring = Mirroring::ONESCREEN_LO;
+                    break;
                 case 1:
-                    // TODO
+                    m_mirroring = Mirroring::ONESCREEN_HI;
                     break;
                 case 2:
                     m_mirroring = Mirroring::VERTICAL;

@@ -20,9 +20,13 @@ using NesEmulatorGL::Window;
 namespace {
     void framebuffer_size_callback(GLFWwindow* window, int width, int height)
     {
+        GLFWwindow* previousContext = glfwGetCurrentContext();
+        glfwMakeContextCurrent(window);
         glViewport(0, 0, width, height);
         Window* myWindow = reinterpret_cast<Window*>(glfwGetWindowUserPointer(window));
         myWindow->OnScreenResized(width, height);
+        if (previousContext != nullptr)
+            glfwMakeContextCurrent(previousContext);
     } 
 }
 
@@ -46,6 +50,7 @@ Window::Window(const char* name, unsigned width, unsigned height, int framerate)
         glfwTerminate();
         return;
     }
+    GLFWwindow* previousContext = glfwGetCurrentContext();
     glfwMakeContextCurrent(m_window);
 
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
@@ -60,6 +65,9 @@ Window::Window(const char* name, unsigned width, unsigned height, int framerate)
 
     m_lastUpdateTime = std::chrono::high_resolution_clock::now();
     m_enable = true;
+
+    if (previousContext != nullptr)
+        glfwMakeContextCurrent(previousContext);
 }
 
 Window::~Window()
@@ -67,26 +75,31 @@ Window::~Window()
     m_childrenWindows.clear();
 
     glfwDestroyWindow(m_window);
-    glfwTerminate();
+    if (m_isMainWindow)
+        glfwTerminate();
 }
 
 void Window::Update(bool externalSync)
 {
+    glfwMakeContextCurrent(m_window);
     if (RequestedClose())
         return;
 
-    for (auto it = m_childrenWindows.begin(); it != m_childrenWindows.end(); ++it)
+    for (auto it = m_childrenWindows.begin(); it != m_childrenWindows.end();)
     {
         if ((*it)->RequestedClose())
         {
             it = m_childrenWindows.erase(it);
+            continue;
         }
         else
         {
             (*it)->Update(externalSync);
         }
+        ++it;
     }
 
+    glfwMakeContextCurrent(m_window);
     glfwPollEvents();
 
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);

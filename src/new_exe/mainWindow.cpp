@@ -29,6 +29,8 @@ namespace {
 MainWindow::MainWindow(const char* name, unsigned width, unsigned height, unsigned internalResWidth, unsigned internalResHeight, int framerate)
     : Window(name, width, height, framerate)
 {
+    m_isMainWindow = true;
+
     if (!m_enable)
         // Something went wrong
         return;
@@ -37,7 +39,7 @@ MainWindow::MainWindow(const char* name, unsigned width, unsigned height, unsign
 
     m_screen = std::make_unique<Screen>(internalResWidth, internalResHeight);
     m_screen->OnScreenResized(width, height);
-    m_imguiManager = std::make_unique<ImguiManager>(m_window);
+    m_imguiManager = std::make_unique<ImguiManager>(this);
 
     m_enable = m_screen->IsInitialized();
 }
@@ -65,9 +67,9 @@ void MainWindow::InternalUpdate(bool externalSync)
     }
 
     if (!externalSync)
-        m_screen->UpdateScreen(bus->GetPPU().GetScreen(), bus->GetPPU().GetHeight() * bus->GetPPU().GetWidth());
+        m_screen->GetImage().UpdateInternalBuffer(bus->GetPPU().GetScreen(), bus->GetPPU().GetHeight() * bus->GetPPU().GetWidth());
 
-    m_screen->Update(*bus);
+    m_screen->Update();
     m_imguiManager->Update();
 }
 

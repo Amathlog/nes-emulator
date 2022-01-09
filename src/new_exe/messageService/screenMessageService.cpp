@@ -15,13 +15,13 @@ bool ScreenMessageService::Push(const Message& message)
     switch (payload->m_type)
     {
     case DefaultScreenMessageType::CHANGE_FORMAT:
-        m_screen.SetScreenFormat(payload->m_format);
+        m_screen.GetImage().SetImageFormat(payload->m_format);
         break;
     case DefaultScreenMessageType::RESIZE:
         m_screen.OnScreenResized(payload->m_width, payload->m_height);
         break;
     case DefaultScreenMessageType::RENDER:
-        m_screen.UpdateScreen(reinterpret_cast<const uint8_t*>(payload->m_dataPtr), payload->m_dataSize);
+        m_screen.GetImage().UpdateInternalBuffer(reinterpret_cast<const uint8_t*>(payload->m_dataPtr), payload->m_dataSize);
         break;
     }
 
@@ -38,7 +38,7 @@ bool ScreenMessageService::Pull(Message& message)
     switch (payload->m_type)
     {
     case DefaultScreenMessageType::GET_FORMAT:
-        payload->m_format = m_screen.GetScreenFormat();
+        payload->m_format = m_screen.GetImage().GetImageFormat();
         break;
     case DefaultScreenMessageType::GET_FRAMETIME:
         payload->m_dataPtr = m_screen.GetFrametimes(payload->m_offset, payload->m_dataSize);

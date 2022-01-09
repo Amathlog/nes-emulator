@@ -1,5 +1,6 @@
 #include <new_exe/messageService/messages/audioMessage.h>
 #include <new_exe/messageService/messages/screenMessage.h>
+#include <new_exe/window.h>
 #include <cstddef>
 #include <new_exe/messageService/messageService.h>
 #include <new_exe/messageService/messages/coreMessage.h>
@@ -13,26 +14,31 @@
 #include <ImGuiFileBrowser.h>
 #include <string>
 #include <chrono>
+#include <new_exe/windows/nameTableWindow.h>
 
 using NesEmulatorGL::ImguiManager;
 using NesEmulatorGL::DispatchMessageServiceSingleton;
 using NesEmulatorGL::LoadNewGameMessage;
 using NesEmulatorGL::SaveStateMessage;
 using NesEmulatorGL::LoadStateMessage;
+using NesEmulatorGL::NameTableWindow;
 
-ImguiManager::ImguiManager(GLFWwindow* window)
+ImguiManager::ImguiManager(Window* window)
+    : m_window(window)
 {
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
-    ImGuiIO& io = ImGui::GetIO(); (void)io;
+    m_context = ImGui::CreateContext();
+    ImGui::SetCurrentContext(m_context);
+    ImGuiIO& io = ImGui::GetIO();
+    // io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
 
     // Setup Dear ImGui style
     ImGui::StyleColorsDark();
     //ImGui::StyleColorsClassic();
 
     // Setup Platform/Renderer backends
-    ImGui_ImplGlfw_InitForOpenGL(window, true);
+    ImGui_ImplGlfw_InitForOpenGL(window->GetWindow(), true);
     ImGui_ImplOpenGL3_Init("#version 330 core");
 
     m_changeFormats.fill(false);
@@ -62,9 +68,10 @@ ImguiManager::ImguiManager(GLFWwindow* window)
 ImguiManager::~ImguiManager()
 {
     // Cleanup
+    ImGui::SetCurrentContext(m_context);
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
-    ImGui::DestroyContext();
+    ImGui::DestroyContext(m_context);
 }
 
 void DemoWindow()
@@ -95,6 +102,7 @@ void DemoWindow()
 
 void ImguiManager::Update()
 {
+    ImGui::SetCurrentContext(m_context);
     // Start the Dear ImGui frame
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
@@ -102,6 +110,7 @@ void ImguiManager::Update()
 
     static bool showFPS = false;
     static bool reset = false;
+    static bool openNameTableWindow = false;
 
     if (m_showMainMenu)
     {
@@ -164,10 +173,18 @@ void ImguiManager::Update()
         if (ImGui::BeginMenu("Debug"))
         {
             ImGui::MenuItem("Show FPS", nullptr, &showFPS);
+            ImGui::MenuItem("Nametables", nullptr, &openNameTableWindow);
             ImGui::EndMenu();
         }
 
         ImGui::EndMainMenuBar();
+    }
+
+    if (openNameTableWindow)
+    {
+        //ImGui::OpenPopup("Hey");
+        m_window->CreateNewChildWindow<NameTableWindow>(300, 300);
+        openNameTableWindow = false;
     }
 
     HandleFileExplorer();
@@ -230,6 +247,14 @@ void ImguiManager::Update()
 
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+    ImGui::EndFrame();
+
+    // Update and Render additional Platform Windows
+    if (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+    {
+        ImGui::UpdatePlatformWindows();
+        ImGui::RenderPlatformWindowsDefault();
+    }
 }
 
 void ImguiManager::HandleFileExplorer()
