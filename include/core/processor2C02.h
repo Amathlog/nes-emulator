@@ -41,6 +41,7 @@ namespace NesEmulator
         void FillFromPatternTable(uint8_t index, uint8_t selectedPalette, uint8_t* buffer);
 
         void FillFromNameTable(uint8_t index, uint8_t selectedPalette, uint8_t* buffer, bool switchIndexes = false);
+        void CompleteReadOfNameTables(uint8_t* buffer);
 
         bool IsNMISet() const { return m_nmi; }
         void ResetNMI() { m_nmi = false; }

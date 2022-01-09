@@ -14,6 +14,7 @@ namespace NesEmulatorGL {
         IMGUI = 1,
         SCREEN = 2,
         AUDIO = 3,
+        DEBUG = 4,
 
         INVALID = 0xFFFFFFFF
     };
@@ -31,7 +32,6 @@ namespace NesEmulatorGL {
 
         virtual ~GenericPayload() = default;
 
-    private:
         uint8_t* m_data;
         size_t m_dataSize;
         size_t m_dataCapacity;

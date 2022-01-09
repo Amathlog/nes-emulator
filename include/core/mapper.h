@@ -13,6 +13,8 @@ namespace NesEmulator
     {
         VERTICAL,
         HORIZONTAL,
+        ONESCREEN_LO,
+        ONESCREEN_HI
     };
 
     class IMapper : public ISerializable

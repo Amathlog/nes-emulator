@@ -1,7 +1,9 @@
 
+#include "new_exe/messageService/message.h"
 #include "new_exe/messageService/messages/coreMessage.h"
 #include <new_exe/messageService/coreMessageService.h>
 #include <new_exe/messageService/messages/corePayload.h>
+#include <new_exe/messageService/messages/debugPayload.h>
 #include <core/utils/fileVisitor.h>
 #include <core/utils/vectorVisitor.h>
 #include <core/bus.h>
@@ -63,16 +65,30 @@ bool CoreMessageService::Push(const Message &message)
 
 bool CoreMessageService::Pull(Message &message)
 {
-    if (message.GetType() != DefaultMessageType::CORE)
+    if (message.GetType() != DefaultMessageType::CORE || message.GetType() != DefaultMessageType::DEBUG)
         return true;
     
-    auto payload = reinterpret_cast<CorePayload*>(message.GetPayload());
-
-    switch(payload->m_type)
+    if (message.GetType() == DefaultMessageType::CORE)
     {
-    case DefaultCoreMessageType::GET_MODE:
-        payload->m_mode = m_bus.GetMode();
-        return true;
+        auto payload = reinterpret_cast<CorePayload*>(message.GetPayload());
+
+        switch(payload->m_type)
+        {
+        case DefaultCoreMessageType::GET_MODE:
+            payload->m_mode = m_bus.GetMode();
+            return true;
+        }
+    }
+    else if (message.GetType() == DefaultMessageType::DEBUG)
+    {
+        auto payload = reinterpret_cast<DebugPayload*>(message.GetPayload());
+
+        switch (payload->m_type)
+        {
+        case DefaultDebugMessageType::READ_NAMETABLES:
+            m_bus.GetPPU().CompleteReadOfNameTables(payload->m_data);
+            return true;
+        }
     }
 
     return true;
