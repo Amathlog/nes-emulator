@@ -201,10 +201,10 @@ bool Bus::Clock()
         }
     }
 
-    if (m_ppu.IsNMISet())
+    if (m_cartridge->GetMapper()->ShouldIRQ())
     {
-        m_ppu.ResetNMI();
-        m_cpu.NMI();
+        m_cartridge->GetMapper()->ClearIRQ();
+        m_cpu.IRQ();
     }
 
     if (m_apu.ShouldIRQ())
@@ -212,10 +212,10 @@ bool Bus::Clock()
         m_cpu.IRQ();
     }
 
-    if (m_cartridge->GetMapper()->ShouldIRQ())
+    if (m_ppu.IsNMISet())
     {
-        m_cartridge->GetMapper()->ClearIRQ();
-        m_cpu.IRQ();
+        m_ppu.ResetNMI();
+        m_cpu.NMI();
     }
 
     // Synchronizing with audio

@@ -37,6 +37,7 @@ namespace NesEmulator
 
         uint8_t m_IRQCounter = 0;
         uint8_t m_IRQReload = 0;
+        bool m_IRQShouldReload = false;
         bool m_IRQEnabled = false;
         bool m_IRQActive = false;
     };

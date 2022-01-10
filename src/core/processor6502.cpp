@@ -431,10 +431,11 @@ void Processor6502::Interrupt(uint8_t requestSoftware, uint16_t jumpAddressLocat
     // and 1 if it comes from software
     m_status.B = requestSoftware;
     m_status.U = 1;
-    m_status.I = 1;
 
     // Then push the status flag to the stack
     PushDataToStack(m_status.flags);
+
+    m_status.I = 1;
 
     // Re-set the B status to 0
     m_status.B = 0;

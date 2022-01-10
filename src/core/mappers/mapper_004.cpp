@@ -119,7 +119,7 @@ bool Mapper_004::MapWriteCPU(uint16_t address, uint32_t& mappedAddress, uint8_t 
     {
         if (address & 0x0001)
         {
-            m_IRQCounter = 0;
+            m_IRQShouldReload = true;
         }
         else
         {
@@ -193,9 +193,10 @@ void Mapper_004::Reset()
 
 void Mapper_004::ScanlineDone()
 {
-    if (m_IRQCounter == 0)
+    if (m_IRQCounter == 0 || m_IRQShouldReload)
     {
         m_IRQCounter = m_IRQReload;
+        m_IRQShouldReload = false;
     }
     else
     {
