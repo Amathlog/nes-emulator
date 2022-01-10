@@ -26,6 +26,7 @@ namespace NesEmulator
             , m_nbChrBanks(m_header.GetCHRROMSize())
             , m_originalMirroring((m_header.flag6.mirroring) ? Mirroring::VERTICAL : Mirroring::HORIZONTAL)
             , m_mirroring(m_originalMirroring)
+            , m_id(header.GetMapperId())
         {}
 
         virtual ~IMapper() = default;
@@ -37,6 +38,7 @@ namespace NesEmulator
         virtual Mirroring GetMirroring() const { return m_mirroring; }
 
         NesEmulator::Mode GetMode() const { return m_header.GetRegion(); }
+        uint16_t GetMapperId() const { return m_id; }
 
         virtual void Reset() 
         {
@@ -81,6 +83,7 @@ namespace NesEmulator
         }
 
     protected:
+        uint16_t m_id;
         iNESHeader m_header;
         uint16_t m_nbPrgBanks;
         uint16_t m_nbChrBanks;
