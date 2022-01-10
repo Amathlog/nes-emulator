@@ -67,7 +67,7 @@ namespace NesEmulator
         int16_t m_scanlines = 0;
         int16_t m_cycles = 0;
 
-        std::array<OAM, 8> m_selectedSprites;
-        uint8_t m_spritesCount;
+        std::array<OAM, 8> m_selectedSprites = {};
+        uint8_t m_spritesCount = 0;
     };
 }

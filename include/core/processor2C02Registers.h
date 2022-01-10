@@ -73,16 +73,16 @@ union LoopyRegister
         uint16_t ununsed: 1;
     };
 
-    uint16_t reg;
+    uint16_t reg = 0x0000;
 };
 }
 
 struct OAM
 {
-    uint8_t y;
-    uint8_t tileId;
-    uint8_t attribute;
-    uint8_t x;
+    uint8_t y = 0xFF;
+    uint8_t tileId = 0xFF;
+    uint8_t attribute = 0xFF;
+    uint8_t x = 0xFF;
 
     void Reset()
     {
@@ -134,12 +134,12 @@ struct PPURegisters
     uint16_t bgShifterAttrLsb = 0x0000;
     uint16_t bgShifterAttrMsb = 0x0000;
     // Shift registers (foreground)
-    std::array<uint8_t, 8> fgShifterPatternLsb;
-    std::array<uint8_t, 8> fgShifterPatternMsb;
+    std::array<uint8_t, 8> fgShifterPatternLsb = {};
+    std::array<uint8_t, 8> fgShifterPatternMsb = {};
 
     // Sprite zero hit detection
-    bool spriteZeroIsPossible;
-    bool spriteZeroIsRendered;
+    bool spriteZeroIsPossible = false;
+    bool spriteZeroIsRendered = false;
 
     void Reset()
     {

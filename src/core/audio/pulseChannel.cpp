@@ -153,7 +153,7 @@ void PulseChannel::Update(double cpuFrequency, Tonic::Synth& synth)
     if (m_sweep.mute || m_register.timer <= 8)
         newEnableValue = 0.0;
 
-    double newFrequency = m_register.timer > 8 ? cpuFrequency / (16.0 * (double)(m_register.timer + 1)) : m_frequency;
+    double newFrequency = m_register.timer > 8 ? (cpuFrequency / (16.0 * (double)(m_register.timer + 1))) : m_frequency;
     double newDutyCycle = 0.0;
     switch (m_register.duty)
     {
@@ -179,13 +179,21 @@ void PulseChannel::Update(double cpuFrequency, Tonic::Synth& synth)
         m_enveloppe.updated = false;
     }
 
-    if (newFrequency != m_frequency || newDutyCycle != m_dutyCycle || newEnableValue != m_enableValue)
+    if (newFrequency != m_frequency)
     {
         m_frequency = newFrequency;
-        m_dutyCycle = newDutyCycle;
-        m_enableValue = newEnableValue;
-        synth.setParameter(GetDutyCycleParameterName(), (float)newDutyCycle);
         synth.setParameter(GetFrequencyParameterName(), (float)newFrequency);
+    }
+
+    if (newDutyCycle != m_dutyCycle)
+    {
+        m_dutyCycle = newDutyCycle;
+        synth.setParameter(GetDutyCycleParameterName(), (float)newDutyCycle);
+    }
+
+    if (newEnableValue != m_enableValue)
+    {
+        m_enableValue = newEnableValue;
         synth.setParameter(GetOutputParameterName(), (float)newEnableValue);
     }
 }

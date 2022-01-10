@@ -710,6 +710,9 @@ void Processor2C02::Reset()
     m_registers.Reset();
     m_scanlines = 0;
     m_cycles = 0;
+    m_spritesCount = 0;
+    for (auto& oam : m_selectedSprites)
+        oam.Reset();
 }
 
 void Processor2C02::RandomizeScreen()
