@@ -250,11 +250,11 @@ void ImguiManager::Update()
     ImGui::EndFrame();
 
     // Update and Render additional Platform Windows
-    if (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
-    {
-        ImGui::UpdatePlatformWindows();
-        ImGui::RenderPlatformWindowsDefault();
-    }
+    //if (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+    //{
+    //    ImGui::UpdatePlatformWindows();
+    //    ImGui::RenderPlatformWindowsDefault();
+    //}
 }
 
 void ImguiManager::HandleFileExplorer()

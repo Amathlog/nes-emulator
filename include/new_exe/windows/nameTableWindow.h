@@ -4,7 +4,7 @@
 #include <new_exe/rendering/image.h>
 #include <memory>
 
-class ImGuiContext;
+struct ImGuiContext;
 
 namespace NesEmulatorGL
 {

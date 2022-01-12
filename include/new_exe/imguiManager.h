@@ -6,7 +6,7 @@
 #include <array>
 
 
-class ImGuiContext;
+struct ImGuiContext;
 
 namespace NesEmulatorGL
 {
