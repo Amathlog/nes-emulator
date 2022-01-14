@@ -95,6 +95,10 @@ bool Cartridge::WriteCPU(uint16_t addr, uint8_t data)
 
 bool Cartridge::WritePPU(uint16_t addr, uint8_t data)
 {
+    // Write to the PPU is only allowed when we don't have any CHR ROM bank
+    if (m_nbChrBanks > 0)
+        return false;
+
     uint32_t mappedAddress = 0;
     if (m_mapper->MapWritePPU(addr, mappedAddress, data))
     {

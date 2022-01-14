@@ -172,9 +172,9 @@ bool Mapper_004::MapReadPPU(uint16_t address, uint32_t& mappedAddress, uint8_t& 
     return false;
 }
 
-bool Mapper_004::MapWritePPU(uint16_t /*address*/, uint32_t& /*mappedAddress*/, uint8_t /*data*/)
+bool Mapper_004::MapWritePPU(uint16_t address, uint32_t& mappedAddress, uint8_t data)
 {
-    return false;
+    return MapReadPPU(address, mappedAddress, data);
 }
 
 void Mapper_004::Reset()
