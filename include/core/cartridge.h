@@ -38,6 +38,7 @@ namespace NesEmulator
         std::vector<uint8_t> m_prgData;
         std::vector<uint8_t> m_chrData;
         std::vector<uint8_t> m_prgRam;
+        std::vector<uint8_t> m_vRam;
 
         std::string m_sha1;
         

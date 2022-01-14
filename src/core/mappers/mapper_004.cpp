@@ -111,8 +111,11 @@ bool Mapper_004::MapWriteCPU(uint16_t address, uint32_t& mappedAddress, uint8_t 
         }
         else
         {
-            // Mirroring on bit 0
-            m_mirroring = (data & 0x01) ? Mirroring::HORIZONTAL : Mirroring::VERTICAL;
+            // Mirroring on bit 0, only if we are not in four screen mode
+            if (m_mirroring != Mirroring::FOUR_SCREEN)
+            {
+                m_mirroring = (data & 0x01) ? Mirroring::HORIZONTAL : Mirroring::VERTICAL;
+            }
         }
     }
     else if (address >= 0xC000 && address <= 0xDFFF)

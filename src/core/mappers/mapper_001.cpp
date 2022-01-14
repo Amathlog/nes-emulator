@@ -93,23 +93,26 @@ bool Mapper_001::MapWriteCPU(uint16_t address, uint32_t& mappedAddress, uint8_t 
                 m_8kBModeChrBank = chrROMBank == 0;
 
                 // Finally check the mirroring
-                // TODO: check 0 and 1 value
-                switch (mirroring) 
+                // Only done if we are not in Four screen mode
+                if (m_mirroring != Mirroring::FOUR_SCREEN)
                 {
-                case 0:
-                    m_mirroring = Mirroring::ONESCREEN_LO;
-                    break;
-                case 1:
-                    m_mirroring = Mirroring::ONESCREEN_HI;
-                    break;
-                case 2:
-                    m_mirroring = Mirroring::VERTICAL;
-                    break;
-                case 3:
-                    m_mirroring = Mirroring::HORIZONTAL;
-                    break;
-                default:
-                    break;
+                    switch (mirroring)
+                    {
+                    case 0:
+                        m_mirroring = Mirroring::ONESCREEN_LO;
+                        break;
+                    case 1:
+                        m_mirroring = Mirroring::ONESCREEN_HI;
+                        break;
+                    case 2:
+                        m_mirroring = Mirroring::VERTICAL;
+                        break;
+                    case 3:
+                        m_mirroring = Mirroring::HORIZONTAL;
+                        break;
+                    default:
+                        break;
+                    }
                 }
             }
             // CHR Bank 0 (0xA000-0xBFFF)

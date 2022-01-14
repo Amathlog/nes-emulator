@@ -25,6 +25,8 @@ namespace
             return (addr & 0x0800) > 0;
         case Mirroring::VERTICAL:
             return (addr & 0x0400) > 0;
+        default:
+            return ((addr & 0x0C00) >> 6);
         }
     }
 }
