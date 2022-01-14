@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.7)
+cmake_minimum_required(VERSION 3.12)
 
 project(NesEmulator)
 
@@ -28,14 +28,9 @@ set(CMAKE_CXX_FLAGS_RELEASE "-O2")
 endif(WIN32)
 
 # Generate Tonic lib
-include_directories(${NesEmulator_SOURCE_DIR}/external/Tonic/src Tonic)
-file(GLOB_RECURSE TONIC_SRC
-    ${NesEmulator_SOURCE_DIR}/external/Tonic/src/*
-)
-
 set(TONIC_DIR ${NesEmulator_SOURCE_DIR}/external/Tonic/src)
-include_directories(${TONIC_DIR})
-include_directories(${NesEmulator_SOURCE_DIR}/external/include)
+set(TONIC_INCLUDES ${TONIC_DIR} ${NesEmulator_SOURCE_DIR}/external/include)
+include_directories(${TONIC_INCLUDES})
 file(GLOB_RECURSE TONIC_SRC
     "${TONIC_DIR}/*"
 )
@@ -49,5 +44,10 @@ if(WIN32)
 endif(WIN32)
 set_target_properties(Tonic PROPERTIES FOLDER ${EXTERNAL_FOLDER})
 
+option(BUILD_TESTS "Build the tests" OFF)
+
 add_subdirectory("src")
-add_subdirectory("tests")
+
+if (BUILD_TESTS)
+    add_subdirectory("tests")
+endif(BUILD_TESTS)

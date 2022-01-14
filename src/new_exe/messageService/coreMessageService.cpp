@@ -10,6 +10,7 @@
 #include <core/cartridge.h>
 #include <filesystem>
 #include <iostream>
+#include <new_exe/utils.h>
 
 namespace fs = std::filesystem;
 
@@ -129,7 +130,7 @@ bool CoreMessageService::SaveState(const std::string& file, int number)
     std::string finalFile = file;
     if (file.empty())
     {
-        finalFile = m_bus.GetSaveStateFile(m_exePath, number).string();
+        finalFile = GetSaveStateFile(m_exePath, number, GetCartridgeUniqueID(m_bus.GetCartridge())).string();
     }
 
     if (finalFile.empty())
@@ -154,7 +155,7 @@ bool CoreMessageService::LoadState(const std::string& file, int number)
     std::string finalFile = file;
     if (file.empty())
     {
-        finalFile = m_bus.GetSaveStateFile(m_exePath, number).string();
+        finalFile = GetSaveStateFile(m_exePath, number, GetCartridgeUniqueID(m_bus.GetCartridge())).string();
     }
 
     if (finalFile.empty())
@@ -183,10 +184,14 @@ bool CoreMessageService::LoadState(const std::string& file, int number)
 
 bool CoreMessageService::SaveGame(const std::string& file)
 {
+    const NesEmulator::Cartridge* cartridge = m_bus.GetCartridge();
+    if (cartridge == nullptr || !cartridge->HasPersistantMemory())
+        return true;
+
     std::string finalFile = file;
     if (file.empty())
     {
-        finalFile = m_bus.GetSaveFile(m_exePath).string();
+        finalFile = GetSaveFile(m_exePath, GetCartridgeUniqueID(cartridge)).string();
     }
 
     // Nothing to do
@@ -208,10 +213,14 @@ bool CoreMessageService::SaveGame(const std::string& file)
 
 bool CoreMessageService::LoadSaveGame(const std::string& file)
 {
+    const NesEmulator::Cartridge* cartridge = m_bus.GetCartridge();
+    if (cartridge == nullptr || !cartridge->HasPersistantMemory())
+        return true;
+
     std::string finalFile = file;
     if (file.empty())
     {
-        finalFile = m_bus.GetSaveFile(m_exePath).string();
+        finalFile = GetSaveFile(m_exePath, GetCartridgeUniqueID(cartridge)).string();
     }
 
     if (finalFile.empty())

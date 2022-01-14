@@ -3,11 +3,21 @@
 
 # Sets the minimum version of CMake required to build the native library.
 
-cmake_minimum_required(VERSION 3.10.2)
+cmake_minimum_required(VERSION 3.12)
 
 # Declares and names the project.
 
 project("nesemulator")
+
+# Get the external projects, that are at the root of the git
+set(ROOT_FOLDER ${nesemulator_SOURCE_DIR}/../../../../..)
+
+# Add dependencies for Tonic and NesEmulator
+set(NESEMULATOR_ONLY_CORE ON CACHE BOOL "Build only the libs")
+add_subdirectory(${ROOT_FOLDER} NesEmulator_Core)
+include_directories(${ROOT_FOLDER}/include)
+include_directories(${ROOT_FOLDER}/external/Tonic/src)
+include_directories(${ROOT_FOLDER}/external/include)
 
 # Creates and names a library, sets it as either STATIC
 # or SHARED, and provides the relative paths to its source code.
@@ -45,4 +55,8 @@ target_link_libraries( # Specifies the target library.
 
         # Links the target library to the log library
         # included in the NDK.
-        ${log-lib})
+        ${log-lib}
+
+        # Also link Tonic and the NesEmulator_Core
+        NesEmulator_Core Tonic
+        )

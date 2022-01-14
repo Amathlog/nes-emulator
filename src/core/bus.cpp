@@ -455,42 +455,6 @@ void Bus::LoadRAM(Utils::IReadVisitor& visitor)
     m_cartridge->GetMapper()->LoadRAM(visitor);
 }
 
-std::filesystem::path Bus::GetSaveStateFile(std::filesystem::path exeDir, int number)
-{
-    if (m_cartridge.get() == nullptr)
-        return std::filesystem::path();
-
-    auto saveFolder = GetSaveFolder(exeDir);
-    std::string saveFile = std::to_string(number);
-    saveFile += ".nesSaveState";
-    return saveFolder / saveFile;
-}
-
-std::filesystem::path Bus::GetSaveFile(std::filesystem::path exeDir)
-{
-    if (m_cartridge.get() == nullptr)
-        return std::filesystem::path();
-
-    // If there is no persistent memory, do nothing
-    if (!m_cartridge->GetMapper()->HasPersistantMemory())
-        return std::filesystem::path();
-
-    auto saveFolder = GetSaveFolder(exeDir);
-    std::string saveFile = "save.nesSave";
-    return saveFolder / saveFile;
-}
-
-std::filesystem::path Bus::GetSaveFolder(std::filesystem::path exeDir)
-{
-    if (m_cartridge.get() == nullptr)
-        return std::filesystem::path();
-
-    std::string hash = m_cartridge->GetSHA1();
-    exeDir /= "saves";
-    exeDir /= hash;
-    return exeDir;
-}
-
 void Bus::SetMode(Mode mode)
 {
     bool shouldResume = IsEnabled();
