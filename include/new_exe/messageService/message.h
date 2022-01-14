@@ -19,7 +19,10 @@ namespace NesEmulatorGL {
         INVALID = 0xFFFFFFFF
     };
 
-    class Payload{};
+    class Payload{
+    public:
+        virtual ~Payload() = default;
+    };
 
     class GenericPayload : public Payload
     {

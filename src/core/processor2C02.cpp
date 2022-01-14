@@ -625,18 +625,37 @@ void Processor2C02::Clock()
 
         // If we have no background pixel, draw the foreground pixel
         // If we have both not 0, draw the pixel only if it has priority
-        if (bg_pixel != 0 && fg_pixel == 0)
+        if (bg_pixel != 0 && fg_pixel == 0 && (m_cycles >= 9 || m_registers.mask.showBackgroundLeftmost))
         {
             pixel = bg_pixel;
             palette = bg_palette;
         }
-        else if (bg_pixel == 0 && fg_pixel != 0)
+        else if (bg_pixel == 0 && fg_pixel != 0 && (m_cycles >= 9 || m_registers.mask.showSpritesLeftmost))
         {
             pixel = fg_pixel;
             palette = fg_palette;
         }
         else if (bg_pixel != 0 && fg_pixel != 0)
         {
+            // When we have both, we still need to check if we can render them if we are on the 8 first cycles.
+            if (m_cycles < 9)
+            {
+                if (!m_registers.mask.showBackgroundLeftmost && !m_registers.mask.showSpritesLeftmost)
+                {
+                    fg_priority = 0;
+                    bg_pixel = 0x00;
+                    bg_palette = 0x00;
+                }
+                else if (m_registers.mask.showBackgroundLeftmost && !m_registers.mask.showSpritesLeftmost)
+                {
+                    fg_priority = 0;
+                }
+                else
+                {
+                    fg_priority = 1;
+                }
+            }
+
             pixel = fg_priority > 0 ? fg_pixel : bg_pixel;
             palette = fg_priority > 0 ? fg_palette : bg_palette;
 
@@ -661,18 +680,6 @@ void Processor2C02::Clock()
                     }
                 }
             }
-        }
-
-        // HACK FOR MMC3 boards (SMB3, Kirby's Adventure, ...)
-        // In most MMC3 boards (like SMB3), the 8 left most pixels can be some mirror of the rightmost pixels
-        // It is because of a limitation of the NES for horizontal scrolling and named tables
-        // In order to "hide" this, we can do this hack.
-        // Set the first 8 pixels of each scanline to the background color
-        bool MMC3Hack = m_cartridge->GetMapper()->GetMapperId() == 4;
-        if (MMC3Hack && (m_cycles <= 9))
-        {
-            pixel = 0;
-            palette = bg_palette;
         }
 
         size_t index = m_scanlines * 256 + m_cycles - 1;
