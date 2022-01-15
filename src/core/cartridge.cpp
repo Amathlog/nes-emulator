@@ -43,6 +43,8 @@ Cartridge::Cartridge(IReadVisitor& visitor)
         m_chrData.resize(0x2000);
     }
 
+    m_vRam.resize(0x2000);
+
     // Setup the mapper
     m_mapper = NesEmulator::CreateMapper(header);
     
@@ -96,6 +98,13 @@ bool Cartridge::WriteCPU(uint16_t addr, uint8_t data)
 bool Cartridge::WritePPU(uint16_t addr, uint8_t data)
 {
     uint32_t mappedAddress = 0;
+    // First check if we are currently in Four screen mode, and in the vram/palette range
+    if (m_mapper->GetMirroring() == Mirroring::FOUR_SCREEN && addr >= Cst::PPU_START_VRAM && addr <= Cst::PPU_END_PALETTE)
+    {
+        m_vRam[addr - Cst::PPU_START_VRAM] = data;
+        return true;
+    }
+
     if (m_mapper->MapWritePPU(addr, mappedAddress, data))
     {
         m_chrData[mappedAddress] = data;
@@ -107,6 +116,14 @@ bool Cartridge::WritePPU(uint16_t addr, uint8_t data)
 bool Cartridge::ReadPPU(uint16_t addr, uint8_t& data)
 {
     uint32_t mappedAddress = 0;
+
+    // First check if we are currently in Four screen mode, and in the vram/palette range
+    if (m_mapper->GetMirroring() == Mirroring::FOUR_SCREEN && addr >= Cst::PPU_START_VRAM && addr <= Cst::PPU_END_PALETTE)
+    {
+        data = m_vRam[addr - Cst::PPU_START_VRAM];
+        return true;
+    }
+
     if (m_mapper->MapReadPPU(addr, mappedAddress, data))
     {
         data = m_chrData[mappedAddress];

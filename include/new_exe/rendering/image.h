@@ -38,7 +38,7 @@ namespace NesEmulatorGL
         void UpdateGLTexture();
         unsigned GetTextureId() const { return m_texture; }
 
-        auto& GetInternalBuffer() { return m_imageBuffer; }
+        std::vector<uint8_t>& GetInternalBuffer() { return m_imageBuffer; }
 
     private:
         bool InitializeImage();

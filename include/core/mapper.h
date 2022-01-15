@@ -14,7 +14,8 @@ namespace NesEmulator
         VERTICAL,
         HORIZONTAL,
         ONESCREEN_LO,
-        ONESCREEN_HI
+        ONESCREEN_HI,
+        FOUR_SCREEN
     };
 
     class IMapper : public ISerializable
@@ -24,10 +25,15 @@ namespace NesEmulator
             : m_header(header)
             , m_nbPrgBanks(m_header.GetPRGROMSize())
             , m_nbChrBanks(m_header.GetCHRROMSize())
-            , m_originalMirroring((m_header.flag6.mirroring) ? Mirroring::VERTICAL : Mirroring::HORIZONTAL)
-            , m_mirroring(m_originalMirroring)
             , m_id(header.GetMapperId())
-        {}
+        {
+            if (m_header.flag6.ignoreMirroringControl)
+                m_originalMirroring = Mirroring::FOUR_SCREEN;
+            else
+                m_originalMirroring = (m_header.flag6.mirroring) ? Mirroring::VERTICAL : Mirroring::HORIZONTAL;
+
+            m_mirroring = m_originalMirroring;
+        }
 
         virtual ~IMapper() = default;
 
