@@ -19,7 +19,7 @@
 
 #if defined(__clang__) && (__clang_major__ >= 10)
 #pragma clang diagnostic pop
-#elif defined(__GNUC__) || defined(__GNUG__) && !defined(__clang__)
+#elif (defined(__GNUC__) || defined(__GNUG__)) && !defined(__clang__)
 #pragma GCC diagnostic pop
 #elif defined(_MSC_VER)
 #pragma warning( pop )
