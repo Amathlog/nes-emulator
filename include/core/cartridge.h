@@ -31,6 +31,7 @@ namespace NesEmulator
         Mirroring GetMirroring() const { return m_mapper->GetMirroring(); }
         void Reset();
         IMapper* GetMapper() { return m_mapper.get(); }
+        bool HasPersistantMemory() const { return m_mapper->HasPersistantMemory(); }
 
         const std::string& GetSHA1() const { return m_sha1; }
 

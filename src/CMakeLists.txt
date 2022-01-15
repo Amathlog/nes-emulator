@@ -1,8 +1,13 @@
 add_subdirectory(core)
 
 # Don't add "exe" on Windows, to avoid installing Qt.
-if(UNIX)
-add_subdirectory(exe)
-endif(UNIX)
+# Now deprecated
+# if(UNIX)
+# add_subdirectory(exe)
+# endif(UNIX)
 
-add_subdirectory(new_exe)
+option(NESEMULATOR_ONLY_CORE "Build only the core lib" OFF)
+
+if (NOT NESEMULATOR_ONLY_CORE)
+    add_subdirectory(new_exe)
+endif(NOT NESEMULATOR_ONLY_CORE)
