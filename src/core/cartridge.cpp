@@ -47,6 +47,7 @@ Cartridge::Cartridge(IReadVisitor& visitor)
 
     // Setup the mapper
     m_mapper = NesEmulator::CreateMapper(header);
+    m_useVRam = m_mapper->GetMirroring() == Mirroring::FOUR_SCREEN;
     
     assert(m_mapper.get() != nullptr && "Invalid mapper id, unsupported");
 
@@ -99,7 +100,7 @@ bool Cartridge::WritePPU(uint16_t addr, uint8_t data)
 {
     uint32_t mappedAddress = 0;
     // First check if we are currently in Four screen mode, and in the vram/palette range
-    if (m_mapper->GetMirroring() == Mirroring::FOUR_SCREEN && addr >= Cst::PPU_START_VRAM && addr <= Cst::PPU_END_PALETTE)
+    if (m_useVRam && addr >= Cst::PPU_START_VRAM && addr <= Cst::PPU_END_PALETTE)
     {
         m_vRam[addr - Cst::PPU_START_VRAM] = data;
         return true;
@@ -118,7 +119,7 @@ bool Cartridge::ReadPPU(uint16_t addr, uint8_t& data)
     uint32_t mappedAddress = 0;
 
     // First check if we are currently in Four screen mode, and in the vram/palette range
-    if (m_mapper->GetMirroring() == Mirroring::FOUR_SCREEN && addr >= Cst::PPU_START_VRAM && addr <= Cst::PPU_END_PALETTE)
+    if (m_useVRam && addr >= Cst::PPU_START_VRAM && addr <= Cst::PPU_END_PALETTE)
     {
         data = m_vRam[addr - Cst::PPU_START_VRAM];
         return true;

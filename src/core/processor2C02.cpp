@@ -334,8 +334,9 @@ void Processor2C02::Clock()
         {
             // First cycle skipped
             m_cycles = 1;
+            return;
         }
-
+        
         if (m_scanlines == -1 && m_cycles == 1)
         {
             // End of vertical blank
@@ -348,6 +349,8 @@ void Processor2C02::Clock()
             m_spritesCount = 0;
             m_registers.fgShifterPatternLsb.fill(0x00);
             m_registers.fgShifterPatternMsb.fill(0x00);
+            m_cycles++;
+            return;
         }
 
         if ((m_cycles >= 2 && m_cycles < 258) || (m_cycles >= 321 && m_cycles < 338))

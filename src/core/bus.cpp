@@ -195,6 +195,7 @@ bool Bus::Clock()
                 }
             }
         }
+        else
         {
             m_cpu.Clock();
             m_cartridge->GetMapper()->CPUClock();

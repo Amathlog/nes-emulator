@@ -46,5 +46,6 @@ namespace NesEmulator
         std::unique_ptr<IMapper> m_mapper;
         uint16_t m_nbPrgBanks = 0;
         uint16_t m_nbChrBanks = 0;
+        bool m_useVRam = false;
     };
 }

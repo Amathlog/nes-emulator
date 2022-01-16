@@ -29,6 +29,7 @@ namespace NesEmulator
 
         Processor6502& GetCPU() { return m_cpu; }
         Processor2C02& GetPPU() { return m_ppu; }
+        Processor2A03& GetAPU() { return m_apu; }
         const std::vector<uint8_t> GetCPURAM() { return m_cpuRam; }
 
         void InsertCartridge(const std::shared_ptr<Cartridge>& cartridge);

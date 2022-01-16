@@ -41,7 +41,7 @@ namespace NesEmulator
         virtual bool MapWriteCPU(uint16_t address, uint32_t& mappedAddress, uint8_t data) = 0;
         virtual bool MapReadPPU(uint16_t address, uint32_t& mappedAddress, uint8_t& data) = 0;
         virtual bool MapWritePPU(uint16_t address, uint32_t& mappedAddress, uint8_t data) = 0;
-        virtual Mirroring GetMirroring() const { return m_mirroring; }
+        Mirroring GetMirroring() const { return m_mirroring; }
 
         NesEmulator::Mode GetMode() const { return m_header.GetRegion(); }
         uint16_t GetMapperId() const { return m_id; }

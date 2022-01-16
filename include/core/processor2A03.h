@@ -7,6 +7,7 @@
 #include <core/audio/pulseChannel.h>
 #include <core/audio/triangleChannel.h>
 #include <core/audio/noiseChannel.h>
+#include <mutex>
 
 namespace NesEmulator
 {
@@ -96,6 +97,7 @@ namespace NesEmulator
         void SerializeTo(Utils::IWriteVisitor& visitor) const override;
         void DeserializeFrom(Utils::IReadVisitor& visitor) override;
 
+        void FillSamples(float *outData, unsigned int numFrames, unsigned int numChannels);
         Tonic::Synth* GetSynth() { return &m_synth; }
         void SetMode(Mode mode) { m_mode = mode; }
         void SampleRequested();
@@ -114,5 +116,6 @@ namespace NesEmulator
         size_t m_frameClockCounter = 0;
         Mode m_mode; // NTSC or PAL
         bool m_IRQFlag = false;
+        std::mutex m_lock;
     };
 }
