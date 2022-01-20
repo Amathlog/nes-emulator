@@ -4,6 +4,7 @@
 #include <core/mappers/all_mappers.h>
 #include <core/constants.h>
 #include <cassert>
+#include <cstdint>
 #include <cstring>
 #include <iostream>
 #include <core/ines.h>
@@ -46,13 +47,13 @@ Cartridge::Cartridge(IReadVisitor& visitor)
     m_vRam.resize(0x2000);
 
     // Setup the mapper
-    m_mapper = NesEmulator::CreateMapper(header);
+    m_mapper = NesEmulator::CreateMapper(header, m_mapping);
     m_useVRam = m_mapper->GetMirroring() == Mirroring::FOUR_SCREEN;
     
     assert(m_mapper.get() != nullptr && "Invalid mapper id, unsupported");
 
-    // Allocate 8kB of prgRam
-    m_prgRam.resize(0x2000);
+    // Allocate 32kB of prgRam
+    m_prgRam.resize(0x8000);
 
     // When all is done, compute the SHA1 of the ROM
     Utils::SHA1 sha1;
@@ -64,16 +65,17 @@ Cartridge::Cartridge(IReadVisitor& visitor)
 bool Cartridge::ReadCPU(uint16_t address, uint8_t& data)
 {
     uint32_t mappedAddress = 0;
-    if (m_mapper->MapReadCPU(address, mappedAddress, data))
+    if (address >= 0x6000 && address <= 0x7FFF && m_mapping.m_ramEnabled)
     {
-        if (mappedAddress == 0xFFFFFFFF)
-        {
-            return true;
-        }
+        mappedAddress = m_mapping.m_prgRamMapping[0] * 0x2000 + (address & 0x1FFF);
+        data = m_mapping.m_ramIsProgram ? m_prgData[mappedAddress] : m_prgRam[mappedAddress];
+        return true;
+    }
 
-        // if (address >= 0x6000 && address <= 0x7FFF)
-        //     data = m_prgRam[mappedAddress];
-        // else
+    if (address >= 0x8000)
+    {
+        uint16_t index = ((address & 0x7000) >> 13);
+        mappedAddress = m_mapping.m_prgMapping[index] * 0x2000 + (address & 0x1FFF);
         data = m_prgData[mappedAddress];
         return true;
     }
@@ -84,6 +86,13 @@ bool Cartridge::ReadCPU(uint16_t address, uint8_t& data)
 bool Cartridge::WriteCPU(uint16_t addr, uint8_t data)
 {
     uint32_t mappedAddress = 0;
+    if (addr >= 0x6000 && addr <= 0x7FFF && !m_mapping.m_ramIsProgram && m_mapping.m_ramEnabled)
+    {
+        mappedAddress = m_mapping.m_prgRamMapping[0] * 0x2000 + (addr & 0x1FFF);
+        m_prgRam[mappedAddress] = data;
+        return true;
+    }
+
     if (m_mapper->MapWriteCPU(addr, mappedAddress, data))
     {
         if (mappedAddress == 0xFFFFFFFF)
@@ -106,11 +115,14 @@ bool Cartridge::WritePPU(uint16_t addr, uint8_t data)
         return true;
     }
 
-    if (m_mapper->MapWritePPU(addr, mappedAddress, data))
+    if (addr <= 0x1FFF)
     {
+        uint16_t index = (addr >> 10);
+        mappedAddress = m_mapping.m_chrMapping[index] * 0x0400 + (addr & 0x03FF);
         m_chrData[mappedAddress] = data;
         return true;
     }
+
     return false;
 }
 
@@ -125,8 +137,10 @@ bool Cartridge::ReadPPU(uint16_t addr, uint8_t& data)
         return true;
     }
 
-    if (m_mapper->MapReadPPU(addr, mappedAddress, data))
+    if (addr <= 0x1FFF)
     {
+        uint16_t index = (addr >> 10);
+        mappedAddress = m_mapping.m_chrMapping[index] * 0x0400 + (addr & 0x03FF);
         data = m_chrData[mappedAddress];
         return true;
     }
@@ -136,6 +150,39 @@ bool Cartridge::ReadPPU(uint16_t addr, uint8_t& data)
 
 void Cartridge::Reset()
 {
+    m_mapping.Reset();
+
     if (m_mapper)
         m_mapper->Reset();
+}
+
+void Cartridge::SaveRAM(Utils::IWriteVisitor& visitor) const
+{
+    visitor.WriteContainer(m_prgRam);
+}
+
+void Cartridge::LoadRAM(Utils::IReadVisitor& visitor)
+{
+    visitor.ReadContainer(m_prgRam);
+}
+
+void Cartridge::SerializeTo(Utils::IWriteVisitor& visitor) const
+{
+    SaveRAM(visitor);
+    if (m_mapper)
+        m_mapper->SerializeTo(visitor);
+
+    // Check if we have chr rom, if not, we need to serialize it
+    if (m_nbChrBanks == 0)
+        visitor.WriteContainer(m_chrData);
+}
+
+void Cartridge::DeserializeFrom(Utils::IReadVisitor& visitor)
+{
+    LoadRAM(visitor);
+    if (m_mapper)
+        m_mapper->DeserializeFrom(visitor);
+
+    if (m_nbChrBanks == 0)
+        visitor.ReadContainer(m_chrData);
 }
