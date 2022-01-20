@@ -35,6 +35,19 @@ namespace NesEmulator
         // but can also be extended to use PRG ROM address range (up to 0xFFFF)
         // Cut in chunks of 8kB
         std::array<uint16_t, 5> m_prgRamMapping;
+
+        // Extra parameters for more custom mappers
+        bool m_ramIsProgram = false;
+        bool m_ramEnabled = true;
+
+        void Reset()
+        {
+            m_prgMapping.fill(0);
+            m_chrMapping.fill(0);
+            m_prgRamMapping.fill(0);
+            m_ramIsProgram = false;
+            m_ramEnabled = true;
+        }
     };
 
     class IMapper : public ISerializable
@@ -86,26 +99,14 @@ namespace NesEmulator
 
         bool HasPersistantMemory() const { return m_header.flag6.hasPersistentMemory; }
 
-        void SaveRAM(Utils::IWriteVisitor& visitor) const
-        {
-            visitor.WriteContainer(m_staticRAM);
-        }
-
-        void LoadRAM(Utils::IReadVisitor& visitor)
-        {
-            visitor.ReadContainer(m_staticRAM);
-        }
-
         void SerializeTo(Utils::IWriteVisitor& visitor) const override
         {
             visitor.WriteValue(m_mirroring);
-            SaveRAM(visitor);
         }
 
         void DeserializeFrom(Utils::IReadVisitor& visitor) override
         {
             visitor.ReadValue(m_mirroring);
-            LoadRAM(visitor);
         }
 
     protected:
@@ -116,7 +117,6 @@ namespace NesEmulator
         Mirroring m_originalMirroring;
         Mirroring m_mirroring;
 
-        std::vector<uint8_t> m_staticRAM;
         Mapping& m_mapping;
     };
 }

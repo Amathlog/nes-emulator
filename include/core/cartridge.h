@@ -1,5 +1,6 @@
 #pragma once
 
+#include <core/serializable.h>
 #include <cstdint>
 #include <vector>
 #include <memory>
@@ -13,7 +14,7 @@ namespace NesEmulator
         class IReadVisitor;
     }
 
-    class Cartridge
+    class Cartridge : public ISerializable
     {
     public:
         Cartridge(Utils::IReadVisitor& visitor);
@@ -34,6 +35,11 @@ namespace NesEmulator
         bool HasPersistantMemory() const { return m_mapper->HasPersistantMemory(); }
 
         const std::string& GetSHA1() const { return m_sha1; }
+
+        void SaveRAM(Utils::IWriteVisitor& visitor) const;
+        void LoadRAM(Utils::IReadVisitor& visitor);
+        void SerializeTo(Utils::IWriteVisitor& visitor) const override;
+        void DeserializeFrom(Utils::IReadVisitor& visitor) override;
 
     private:
         std::vector<uint8_t> m_prgData;

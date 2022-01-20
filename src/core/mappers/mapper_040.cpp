@@ -9,6 +9,7 @@ using NesEmulator::Mapping;
 Mapper_040::Mapper_040(const iNESHeader& header, Mapping& mapping)
     : IMapper(header, mapping)
 {
+    InternalReset();
 }
 
 bool Mapper_040::MapReadCPU(uint16_t address, uint32_t& mappedAddress, uint8_t& data)
@@ -74,6 +75,7 @@ bool Mapper_040::MapWriteCPU(uint16_t address, uint32_t& mappedAddress, uint8_t 
     {
         // Select switchable bank. There is only 8 of them
         m_switchableBank = data & 0x07;
+        UpdateMapping();
     }
 
     return false;
@@ -95,13 +97,17 @@ bool Mapper_040::MapWritePPU(uint16_t /*address*/, uint32_t& /*mappedAddress*/, 
     return false;
 }
 
-void Mapper_040::Reset()
+void Mapper_040::InternalReset()
 {
-    IMapper::Reset();
     m_switchableBank = 0;
     m_IRQEnabled = false;
     m_IRQActive = false;
     m_IRQCounter = 0;
+
+    m_mapping.m_prgMapping = {4, 5, m_switchableBank, 7};
+    m_mapping.m_chrMapping = {0, 1, 2, 3, 4, 5, 6, 7};
+    m_mapping.m_prgRamMapping.fill(6);
+    m_mapping.m_ramIsProgram = true;
 }
 
 void Mapper_040::CPUClock()
@@ -145,4 +151,11 @@ void Mapper_040::DeserializeFrom(Utils::IReadVisitor& visitor)
     visitor.ReadValue(m_IRQCounter);
     visitor.ReadValue(m_IRQEnabled);
     visitor.ReadValue(m_IRQActive);
+
+    UpdateMapping();
+}
+
+inline void Mapper_040::UpdateMapping()
+{
+    m_mapping.m_prgMapping[2] = m_switchableBank;
 }

@@ -12,24 +12,14 @@ Mapper_001::Mapper_001(const iNESHeader& header, Mapping& mapping)
     // We need to be sure that there is 1 or 2 prgBanks and 1 chrBanks
     assert(m_nbPrgBanks >= 2 && m_nbPrgBanks <= 16 && (m_nbChrBanks == 0 || m_nbChrBanks >= 2) && m_nbChrBanks <= 32 && "Wrong number of prgBanks or chrBans in mapper 001");
 
-    m_staticRAM.resize(32 * 1024); // 32kB
-
     InternalReset();
 }
 
 bool Mapper_001::MapReadCPU(uint16_t address, uint32_t& mappedAddress, uint8_t& data)
 {
     // Should not be called
-    assert(false);
 
-    if (address >= 0x6000 && address <= 0x7FFF)
-    {
-        // PrgRam range
-        mappedAddress = 0xFFFFFFFF;
-        data = m_staticRAM[address & 0x1FFF];
-        return true;
-    }
-    else if (address >= 0x8000)
+    if (address >= 0x8000)
     {
         if (m_32kBModePrgBank)
         {
@@ -61,12 +51,6 @@ bool Mapper_001::MapReadCPU(uint16_t address, uint32_t& mappedAddress, uint8_t& 
 
 bool Mapper_001::MapWriteCPU(uint16_t address, uint32_t& mappedAddress, uint8_t data)
 { 
-    if (address >= 0x6000 && address <= 0x7FFF)
-    {
-        mappedAddress = 0xFFFFFFFF;
-        m_staticRAM[address & 0x1FFF] = data;
-        return true;
-    }
     if (address >= 0x8000)
     {
         // In this case, we need to load some data in the shift register.
@@ -164,7 +148,6 @@ bool Mapper_001::MapWriteCPU(uint16_t address, uint32_t& mappedAddress, uint8_t 
 bool Mapper_001::MapReadPPU(uint16_t address, uint32_t& mappedAddress, uint8_t& /*data*/)
 {
     // Should not be called
-    assert(false);
     // First check if we have Chr bank. If not, we need to read from RAM
     if (address <= 0x1FFF)
     {

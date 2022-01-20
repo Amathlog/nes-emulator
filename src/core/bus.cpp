@@ -296,7 +296,7 @@ void Bus::SerializeTo(Utils::IWriteVisitor& visitor) const
     m_apu.SerializeTo(visitor);
 
     visitor.WriteContainer(m_cpuRam);
-    m_cartridge->GetMapper()->SerializeTo(visitor);
+    m_cartridge->SerializeTo(visitor);
 
     visitor.WriteValue(m_clockCounter);
 
@@ -368,7 +368,7 @@ void Bus::DeserializeFrom(Utils::IReadVisitor& visitor)
     m_apu.DeserializeFrom(visitor);
 
     visitor.ReadContainer(m_cpuRam);
-    m_cartridge->GetMapper()->DeserializeFrom(visitor);
+    m_cartridge->DeserializeFrom(visitor);
 
     visitor.ReadValue(m_clockCounter);
 
@@ -413,7 +413,7 @@ void Bus::SaveRAM(Utils::IWriteVisitor& visitor) const
     visitor.WriteValue(hash.size());
     visitor.Write(hash.c_str(), hash.size());
 
-    m_cartridge->GetMapper()->SaveRAM(visitor);
+    m_cartridge->SaveRAM(visitor);
 }
 
 void Bus::LoadRAM(Utils::IReadVisitor& visitor)
@@ -453,7 +453,7 @@ void Bus::LoadRAM(Utils::IReadVisitor& visitor)
         return;
     }
 
-    m_cartridge->GetMapper()->LoadRAM(visitor);
+    m_cartridge->LoadRAM(visitor);
 }
 
 void Bus::SetMode(Mode mode)
