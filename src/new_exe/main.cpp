@@ -35,7 +35,7 @@ int main(int argc, char **argv)
     // Mapper 000 also
     auto path = root / "tests" / "test_roms" / "nestest.nes";
 
-    //path = root / "roms" / "kirby.nes";
+    path = root / "roms" / "smb.nes";
 
     // Check the arg, if there is a file to load
     if (argc > 1)

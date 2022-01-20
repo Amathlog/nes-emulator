@@ -4,9 +4,10 @@
 #include <cstdint>
 
 using NesEmulator::Mapper_040;
+using NesEmulator::Mapping;
 
-Mapper_040::Mapper_040(const iNESHeader& header)
-    : IMapper(header)
+Mapper_040::Mapper_040(const iNESHeader& header, Mapping& mapping)
+    : IMapper(header, mapping)
 {
 }
 

@@ -10,7 +10,7 @@ namespace NesEmulator
     class Mapper_004 : public IMapper
     {
     public:
-        Mapper_004(const iNESHeader& header);
+        Mapper_004(const iNESHeader& header, Mapping& mapping);
         ~Mapper_004() = default;
 
         bool MapReadCPU(uint16_t address, uint32_t& mappedAddress, uint8_t& data) override;

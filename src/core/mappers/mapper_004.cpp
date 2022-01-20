@@ -4,9 +4,10 @@
 #include <cstdint>
 
 using NesEmulator::Mapper_004;
+using NesEmulator::Mapping;
 
-Mapper_004::Mapper_004(const iNESHeader& header)
-    : IMapper(header)
+Mapper_004::Mapper_004(const iNESHeader& header, Mapping& mapping)
+    : IMapper(header, mapping)
 {
     m_staticRAM.resize(0x8000);
 }

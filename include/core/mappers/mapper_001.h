@@ -10,7 +10,7 @@ namespace NesEmulator
     class Mapper_001 : public IMapper
     {
     public:
-        Mapper_001(const iNESHeader& header);
+        Mapper_001(const iNESHeader& header, Mapping& mapping);
         ~Mapper_001() = default;
 
         bool MapReadCPU(uint16_t address, uint32_t& mappedAddress, uint8_t& data) override;
@@ -18,15 +18,19 @@ namespace NesEmulator
         bool MapReadPPU(uint16_t address, uint32_t& mappedAddress, uint8_t& data) override; 
         bool MapWritePPU(uint16_t address, uint32_t& mappedAddress, uint8_t data) override;
 
-        void Reset() override;
+        void Reset() override { InternalReset(); };
 
         void SerializeTo(Utils::IWriteVisitor& visitor) const override;
         void DeserializeFrom(Utils::IReadVisitor& visitor) override;
 
     private:
+        void InternalReset();
         void ResetShiftRegister();
         void ResetControlRegister();
         void HandleLoadRegister(uint8_t data);
+
+        void UpdateMapping();
+
         uint8_t m_shiftRegister = 0x00;
         uint8_t m_shiftCounter = 0x00;
         uint8_t m_internalRegister = 0x00;

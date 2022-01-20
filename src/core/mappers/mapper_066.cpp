@@ -4,9 +4,10 @@
 #include <cstdint>
 
 using NesEmulator::Mapper_066;
+using NesEmulator::Mapping;
 
-Mapper_066::Mapper_066(const iNESHeader& header)
-    : IMapper(header)
+Mapper_066::Mapper_066(const iNESHeader& header, Mapping& mapping)
+    : IMapper(header, mapping)
 {
     assert(m_nbPrgBanks >= 2 && m_nbChrBanks >= 2 && "Wrong number of prgBanks or chrBans in mapper 066");
 }

@@ -4,6 +4,7 @@
 #include <core/mappers/all_mappers.h>
 #include <core/constants.h>
 #include <cassert>
+#include <cstdint>
 #include <cstring>
 #include <iostream>
 #include <core/ines.h>
@@ -46,7 +47,7 @@ Cartridge::Cartridge(IReadVisitor& visitor)
     m_vRam.resize(0x2000);
 
     // Setup the mapper
-    m_mapper = NesEmulator::CreateMapper(header);
+    m_mapper = NesEmulator::CreateMapper(header, m_mapping);
     m_useVRam = m_mapper->GetMirroring() == Mirroring::FOUR_SCREEN;
     
     assert(m_mapper.get() != nullptr && "Invalid mapper id, unsupported");
@@ -64,19 +65,43 @@ Cartridge::Cartridge(IReadVisitor& visitor)
 bool Cartridge::ReadCPU(uint16_t address, uint8_t& data)
 {
     uint32_t mappedAddress = 0;
-    if (m_mapper->MapReadCPU(address, mappedAddress, data))
+    if (address >= 0x6000 && address <= 0x7FFF)
     {
-        if (mappedAddress == 0xFFFFFFFF)
-        {
-            return true;
-        }
+        mappedAddress = m_mapping.m_prgRamMapping[0] * 0x2000 + (address & 0x1FFF);
+        data = m_prgRam[mappedAddress];
+        return true;
+    }
 
-        // if (address >= 0x6000 && address <= 0x7FFF)
-        //     data = m_prgRam[mappedAddress];
-        // else
+    if (address >= 0x8000)
+    {
+        uint16_t index = ((address & 0x7000) >> 13);
+        mappedAddress = m_mapping.m_prgMapping[index] * 0x2000 + (address & 0x1FFF);
         data = m_prgData[mappedAddress];
         return true;
     }
+
+
+    // // DO NOT COMMIT
+    // if (address >= 0x8000 && address <= 0xFFFF)
+    // {
+    //     // Prg
+    //     mappedAddress = address & (m_nbPrgBanks == 2 ? 0x7FFF : 0x3FFF);
+    //     data = m_prgData[mappedAddress];
+    //     return true;
+    // }
+    // if (m_mapper->MapReadCPU(address, mappedAddress, data))
+    // {
+    //     if (mappedAddress == 0xFFFFFFFF)
+    //     {
+    //         return true;
+    //     }
+
+    //     // if (address >= 0x6000 && address <= 0x7FFF)
+    //     //     data = m_prgRam[mappedAddress];
+    //     // else
+    //     data = m_prgData[mappedAddress];
+    //     return true;
+    // }
 
     return false;
 }
@@ -106,11 +131,19 @@ bool Cartridge::WritePPU(uint16_t addr, uint8_t data)
         return true;
     }
 
-    if (m_mapper->MapWritePPU(addr, mappedAddress, data))
+    if (addr <= 0x1FFF)
     {
+        uint16_t index = (addr >> 10);
+        mappedAddress = m_mapping.m_chrMapping[index] * 0x0400 + (addr & 0x03FF);
         m_chrData[mappedAddress] = data;
         return true;
     }
+
+    // if (m_mapper->MapWritePPU(addr, mappedAddress, data))
+    // {
+    //     m_chrData[mappedAddress] = data;
+    //     return true;
+    // }
     return false;
 }
 
@@ -125,11 +158,26 @@ bool Cartridge::ReadPPU(uint16_t addr, uint8_t& data)
         return true;
     }
 
-    if (m_mapper->MapReadPPU(addr, mappedAddress, data))
+    if (addr <= 0x1FFF)
     {
+        uint16_t index = (addr >> 10);
+        mappedAddress = m_mapping.m_chrMapping[index] * 0x0400 + (addr & 0x03FF);
         data = m_chrData[mappedAddress];
         return true;
     }
+
+    // DO NOT COMMIT
+    // if (addr <= Cst::PPU_END_CHR_ROM)
+    // {
+    //     data = m_chrData[addr];
+    //     return true;
+    // }
+
+    // if (m_mapper->MapReadPPU(addr, mappedAddress, data))
+    // {
+    //     data = m_chrData[mappedAddress];
+    //     return true;
+    // }
 
     return false;
 }

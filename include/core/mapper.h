@@ -18,14 +18,34 @@ namespace NesEmulator
         FOUR_SCREEN
     };
 
+    struct Mapping
+    {
+        // PRG rom is located between 0x8000 and 0xFFFF (32kB)
+        // We cut this range in chunks of 8kB (0x2000), that can be changed
+        // indicating where we need to reed in program data.
+        // We do this to avoid virtual calls to IMapper, which is costly
+        // if done a lot of times.
+        std::array<uint16_t, 4> m_prgMapping;
+        
+        // Same thing for CHR rom, between 0x0000 and 0x1FFF (8kB)
+        // Cut in chunks of 1kB (0x0400)
+        std::array<uint16_t, 8> m_chrMapping;
+
+        // And same thing for PRG RAM, between 0x6000 and 0x7FFF (8kB)
+        // but can also be extended to use PRG ROM address range (up to 0xFFFF)
+        // Cut in chunks of 8kB
+        std::array<uint16_t, 5> m_prgRamMapping;
+    };
+
     class IMapper : public ISerializable
     {
     public:
-        IMapper(const iNESHeader& header)
+        IMapper(const iNESHeader& header, Mapping& mapping)
             : m_header(header)
             , m_nbPrgBanks(m_header.GetPRGROMSize())
             , m_nbChrBanks(m_header.GetCHRROMSize())
             , m_id(header.GetMapperId())
+            , m_mapping(mapping)
         {
             if (m_header.flag6.ignoreMirroringControl)
                 m_originalMirroring = Mirroring::FOUR_SCREEN;
@@ -97,5 +117,6 @@ namespace NesEmulator
         Mirroring m_mirroring;
 
         std::vector<uint8_t> m_staticRAM;
+        Mapping& m_mapping;
     };
 }
