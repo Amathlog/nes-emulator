@@ -88,7 +88,7 @@ int main(int argc, char **argv)
                     auto start_point = std::chrono::high_resolution_clock::now();
                     auto timeSpent = std::chrono::duration_cast<std::chrono::microseconds>(start_point - previous_point).count();
                     previous_point = std::chrono::high_resolution_clock::now();
-                    timeSpent = std::min(timeSpent, 16666ll);
+                    timeSpent = std::min<long long>(timeSpent, 16666ll);
                     
                     constexpr double ppuPeriodUS = 1000000.0 / NesEmulator::Cst::NTSC_PPU_FREQUENCY;
                     auto nbClocks = (timeSpent / ppuPeriodUS);
