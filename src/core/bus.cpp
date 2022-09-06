@@ -195,6 +195,7 @@ bool Bus::Clock()
                 }
             }
         }
+        else
         {
             m_cpu.Clock();
             m_cartridge->GetMapper()->CPUClock();
@@ -295,7 +296,7 @@ void Bus::SerializeTo(Utils::IWriteVisitor& visitor) const
     m_apu.SerializeTo(visitor);
 
     visitor.WriteContainer(m_cpuRam);
-    m_cartridge->GetMapper()->SerializeTo(visitor);
+    m_cartridge->SerializeTo(visitor);
 
     visitor.WriteValue(m_clockCounter);
 
@@ -367,7 +368,7 @@ void Bus::DeserializeFrom(Utils::IReadVisitor& visitor)
     m_apu.DeserializeFrom(visitor);
 
     visitor.ReadContainer(m_cpuRam);
-    m_cartridge->GetMapper()->DeserializeFrom(visitor);
+    m_cartridge->DeserializeFrom(visitor);
 
     visitor.ReadValue(m_clockCounter);
 
@@ -412,7 +413,7 @@ void Bus::SaveRAM(Utils::IWriteVisitor& visitor) const
     visitor.WriteValue(hash.size());
     visitor.Write(hash.c_str(), hash.size());
 
-    m_cartridge->GetMapper()->SaveRAM(visitor);
+    m_cartridge->SaveRAM(visitor);
 }
 
 void Bus::LoadRAM(Utils::IReadVisitor& visitor)
@@ -452,43 +453,7 @@ void Bus::LoadRAM(Utils::IReadVisitor& visitor)
         return;
     }
 
-    m_cartridge->GetMapper()->LoadRAM(visitor);
-}
-
-std::filesystem::path Bus::GetSaveStateFile(std::filesystem::path exeDir, int number)
-{
-    if (m_cartridge.get() == nullptr)
-        return std::filesystem::path();
-
-    auto saveFolder = GetSaveFolder(exeDir);
-    std::string saveFile = std::to_string(number);
-    saveFile += ".nesSaveState";
-    return saveFolder / saveFile;
-}
-
-std::filesystem::path Bus::GetSaveFile(std::filesystem::path exeDir)
-{
-    if (m_cartridge.get() == nullptr)
-        return std::filesystem::path();
-
-    // If there is no persistent memory, do nothing
-    if (!m_cartridge->GetMapper()->HasPersistantMemory())
-        return std::filesystem::path();
-
-    auto saveFolder = GetSaveFolder(exeDir);
-    std::string saveFile = "save.nesSave";
-    return saveFolder / saveFile;
-}
-
-std::filesystem::path Bus::GetSaveFolder(std::filesystem::path exeDir)
-{
-    if (m_cartridge.get() == nullptr)
-        return std::filesystem::path();
-
-    std::string hash = m_cartridge->GetSHA1();
-    exeDir /= "saves";
-    exeDir /= hash;
-    return exeDir;
+    m_cartridge->LoadRAM(visitor);
 }
 
 void Bus::SetMode(Mode mode)

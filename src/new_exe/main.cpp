@@ -1,7 +1,10 @@
+#include "core/constants.h"
+#include <chrono>
 #include <new_exe/audio/nesAudioSystem.h>
 #include <new_exe/messageService/coreMessageService.h>
 #include <new_exe/messageService/messageService.h>
 #include <new_exe/messageService/messages/coreMessage.h>
+#include <new_exe/messageService/messages/screenMessage.h>
 #include <new_exe/mainWindow.h>
 #include <iostream>
 #include <filesystem>
@@ -10,13 +13,14 @@
 #include <core/bus.h>
 #include <core/cartridge.h>
 #include <vector>
+#include <algorithm>
 
 
 namespace fs = std::filesystem;
 using namespace NesEmulatorGL;
 
 static bool enableAudioByDefault = true;
-static bool syncWithAudio = true;
+static bool syncWithAudio = false;
 
 int main(int argc, char **argv)
 {
@@ -43,7 +47,7 @@ int main(int argc, char **argv)
 
     NesEmulator::Bus bus;
 
-    NesAudioSystem audioSystem(bus, syncWithAudio, 2);
+    NesAudioSystem audioSystem(bus, syncWithAudio, 2, 44100, 256);
     audioSystem.Enable(enableAudioByDefault);
 
     bus.SetSampleFrequency(audioSystem.GetSampleRate());
@@ -57,24 +61,64 @@ int main(int argc, char **argv)
     // Load a new game
     singleton.Push(LoadNewGameMessage(path.string()));
 
+    auto previous_point = std::chrono::high_resolution_clock::now();
+    constexpr bool showRealFPS = false;
+    constexpr size_t nbSamples = 120;
+    std::array<float, nbSamples> timeCounter;
+    size_t ptr = 0;
+
     {
         NesEmulatorGL::MainWindow mainWindow("NES Emulator", 256*3, 240*3, bus.GetPPU().GetWidth(), bus.GetPPU().GetHeight());
         mainWindow.SetUserData(&bus);
         mainWindow.ConnectController();
 
         if (audioSystem.Initialize() || !enableAudioByDefault)
-        {            
+        {
+            previous_point = std::chrono::high_resolution_clock::now();
             while (!mainWindow.RequestedClose())
             {
                 if (!syncWithAudio)
                 {
-                    do
+                    // do {
+                    //     bus.Clock();
+                    // } while (!bus.GetPPU().IsFrameComplete());
+                    // DispatchMessageServiceSingleton::GetInstance().Push(RenderMessage(bus.GetPPU().GetScreen(), bus.GetPPU().GetHeight() * bus.GetPPU().GetWidth()));
+
+
+                    auto start_point = std::chrono::high_resolution_clock::now();
+                    auto timeSpent = std::chrono::duration_cast<std::chrono::microseconds>(start_point - previous_point).count();
+                    previous_point = std::chrono::high_resolution_clock::now();
+                    timeSpent = std::min<long long>(timeSpent, 16666ll);
+                    
+                    constexpr double ppuPeriodUS = 1000000.0 / NesEmulator::Cst::NTSC_PPU_FREQUENCY;
+                    auto nbClocks = (timeSpent / ppuPeriodUS);
+                    for (auto i = 0; i < nbClocks; ++i)
                     {
                         bus.Clock();
-                    } while (!bus.GetPPU().IsFrameComplete());
+                        if (bus.GetPPU().IsFrameComplete())
+                            DispatchMessageServiceSingleton::GetInstance().Push(RenderMessage(bus.GetPPU().GetScreen(), bus.GetPPU().GetHeight() * bus.GetPPU().GetWidth()));
+                    }
+
+                    if constexpr (showRealFPS)
+                    {
+                        auto end_point = std::chrono::high_resolution_clock::now();
+                        timeSpent = std::chrono::duration_cast<std::chrono::microseconds>(end_point - start_point).count();
+                        double ratio = (double)(timeSpent) / (ppuPeriodUS * nbClocks); // < 1 = faster than realtime
+                        timeCounter[ptr++] = 60.0f / (float)ratio;
+                        if (ptr == nbSamples)
+                        {
+                            ptr = 0;
+                            float res = 0;
+                            for (auto x : timeCounter)
+                            {
+                                res += x;
+                            }
+                            std::cout << "Real FPS: " << res / nbSamples << std::endl;
+                        }
+                    }
                 }
 
-                mainWindow.Update(syncWithAudio);
+                mainWindow.Update(true);
             }
         }
 

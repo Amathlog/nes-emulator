@@ -4,26 +4,22 @@
 #include <cstdint>
 
 using NesEmulator::Mapper_001;
+using NesEmulator::Mapping;
 
-Mapper_001::Mapper_001(const iNESHeader& header)
-    : IMapper(header)
+Mapper_001::Mapper_001(const iNESHeader& header, Mapping& mapping)
+    : IMapper(header, mapping)
 {
     // We need to be sure that there is 1 or 2 prgBanks and 1 chrBanks
     assert(m_nbPrgBanks >= 2 && m_nbPrgBanks <= 32 && (m_nbChrBanks == 0 || m_nbChrBanks >= 2) && m_nbChrBanks <= 32 && "Wrong number of prgBanks or chrBans in mapper 001");
 
-    m_staticRAM.resize(32 * 1024); // 32kB
+    InternalReset();
 }
 
 bool Mapper_001::MapReadCPU(uint16_t address, uint32_t& mappedAddress, uint8_t& data)
 {
-    if (address >= 0x6000 && address <= 0x7FFF)
-    {
-        // PrgRam range
-        mappedAddress = 0xFFFFFFFF;
-        data = m_staticRAM[address & 0x1FFF];
-        return true;
-    }
-    else if (address >= 0x8000)
+    // Should not be called
+
+    if (address >= 0x8000)
     {
         if (m_32kBModePrgBank)
         {
@@ -55,12 +51,6 @@ bool Mapper_001::MapReadCPU(uint16_t address, uint32_t& mappedAddress, uint8_t& 
 
 bool Mapper_001::MapWriteCPU(uint16_t address, uint32_t& mappedAddress, uint8_t data)
 { 
-    if (address >= 0x6000 && address <= 0x7FFF)
-    {
-        mappedAddress = 0xFFFFFFFF;
-        m_staticRAM[address & 0x1FFF] = data;
-        return true;
-    }
     if (address >= 0x8000)
     {
         // In this case, we need to load some data in the shift register.
@@ -114,6 +104,9 @@ bool Mapper_001::MapWriteCPU(uint16_t address, uint32_t& mappedAddress, uint8_t 
                         break;
                     }
                 }
+
+                // Perhaps not necessary at this stage
+                UpdateMapping();
             }
             // CHR Bank 0 (0xA000-0xBFFF)
             else if(address <= 0xBFFF)
@@ -121,6 +114,7 @@ bool Mapper_001::MapWriteCPU(uint16_t address, uint32_t& mappedAddress, uint8_t 
                 uint8_t chrBank0 = m_internalRegister & 0x1F;
                 // Ignore lowest bit in 8kB mode
                 m_currentChrBank0 = m_8kBModeChrBank ? (chrBank0 >> 1) : chrBank0;
+                UpdateMapping();
             }
             // CHR Bank 1 (0xC000-0xDFFF)
             else if (address <= 0xDFFF)
@@ -131,6 +125,7 @@ bool Mapper_001::MapWriteCPU(uint16_t address, uint32_t& mappedAddress, uint8_t 
                 {
                     m_currentChrBank1 = chrBank1;
                 }
+                UpdateMapping();
             }
             // PRG Bank (0xE000-0xFFFF)
             else 
@@ -140,6 +135,7 @@ bool Mapper_001::MapWriteCPU(uint16_t address, uint32_t& mappedAddress, uint8_t 
 
                 // Low bit ignored in 32kB mode
                 m_currentPrgBankSwitch = (m_currentPrgBankSwitch & 0x10) | (m_32kBModePrgBank ? (prgROMBank >> 1) : prgROMBank);
+                UpdateMapping();
             }
 
             m_loadRegisterDone = false;
@@ -151,6 +147,7 @@ bool Mapper_001::MapWriteCPU(uint16_t address, uint32_t& mappedAddress, uint8_t 
 
 bool Mapper_001::MapReadPPU(uint16_t address, uint32_t& mappedAddress, uint8_t& /*data*/)
 {
+    // Should not be called
     // First check if we have Chr bank. If not, we need to read from RAM
     if (address <= 0x1FFF)
     {
@@ -225,7 +222,7 @@ void Mapper_001::HandleLoadRegister(uint8_t data)
     }
 }
 
-void Mapper_001::Reset()
+void Mapper_001::InternalReset()
 {
     ResetShiftRegister();
     m_internalRegister = 0x00;
@@ -235,6 +232,8 @@ void Mapper_001::Reset()
     m_currentChrBank0 = 0;
     m_currentChrBank1 = 0;
     ResetControlRegister();
+
+    UpdateMapping();
 }
 
 void Mapper_001::SerializeTo(Utils::IWriteVisitor& visitor) const
@@ -269,4 +268,54 @@ void Mapper_001::DeserializeFrom(Utils::IReadVisitor& visitor)
     visitor.ReadValue(m_currentChrBank1);
     visitor.ReadValue(m_32kBModePrgBank);
     visitor.ReadValue(m_8kBModeChrBank);
+
+    UpdateMapping();
+}
+
+void Mapper_001::UpdateMapping()
+{
+    // PRG
+    if (m_32kBModePrgBank)
+    {
+        uint16_t currentBank = (uint16_t)m_currentPrgBankSwitch * 4;
+        m_mapping.m_prgMapping = {currentBank, (uint16_t)(currentBank + 1), 
+                                (uint16_t)(currentBank + 2), (uint16_t)(currentBank + 3)};
+    }
+    else
+    {
+        uint16_t firstBank = m_PrgBank0IsSwitch ? (uint16_t)m_currentPrgBankSwitch * 2 : 0;
+        uint16_t lastBank = !m_PrgBank0IsSwitch ? (uint16_t)m_currentPrgBankSwitch * 2 : 2 * (m_nbPrgBanks - 1);
+        m_mapping.m_prgMapping = {firstBank, (uint16_t)(firstBank + 1), lastBank, (uint16_t)(lastBank + 1)};
+    }
+
+    // CHR
+    // If there is no CHR ROM, no mapping is done
+    if (m_nbChrBanks == 0)
+    {
+        m_mapping.m_chrMapping = { 0, 1, 2, 3, 4, 5, 6, 7 };
+    }
+    else if (m_8kBModeChrBank)
+    {
+        uint16_t currentBank = m_currentChrBank0 * 8;
+        m_mapping.m_chrMapping = {
+            currentBank, (uint16_t)(currentBank + 1),
+            (uint16_t)(currentBank + 2), (uint16_t)(currentBank + 3),
+            (uint16_t)(currentBank + 4), (uint16_t)(currentBank + 5),
+            (uint16_t)(currentBank + 6), (uint16_t)(currentBank + 7)
+        };
+    }
+    else
+    {
+        uint16_t currentBank0 = m_currentChrBank0 * 4;
+        uint16_t currentBank1 = m_currentChrBank1 * 4;
+        m_mapping.m_chrMapping = {
+            currentBank0, (uint16_t)(currentBank0 + 1),
+            (uint16_t)(currentBank0 + 2), (uint16_t)(currentBank0 + 3),
+            currentBank1, (uint16_t)(currentBank1 + 1),
+            (uint16_t)(currentBank1 + 2), (uint16_t)(currentBank1 + 3)
+        };
+    }
+
+    // RAM, fixed
+    m_mapping.m_prgRamMapping.fill(0);
 }

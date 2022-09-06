@@ -11,7 +11,6 @@
 #include <core/processor2C02.h>
 #include <core/processor2A03.h>
 #include <core/controller.h>
-#include <filesystem>
 #include <MyTonic.h>
 #include <mutex>
 
@@ -30,6 +29,7 @@ namespace NesEmulator
 
         Processor6502& GetCPU() { return m_cpu; }
         Processor2C02& GetPPU() { return m_ppu; }
+        Processor2A03& GetAPU() { return m_apu; }
         const std::vector<uint8_t> GetCPURAM() { return m_cpuRam; }
 
         void InsertCartridge(const std::shared_ptr<Cartridge>& cartridge);
@@ -54,15 +54,13 @@ namespace NesEmulator
         void SaveRAM(Utils::IWriteVisitor& visitor) const;
         void LoadRAM(Utils::IReadVisitor& visitor);
 
-        std::filesystem::path GetSaveStateFile(std::filesystem::path exeDir, int number);
-        std::filesystem::path GetSaveFile(std::filesystem::path exeDir);
-        std::filesystem::path GetSaveFolder(std::filesystem::path exeDir);
-
         Tonic::Synth* GetSynth() { return m_apu.GetSynth(); }
 
         void SetMode(Mode mode);
         NesEmulator::Mode GetMode() const { return m_mode; }
         void SetSampleFrequency(unsigned sampleFrequency);
+
+        const Cartridge* GetCartridge() const { return m_cartridge.get(); }
 
     private:
         Processor6502 m_cpu;

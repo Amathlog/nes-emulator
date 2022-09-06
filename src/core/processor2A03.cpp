@@ -3,6 +3,7 @@
 #include "core/audio/pulseChannel.h"
 #include "core/constants.h"
 #include <core/processor2A03.h>
+#include <mutex>
 #include <string>
 
 using NesEmulator::Processor2A03;
@@ -104,16 +105,23 @@ void Processor2A03::Clock()
 
         double cpuFrequency = (m_mode == Mode::NTSC) ? Cst::NTSC_CPU_FREQUENCY : Cst::PAL_CPU_FREQUENCY;
 
-        m_pulseChannel1.Update(cpuFrequency, m_synth);
-        m_pulseChannel2.Update(cpuFrequency, m_synth);
-        m_triangleChannel.Update(cpuFrequency, m_synth);
-        m_noiseChannel.Update(cpuFrequency, m_synth);
+        {
+            //std::unique_lock<std::mutex> lk(m_lock);
+            m_pulseChannel1.Track();
+            m_pulseChannel2.Track();
+            m_pulseChannel1.Update(cpuFrequency, m_synth);
+            m_pulseChannel2.Update(cpuFrequency, m_synth);
+            m_triangleChannel.Update(cpuFrequency, m_synth);
+            m_noiseChannel.Update(cpuFrequency, m_synth);
+        }
     }
 
-    m_pulseChannel1.Track();
-    m_pulseChannel2.Track();
-
     m_clockCounter++;
+}
+void Processor2A03::FillSamples(float *outData, unsigned int numFrames, unsigned int numChannels)
+{
+    //std::unique_lock<std::mutex> lk(m_lock);
+    m_synth.fillBufferOfFloats(outData, numFrames, numChannels);
 }
 
 void Processor2A03::WriteCPU(uint16_t addr, uint8_t data)

@@ -33,7 +33,7 @@ int NesAudioSystem::RenderCallback(void *outputBuffer, void* /*inputBuffer*/, un
         }
     }
 
-    m_bus.GetSynth()->fillBufferOfFloats((float*)outputBuffer, nBufferFrames, m_nbChannels);
+    m_bus.GetAPU().FillSamples((float*)outputBuffer, nBufferFrames, m_nbChannels);
 
     return 0;
 }

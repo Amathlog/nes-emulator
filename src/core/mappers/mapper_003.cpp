@@ -4,11 +4,14 @@
 #include <cstdint>
 
 using NesEmulator::Mapper_003;
+using NesEmulator::Mapping;
 
-Mapper_003::Mapper_003(const iNESHeader& header)
-    : IMapper(header)
+Mapper_003::Mapper_003(const iNESHeader& header, Mapping& mapping)
+    : IMapper(header, mapping)
 {
     assert(m_nbPrgBanks > 0 && m_nbPrgBanks <= 2 && (m_nbChrBanks >= 2) && "Wrong number of prgBanks or chrBans in mapper 003");
+
+    InternalReset();
 }
 
 bool Mapper_003::MapReadCPU(uint16_t address, uint32_t& mappedAddress, uint8_t& /*data*/)
@@ -46,6 +49,7 @@ bool Mapper_003::MapWriteCPU(uint16_t address, uint32_t& mappedAddress, uint8_t 
     if (address >= 0x8000 && address <= 0xFFFF)
     {
         m_currentSwitchChrBank = data;
+        UpdateMapping();
     }
     return false;
 }
@@ -66,10 +70,17 @@ bool Mapper_003::MapWritePPU(uint16_t /*address*/, uint32_t& /*mappedAddress*/, 
     return false;
 }
 
-void Mapper_003::Reset()
+void Mapper_003::InternalReset()
 {
-    IMapper::Reset();
     m_currentSwitchChrBank = 0;
+
+    if (m_nbPrgBanks == 1)
+        m_mapping.m_prgMapping = {0, 1, 0, 1};
+    else
+        m_mapping.m_prgMapping = {0, 1, 2, 3};
+
+    m_mapping.m_prgRamMapping.fill(0);
+    m_mapping.m_chrMapping = {0, 1, 2, 3, 4, 5, 6, 7};
 }
 
 void Mapper_003::SerializeTo(Utils::IWriteVisitor& visitor) const
@@ -84,4 +95,16 @@ void Mapper_003::DeserializeFrom(Utils::IReadVisitor& visitor)
     IMapper::DeserializeFrom(visitor);
 
     visitor.ReadValue(m_currentSwitchChrBank);
+    UpdateMapping();
+}
+
+inline void Mapper_003::UpdateMapping()
+{
+    uint16_t currentBank = m_currentSwitchChrBank * 8;
+    m_mapping.m_chrMapping = {
+        currentBank, (uint16_t)(currentBank + 1),
+        (uint16_t)(currentBank + 2), (uint16_t)(currentBank + 3),
+        (uint16_t)(currentBank + 4), (uint16_t)(currentBank + 5),
+        (uint16_t)(currentBank + 6), (uint16_t)(currentBank + 7)
+    };
 }

@@ -8,7 +8,7 @@
             "name": "Debug",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/build/src/exe/NesEmulator",
+            "program": "${workspaceFolder}/build/src/new_exe/NesEmulatorGL",
             "args": [],
             "stopAtEntry": false,
             "cwd": "${fileDirname}",

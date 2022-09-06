@@ -4,23 +4,17 @@
 #include <cstdint>
 
 using NesEmulator::Mapper_004;
+using NesEmulator::Mapping;
 
-Mapper_004::Mapper_004(const iNESHeader& header)
-    : IMapper(header)
+Mapper_004::Mapper_004(const iNESHeader& header, Mapping& mapping)
+    : IMapper(header, mapping)
 {
-    m_staticRAM.resize(0x8000);
+    InternalReset();
 }
 
 bool Mapper_004::MapReadCPU(uint16_t address, uint32_t& mappedAddress, uint8_t& data)
 {
-    if (address >= 0x6000 && address <= 0x7FFF && m_prgRamEnabled)
-    {
-        // PrgRam range
-        mappedAddress = 0xFFFFFFFF;
-        data = m_staticRAM[address & 0x1FFF];
-        return true;
-    }
-    else if (address >= 0x8000 && address <= 0x9FFF)
+    if (address >= 0x8000 && address <= 0x9FFF)
     {
         // First bank
         // On mode 0, it is index 6 (R6)
@@ -65,12 +59,6 @@ bool Mapper_004::MapReadCPU(uint16_t address, uint32_t& mappedAddress, uint8_t& 
 
 bool Mapper_004::MapWriteCPU(uint16_t address, uint32_t& mappedAddress, uint8_t data)
 { 
-    if (address >= 0x6000 && address <= 0x7FFF && m_prgRamEnabled)
-    {
-        mappedAddress = 0xFFFFFFFF;
-        m_staticRAM[address & 0x1FFF] = data;
-        return true;
-    }
     if (address >= 0x8000 && address <= 0x9FFF)
     {
         if (address & 0x0001)
@@ -91,6 +79,7 @@ bool Mapper_004::MapWriteCPU(uint16_t address, uint32_t& mappedAddress, uint8_t 
             }
             
             m_indexes[m_nextIndexToUpdate] = data;
+            UpdateMapping();
         }
         else
         {
@@ -111,6 +100,7 @@ bool Mapper_004::MapWriteCPU(uint16_t address, uint32_t& mappedAddress, uint8_t 
             // Don't support write protection
             // PrgRam is on bit 7
             m_prgRamEnabled = (data & 0x80) > 0;
+            m_mapping.m_ramEnabled = m_prgRamEnabled;
         }
         else
         {
@@ -183,9 +173,8 @@ bool Mapper_004::MapWritePPU(uint16_t address, uint32_t& mappedAddress, uint8_t 
     return MapReadPPU(address, mappedAddress, data);
 }
 
-void Mapper_004::Reset()
+void Mapper_004::InternalReset()
 {
-    IMapper::Reset();
     m_indexes.fill(0);
     m_prgRomBankMode = 0;
     m_chrRomBankMode = 0;
@@ -195,6 +184,8 @@ void Mapper_004::Reset()
     m_IRQActive = false;
     m_IRQCounter = 0;
     m_IRQReload = 0;
+
+    UpdateMapping();
 }
 
 void Mapper_004::ScanlineDone()
@@ -253,4 +244,45 @@ void Mapper_004::DeserializeFrom(Utils::IReadVisitor& visitor)
     visitor.ReadValue(m_IRQActive);
     visitor.ReadValue(m_IRQCounter);
     visitor.ReadValue(m_IRQReload);
+
+    UpdateMapping();
+}
+
+void Mapper_004::UpdateMapping()
+{
+    m_mapping.m_ramEnabled = m_prgRamEnabled;
+
+    m_mapping.m_prgMapping[0] = m_prgRomBankMode == 0 ? m_indexes[6] : 2 * (m_nbPrgBanks - 1);
+    m_mapping.m_prgMapping[1] = m_indexes[7];
+    m_mapping.m_prgMapping[2] = m_prgRomBankMode == 1 ? m_indexes[6] : 2 * (m_nbPrgBanks - 1);
+    m_mapping.m_prgMapping[3] = 2 * m_nbPrgBanks - 1;
+
+
+    // On mode 0, it is R0, R1 (with 2kB each) and then R2, R3, R4 and R5 (with 1kB each)
+    // On mode 1, it is R2, R3, R4, R5 (with 1kB each) and then R0, R1 (with 2kB each)
+    if (m_chrRomBankMode == 0)
+    {
+        m_mapping.m_chrMapping[0] = m_indexes[0];
+        m_mapping.m_chrMapping[1] = m_indexes[0] + 1;
+        m_mapping.m_chrMapping[2] = m_indexes[1];
+        m_mapping.m_chrMapping[3] = m_indexes[1] + 1;
+        m_mapping.m_chrMapping[4] = m_indexes[2];
+        m_mapping.m_chrMapping[5] = m_indexes[3];
+        m_mapping.m_chrMapping[6] = m_indexes[4];
+        m_mapping.m_chrMapping[7] = m_indexes[5];
+    }
+    else
+    {
+        m_mapping.m_chrMapping[0] = m_indexes[2];
+        m_mapping.m_chrMapping[1] = m_indexes[3];
+        m_mapping.m_chrMapping[2] = m_indexes[4];
+        m_mapping.m_chrMapping[3] = m_indexes[5];
+        m_mapping.m_chrMapping[4] = m_indexes[0];
+        m_mapping.m_chrMapping[5] = m_indexes[0] + 1;
+        m_mapping.m_chrMapping[6] = m_indexes[1];
+        m_mapping.m_chrMapping[7] = m_indexes[1] + 1;
+    }
+
+    // RAM is fixed
+    m_mapping.m_prgRamMapping.fill(0);
 }
