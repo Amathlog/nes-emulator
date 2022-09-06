@@ -78,7 +78,10 @@ bool Mapper_004::MapWriteCPU(uint16_t address, uint32_t& mappedAddress, uint8_t 
             // Change the value of the selected index.
             // Ignore top 2 bits on R6 and R7 (only 64 prg rom banks), and ignore bottom bit 
             // on R0 and R1 (since it is 2kB instead of 1kB for chr rom index)
-            if (m_nextIndexToUpdate >= 6)
+            // If there are more than 64 prg rom banks (like some rom hacks), we can use the top
+            // 2 bits to handle up to 256 prg rom banks.
+            // Only use them if there are more than 64 prg rom banks
+            if (m_nextIndexToUpdate >= 6 && m_nbPrgBanks <= 64)
             {
                 data &= 0x3F;
             }

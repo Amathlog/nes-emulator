@@ -9,7 +9,7 @@ Mapper_001::Mapper_001(const iNESHeader& header)
     : IMapper(header)
 {
     // We need to be sure that there is 1 or 2 prgBanks and 1 chrBanks
-    assert(m_nbPrgBanks >= 2 && m_nbPrgBanks <= 16 && (m_nbChrBanks == 0 || m_nbChrBanks >= 2) && m_nbChrBanks <= 32 && "Wrong number of prgBanks or chrBans in mapper 001");
+    assert(m_nbPrgBanks >= 2 && m_nbPrgBanks <= 32 && (m_nbChrBanks == 0 || m_nbChrBanks >= 2) && m_nbChrBanks <= 32 && "Wrong number of prgBanks or chrBans in mapper 001");
 
     m_staticRAM.resize(32 * 1024); // 32kB
 }
@@ -139,7 +139,7 @@ bool Mapper_001::MapWriteCPU(uint16_t address, uint32_t& mappedAddress, uint8_t 
                 //uint8_t prgRAMChipEnable = (m_internalRegister & 0x10) > 0;
 
                 // Low bit ignored in 32kB mode
-                m_currentPrgBankSwitch = m_32kBModePrgBank ? (prgROMBank >> 1) : prgROMBank;
+                m_currentPrgBankSwitch = (m_currentPrgBankSwitch & 0x10) | (m_32kBModePrgBank ? (prgROMBank >> 1) : prgROMBank);
             }
 
             m_loadRegisterDone = false;
