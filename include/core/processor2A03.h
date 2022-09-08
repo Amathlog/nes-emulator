@@ -117,7 +117,6 @@ namespace NesEmulator
         size_t m_bufferPtr = 0;
         CircularBuffer<float> m_circularBuffer;
 
-        size_t m_clockCounter = 0;
         size_t m_frameClockCounter = 0;
         Mode m_mode; // NTSC or PAL
         bool m_IRQFlag = false;

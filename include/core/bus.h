@@ -35,7 +35,7 @@ namespace NesEmulator
         void ConnectController(const std::shared_ptr<Controller>& controller, uint8_t controllerIndex);
         void DisconnectController(uint8_t controllerIndex);
 
-        // Clock will advance 1 PPU clock. Will return true if an audio sample is ready
+        // Clock will advance 1 CPU clock. Will return true if the ppu has finished producing a frame.
         bool Clock();
 
         // Stop will disable the bus, wait for the lock to be released.
@@ -83,7 +83,7 @@ namespace NesEmulator
         
         double m_audioTime = 0.0;
         double m_audioTimePerSystemSample = 0.0;
-        double m_audioTimePerPPUClock = 0.0;
+        double m_audioTimePerCPUClock = 0.0;
 
         bool m_enabled = true;
 

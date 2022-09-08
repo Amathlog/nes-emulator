@@ -73,6 +73,8 @@ void TriangleChannel::Reset()
     m_linearCounter = 0;
     m_lengthCounter = 0;
     m_linearControlFlag = 0;
+
+    m_oscillator.Reset();
 }
 
 void TriangleChannel::ClockLinear(bool isEnabled)

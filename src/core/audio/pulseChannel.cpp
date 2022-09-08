@@ -264,6 +264,8 @@ void PulseChannel::Reset()
     m_dutyCycle = 0.0;
     m_enableValue = 0.0;
     m_lengthCounter = 0;
+
+    m_oscillator.Reset();
 }
 
 void PulseChannel::ReloadCounter()

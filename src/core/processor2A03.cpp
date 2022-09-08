@@ -23,71 +23,66 @@ void Processor2A03::Clock()
     bool quarterFrame = false;
     bool halfFrame = false;
 
-    if (m_clockCounter % 6 == 0)
+    m_frameClockCounter++;
+
+    // Step 1 and Step 3 of the sequencer
+    if (m_frameClockCounter == Cst::APU_SEQUENCER_STEP1 || m_frameClockCounter == Cst::APU_SEQUENCER_STEP3)
     {
-        m_frameClockCounter++;
-
-        // Step 1 and Step 3 of the sequencer
-        if (m_frameClockCounter == Cst::APU_SEQUENCER_STEP1 || m_frameClockCounter == Cst::APU_SEQUENCER_STEP3)
-        {
-            quarterFrame = true;
-        }
-
-        // Step 2 of the sequencer
-        if (m_frameClockCounter == Cst::APU_SEQUENCER_STEP2)
-        {
-            quarterFrame = true;
-            halfFrame = true;
-        }
-
-        // In case of 4-Step, reset is on step 4. In case of 5-Step, reset is on step 5
-        // and there is nothing done on step4
-        // Also, we raise the IRQ flag in 4-Step only
-        if ((m_frameCounterRegister.mode == 0 && m_frameClockCounter == Cst::APU_SEQUENCER_STEP4) ||
-            (m_frameCounterRegister.mode == 1 && m_frameClockCounter == Cst::APU_SEQUENCER_STEP5))
-        {
-            // 4-step
-            quarterFrame = true;
-            halfFrame = true;
-            m_frameClockCounter = 0;
-
-            if (m_frameCounterRegister.mode == 0)
-                m_IRQFlag = m_frameCounterRegister.irqInhibit == 0;
-        }
-
-        if (quarterFrame)
-        {
-            // Update volume enveloppe
-            m_pulseChannel1.ClockEnveloppe();
-            m_pulseChannel2.ClockEnveloppe();
-            m_noiseChannel.ClockEnveloppe();
-
-            // Update linear counter for triangle
-            m_triangleChannel.ClockLinear(m_statusRegister.enableLengthCounterTriangle);
-        }
-
-        if (halfFrame)
-        {
-            // Update Length counters and sweep
-            m_pulseChannel1.Clock(m_statusRegister.enableLengthCounterPulse1);
-            m_pulseChannel2.Clock(m_statusRegister.enableLengthCounterPulse2);
-            m_triangleChannel.ClockLength(m_statusRegister.enableLengthCounterTriangle);
-            m_noiseChannel.Clock(m_statusRegister.enableLengthCounterNoise);
-        }
-
-        double cpuFrequency = (m_mode == Mode::NTSC) ? Cst::NTSC_CPU_FREQUENCY : Cst::PAL_CPU_FREQUENCY;
-
-        {
-            m_pulseChannel1.Track();
-            m_pulseChannel2.Track();
-            m_pulseChannel1.Update(cpuFrequency);
-            m_pulseChannel2.Update(cpuFrequency);
-            m_triangleChannel.Update(cpuFrequency);
-            m_noiseChannel.Update(cpuFrequency);
-        }
+        quarterFrame = true;
     }
 
-    m_clockCounter++;
+    // Step 2 of the sequencer
+    if (m_frameClockCounter == Cst::APU_SEQUENCER_STEP2)
+    {
+        quarterFrame = true;
+        halfFrame = true;
+    }
+
+    // In case of 4-Step, reset is on step 4. In case of 5-Step, reset is on step 5
+    // and there is nothing done on step4
+    // Also, we raise the IRQ flag in 4-Step only
+    if ((m_frameCounterRegister.mode == 0 && m_frameClockCounter == Cst::APU_SEQUENCER_STEP4) ||
+        (m_frameCounterRegister.mode == 1 && m_frameClockCounter == Cst::APU_SEQUENCER_STEP5))
+    {
+        // 4-step
+        quarterFrame = true;
+        halfFrame = true;
+        m_frameClockCounter = 0;
+
+        if (m_frameCounterRegister.mode == 0)
+            m_IRQFlag = m_frameCounterRegister.irqInhibit == 0;
+    }
+
+    if (quarterFrame)
+    {
+        // Update volume enveloppe
+        m_pulseChannel1.ClockEnveloppe();
+        m_pulseChannel2.ClockEnveloppe();
+        m_noiseChannel.ClockEnveloppe();
+
+        // Update linear counter for triangle
+        m_triangleChannel.ClockLinear(m_statusRegister.enableLengthCounterTriangle);
+    }
+
+    if (halfFrame)
+    {
+        // Update Length counters and sweep
+        m_pulseChannel1.Clock(m_statusRegister.enableLengthCounterPulse1);
+        m_pulseChannel2.Clock(m_statusRegister.enableLengthCounterPulse2);
+        m_triangleChannel.ClockLength(m_statusRegister.enableLengthCounterTriangle);
+        m_noiseChannel.Clock(m_statusRegister.enableLengthCounterNoise);
+    }
+
+    double cpuFrequency = (m_mode == Mode::NTSC) ? Cst::NTSC_CPU_FREQUENCY : Cst::PAL_CPU_FREQUENCY;
+
+    {
+        m_pulseChannel1.Track();
+        m_pulseChannel2.Track();
+        m_pulseChannel1.Update(cpuFrequency);
+        m_pulseChannel2.Update(cpuFrequency);
+        m_triangleChannel.Update(cpuFrequency);
+        m_noiseChannel.Update(cpuFrequency);
+    }
 }
 void Processor2A03::FillSamples(float *outData, unsigned int numFrames, unsigned int numChannels)
 {
@@ -299,7 +294,6 @@ void Processor2A03::Reset()
     m_dmcRegister.Reset();
     m_statusRegister.flags = 0;
     m_frameCounterRegister.flags = 0;
-    m_clockCounter = 0;
     m_frameClockCounter = 0;
 
     m_bufferPtr = 0;
@@ -316,7 +310,6 @@ void Processor2A03::SerializeTo(Utils::IWriteVisitor& visitor) const
 
     visitor.WriteValue(m_statusRegister.flags);
     visitor.WriteValue(m_frameCounterRegister.flags);
-    visitor.WriteValue(m_clockCounter);
     visitor.WriteValue(m_frameClockCounter);
 }
 
@@ -330,7 +323,6 @@ void Processor2A03::DeserializeFrom(Utils::IReadVisitor& visitor)
 
     visitor.ReadValue(m_statusRegister.flags);
     visitor.ReadValue(m_frameCounterRegister.flags);
-    visitor.ReadValue(m_clockCounter);
     visitor.ReadValue(m_frameClockCounter);
 }
 

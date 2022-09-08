@@ -20,7 +20,6 @@ namespace fs = std::filesystem;
 using namespace NesEmulatorGL;
 
 static bool enableAudioByDefault = true;
-static bool syncWithAudio = false;
 
 int main(int argc, char **argv)
 {
@@ -53,14 +52,15 @@ int main(int argc, char **argv)
     CoreMessageService messageService(bus, dir.string());
     singleton.Connect(&messageService);
 
-    NesAudioSystem audioSystem(bus, syncWithAudio, 2, 256);
+    NesAudioSystem audioSystem(bus, false, 2, 256);
     audioSystem.Enable(enableAudioByDefault);
 
     // Load a new game
     singleton.Push(LoadNewGameMessage(path.string()));
 
     auto previous_point = std::chrono::high_resolution_clock::now();
-    constexpr bool showRealFPS = true;
+    double extraClock = 0;
+    constexpr bool showRealFPS = false;
     constexpr size_t nbSamples = 120;
     std::array<float, nbSamples> timeCounter;
     size_t ptr = 0;
@@ -75,44 +75,45 @@ int main(int argc, char **argv)
             previous_point = std::chrono::high_resolution_clock::now();
             while (!mainWindow.RequestedClose())
             {
-                if (!syncWithAudio)
+                auto start_point = std::chrono::high_resolution_clock::now();
+                auto timeSpent = std::chrono::duration_cast<std::chrono::microseconds>(start_point - previous_point).count();
+                previous_point = std::chrono::high_resolution_clock::now();
+                timeSpent = std::min<long long>(timeSpent, 16666ll);
+
+                constexpr double cpuPeriodUS = 1000000.0 / NesEmulator::Cst::NTSC_CPU_FREQUENCY;
+                double nbClocksDouble = (double)timeSpent / cpuPeriodUS;
+                size_t nbClocks = (size_t)std::floor(nbClocksDouble);
+
+                // The division won't have a well rounded number, so keep a counter of all the fractional parts of our number of clocks
+                // and add one clock when it reaches 1.
+                extraClock += nbClocksDouble - (double)nbClocks;
+                while (extraClock >= 1.0)
                 {
-                    // do {
-                    //     bus.Clock();
-                    // } while (!bus.GetPPU().IsFrameComplete());
-                    // DispatchMessageServiceSingleton::GetInstance().Push(RenderMessage(bus.GetPPU().GetScreen(), bus.GetPPU().GetHeight() * bus.GetPPU().GetWidth()));
+                    extraClock -= 1.0;
+                    nbClocks++;
+                }
 
+                for (auto i = 0; i < nbClocks; ++i)
+                {
+                    if (bus.Clock())
+                        DispatchMessageServiceSingleton::GetInstance().Push(RenderMessage(bus.GetPPU().GetScreen(), bus.GetPPU().GetHeight() * bus.GetPPU().GetWidth()));
+                }
 
-                    auto start_point = std::chrono::high_resolution_clock::now();
-                    auto timeSpent = std::chrono::duration_cast<std::chrono::microseconds>(start_point - previous_point).count();
-                    previous_point = std::chrono::high_resolution_clock::now();
-                    timeSpent = std::min<long long>(timeSpent, 16666ll);
-                    
-                    constexpr double ppuPeriodUS = 1000000.0 / NesEmulator::Cst::NTSC_PPU_FREQUENCY;
-                    auto nbClocks = (timeSpent / ppuPeriodUS);
-                    for (auto i = 0; i < nbClocks; ++i)
+                if constexpr (showRealFPS)
+                {
+                    auto end_point = std::chrono::high_resolution_clock::now();
+                    timeSpent = std::chrono::duration_cast<std::chrono::microseconds>(end_point - start_point).count();
+                    double ratio = (double)(timeSpent) / (cpuPeriodUS * nbClocks); // < 1 = faster than realtime
+                    timeCounter[ptr++] = 60.0f / (float)ratio;
+                    if (ptr == nbSamples)
                     {
-                        bus.Clock();
-                        if (bus.GetPPU().IsFrameComplete())
-                            DispatchMessageServiceSingleton::GetInstance().Push(RenderMessage(bus.GetPPU().GetScreen(), bus.GetPPU().GetHeight() * bus.GetPPU().GetWidth()));
-                    }
-
-                    if constexpr (showRealFPS)
-                    {
-                        auto end_point = std::chrono::high_resolution_clock::now();
-                        timeSpent = std::chrono::duration_cast<std::chrono::microseconds>(end_point - start_point).count();
-                        double ratio = (double)(timeSpent) / (ppuPeriodUS * nbClocks); // < 1 = faster than realtime
-                        timeCounter[ptr++] = 60.0f / (float)ratio;
-                        if (ptr == nbSamples)
+                        ptr = 0;
+                        float res = 0;
+                        for (auto x : timeCounter)
                         {
-                            ptr = 0;
-                            float res = 0;
-                            for (auto x : timeCounter)
-                            {
-                                res += x;
-                            }
-                            std::cout << "Real FPS: " << res / nbSamples << std::endl;
+                            res += x;
                         }
+                        std::cout << "Real FPS: " << res / nbSamples << std::endl;
                     }
                 }
 

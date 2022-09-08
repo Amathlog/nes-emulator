@@ -150,6 +150,8 @@ void NoiseChannel::Reset()
     m_lengthCounter = 0;
     m_timer = 0;
     m_currentOutput = 0.0f;
+
+    m_oscillator.Reset();
 }
 
 void NoiseChannel::SerializeTo(Utils::IWriteVisitor& visitor) const

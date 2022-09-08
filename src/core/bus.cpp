@@ -151,52 +151,61 @@ bool Bus::Clock()
     constexpr bool verbose = false;
 
     // PPU runs 3 times faster than the CPU
-    m_ppu.Clock();
-    m_apu.Clock();
-    if (m_clockCounter % 3 == 0)
+    bool frameComplete = false;
+    for (uint8_t i = 0; i < 3; ++i)
     {
-        if constexpr (verbose)
-        {
-            Verbose();
-        }
+        m_ppu.Clock();
+        frameComplete |= m_ppu.IsFrameComplete();
+    }
 
-        // DMA specific
-        // When DMA transfer is enabled, CPU gets suspended
-        if (m_dmaTransfer)
+    bool evenClockCounter = (m_clockCounter & 0x1) == 0;
+    // There is 1 APU cycle every 2 CPU cycles.
+    if (evenClockCounter)
+    {
+        m_apu.Clock();
+    }
+
+    if constexpr (verbose)
+    {
+        Verbose();
+    }
+
+    // DMA specific
+    // When DMA transfer is enabled, CPU gets suspended
+    if (m_dmaTransfer)
+    {
+        if (m_dmaWaitForCPU)
         {
-            if (m_dmaWaitForCPU)
+            // But at the beginning, we need to wait until clock count is odd
+            // It can takes 1 or 2 cycles
+            if (!evenClockCounter)
+                m_dmaWaitForCPU = false;
+        }
+        else {
+            // On even cycles, we read the data
+            // On odd cycles, we write the data
+            if (evenClockCounter)
             {
-                // But at the beginning, we need to wait until clock count is odd
-                // It can takes 1 or 2 cycles
-                if (m_clockCounter % 2 == 1)
-                    m_dmaWaitForCPU = false;
+                uint16_t addr = ((uint16_t)m_dmaPage << 8) | m_dmaAddr;
+                m_dmaData = ReadCPU(addr);
             }
-            else {
-                // On even cycles, we read the data
-                // On odd cycles, we write the data
-                if (m_clockCounter % 2 == 0)
-                {
-                    uint16_t addr = ((uint16_t)m_dmaPage << 8) | m_dmaAddr;
-                    m_dmaData = ReadCPU(addr);
-                }
-                else 
-                {
-                    // First write the address for OAM
-                    WriteCPU(Cst::PPU_REG_START_ADDR + 0x0003, m_dmaAddr);
-                    // Then write the data
-                    WriteCPU(Cst::PPU_REG_START_ADDR + 0x0004, m_dmaData);
+            else 
+            {
+                // First write the address for OAM
+                WriteCPU(Cst::PPU_REG_START_ADDR + 0x0003, m_dmaAddr);
+                // Then write the data
+                WriteCPU(Cst::PPU_REG_START_ADDR + 0x0004, m_dmaData);
 
-                    // When we reach the last address, we stop
-                    if (++m_dmaAddr == 0)
-                        m_dmaTransfer = false;
-                }
+                // When we reach the last address, we stop
+                if (++m_dmaAddr == 0)
+                    m_dmaTransfer = false;
             }
         }
-        else
-        {
-            m_cpu.Clock();
-            m_cartridge->GetMapper()->CPUClock();
-        }
+    }
+    else
+    {
+        m_cpu.Clock();
+        m_cartridge->GetMapper()->CPUClock();
     }
 
     if (m_cartridge->GetMapper()->ShouldIRQ())
@@ -217,18 +226,16 @@ bool Bus::Clock()
     }
 
     // Synchronizing with audio
-    bool sampleReady = false;
-    m_audioTime += m_audioTimePerPPUClock;
+    m_audioTime += m_audioTimePerCPUClock;
     if (m_audioTime >= m_audioTimePerSystemSample)
     {
-        sampleReady = true;
         m_apu.SampleRequested();
         m_audioTime -= m_audioTimePerSystemSample;
     }
 
     m_clockCounter++;
 
-    return sampleReady;
+    return frameComplete;
 }
 
 void Bus::Reset()
@@ -460,7 +467,7 @@ void Bus::SetMode(Mode mode)
 
     m_mode = mode;
     m_apu.SetMode(mode);
-    m_audioTimePerPPUClock = 1.0 / (mode == Mode::NTSC ? Cst::NTSC_PPU_FREQUENCY : Cst::PAL_PPU_FREQUENCY);
+    m_audioTimePerCPUClock = 1.0 / (mode == Mode::NTSC ? Cst::NTSC_CPU_FREQUENCY : Cst::PAL_CPU_FREQUENCY);
 
     if (shouldResume)
         Resume();
