@@ -15,6 +15,7 @@
 #include <string>
 #include <chrono>
 #include <new_exe/windows/nameTableWindow.h>
+#include <new_exe/imguiWindows/findRomsWindow.h>
 
 using NesEmulatorGL::ImguiManager;
 using NesEmulatorGL::DispatchMessageServiceSingleton;
@@ -31,7 +32,7 @@ ImguiManager::ImguiManager(Window* window)
     m_context = ImGui::CreateContext();
     ImGui::SetCurrentContext(m_context);
     ImGuiIO& io = ImGui::GetIO();
-    // io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
+    io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
 
     // Setup Dear ImGui style
     ImGui::StyleColorsDark();
@@ -61,6 +62,8 @@ ImguiManager::ImguiManager(Window* window)
         m_isSoundEnabled = audioMessage.GetTypedPayload().m_data;
         m_previousSoundState = m_isSoundEnabled;
     }
+
+    m_childWidgets.emplace(FindRomsWindow::GetStaticWindowId(), std::make_unique<FindRomsWindow>());
 
     UpdateCurrentMode();
 }
@@ -119,6 +122,7 @@ void ImguiManager::Update()
         if (ImGui::BeginMenu("File"))
         {
             ImGui::MenuItem("Open File", nullptr, &m_showFileExplorer);
+            ImGui::MenuItem("Find Roms", nullptr, &m_childWidgets[FindRomsWindow::GetStaticWindowId()]->m_open);
             ImGui::Separator();
 
             if (ImGui::BeginMenu("State states"))
@@ -245,16 +249,21 @@ void ImguiManager::Update()
         reset = false;
     }
 
+    for (auto& childWidget : m_childWidgets)
+    {
+        childWidget.second->Draw();
+    }
+
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
     ImGui::EndFrame();
 
     // Update and Render additional Platform Windows
-    //if (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
-    //{
-    //    ImGui::UpdatePlatformWindows();
-    //    ImGui::RenderPlatformWindowsDefault();
-    //}
+    if (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+    {
+        ImGui::UpdatePlatformWindows();
+        ImGui::RenderPlatformWindowsDefault();
+    }
 }
 
 void ImguiManager::HandleFileExplorer()

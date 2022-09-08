@@ -3,8 +3,14 @@
 #include <core/cartridge.h>
 #include <filesystem>
 
+#ifdef _WIN32
+#include "windows.h"
+#endif // _WIN32
+
 namespace NesEmulatorGL 
 {
+    static constexpr const char* ROOT_FILE = "nesemulator_root.myroot";
+
     inline std::string GetCartridgeUniqueID(const NesEmulator::Cartridge* cartridge)
     {
         if (cartridge != nullptr)
@@ -32,5 +38,47 @@ namespace NesEmulatorGL
             return std::filesystem::path();
 
         return GetSaveFolder(exeDir, uniqueID) / "save.nesSave";
+    }
+
+    inline std::filesystem::path GetExePath()
+    {
+#ifdef _WIN32
+        wchar_t path[MAX_PATH] = { 0 };
+        GetModuleFileNameW(NULL, path, MAX_PATH);
+        return std::filesystem::path(path).parent_path();
+#else
+        return std::filesystem::canonical("/proc/self/exe").parent_path();
+#endif
+    }
+
+    inline std::filesystem::path GetRootPath()
+    {
+        std::filesystem::path exePath = GetExePath();
+
+        std::filesystem::path curr = exePath;
+        bool found = false;
+
+        while (!found)
+        {
+            if (!curr.has_parent_path())
+                break;
+
+            for (const auto& file : std::filesystem::directory_iterator(curr))
+            {
+                if (!file.is_regular_file())
+                    continue;
+
+                if (file.path().filename() == ROOT_FILE)
+                {
+                    found = true;
+                    break;
+                }
+            }
+
+            if (!found)
+                curr = curr.parent_path();
+        }
+
+        return found ? curr : exePath;
     }
 }

@@ -3,7 +3,9 @@
 #include <core/constants.h>
 #include <string>
 #include <new_exe/messageService/messages/screenPayload.h>
+#include <new_exe/imguiWindows/imguiWindow.h>
 #include <array>
+#include <map>
 
 
 struct ImGuiContext;
@@ -49,5 +51,8 @@ namespace NesEmulatorGL
 
         std::array<bool, (unsigned)NesEmulator::Mode::COUNT> m_requestChangeMode;
         NesEmulator::Mode m_currentMode;
+
+        using ChildWidgetMap = std::map<int, std::unique_ptr<ImGuiWindow>>;
+        ChildWidgetMap m_childWidgets;
     };
 }

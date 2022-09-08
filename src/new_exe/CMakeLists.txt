@@ -79,7 +79,8 @@ endif(WIN32)
 include_directories(${NesEmulator_SOURCE_DIR}/include)
 
 file(GLOB_RECURSE NEW_EXE_SRC
-    "${NesEmulator_SOURCE_DIR}/src/new_exe/*.cpp" 
+    "${NesEmulator_SOURCE_DIR}/src/new_exe/*.cpp"
+    "${NesEmulator_SOURCE_DIR}/include/new_exe/*.h"
     "${GLAD_DIR}/src/glad.c"
 )
 
