@@ -175,6 +175,7 @@ void Processor2A03::WriteCPU(uint16_t addr, uint8_t data)
         case 2:
             noiseRegister.mode = (data & 0x80) > 0;
             noiseRegister.SetNoisePeriod((data & 0x0F), m_mode);
+            m_noiseChannel.SetMode(noiseRegister.mode != 0);
             break;
         case 3:
             noiseRegister.lengthCounterLoad = (data & 0xF8) >> 3;

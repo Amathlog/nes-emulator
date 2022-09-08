@@ -40,9 +40,9 @@ void NoiseRegister::DeserializeFrom(Utils::IReadVisitor& visitor)
     visitor.ReadValue(lengthCounterLoad);
 }
 
-void NoiseRegister::SetNoisePeriod(uint8_t index, Mode mode)
+void NoiseRegister::SetNoisePeriod(uint8_t index, Mode _mode)
 {
-    auto noisePeriodTable = mode == Mode::PAL ? Cst::APU_NOISE_PERIOD_PAL : Cst::APU_NOISE_PERIOD_NTSC;
+    auto noisePeriodTable = _mode == Mode::PAL ? Cst::APU_NOISE_PERIOD_PAL : Cst::APU_NOISE_PERIOD_NTSC;
     noisePeriod = noisePeriodTable[index & 0x0F];
     noisePeriodChanged = true;
 }
@@ -60,6 +60,7 @@ void NoiseOscillator::Reset()
     m_shiftRegister = 1;
     m_sampleDuration = 0.0;
     m_elaspedTime = 0.0;
+    m_bit6Mode = false;
 }
 
 void NoiseOscillator::SetFrequency(double freq)
@@ -76,12 +77,13 @@ void NoiseOscillator::SetFrequency(double freq)
 
 double NoiseOscillator::Tick()
 {
-    double value = m_shiftRegister & 0x0001 ? 1.0 : -1.0;
+    double value = m_shiftRegister & 0x0001 ? 0.0 : 1.0;
     m_elaspedTime += m_realSampleDuration;
     if (m_elaspedTime >= m_sampleDuration)
     {
         m_elaspedTime -= m_sampleDuration;
-        uint16_t otherFeedback = (m_shiftRegister >> 1) & 0x0001;
+        uint8_t shift = m_bit6Mode ? 6 : 1;
+        uint16_t otherFeedback = (m_shiftRegister >> shift) & 0x0001;
         uint16_t feedback = (m_shiftRegister ^ otherFeedback) & 0x0001;
         m_shiftRegister = (feedback << 14) | (m_shiftRegister >> 1);
     }

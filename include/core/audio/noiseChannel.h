@@ -29,6 +29,7 @@ namespace NesEmulator
         NoiseOscillator();
         void Reset();
         void SetFrequency(double freq);
+        void SetMode(bool mode) { m_bit6Mode = mode; }
 
         double Tick();
 
@@ -36,6 +37,7 @@ namespace NesEmulator
         uint16_t m_shiftRegister = 1;
         double m_realSampleDuration = 0.0;
         double m_sampleDuration = 0.0;
+        bool m_bit6Mode = false;
     };
 
     class NoiseChannel
@@ -48,6 +50,8 @@ namespace NesEmulator
         void Clock(bool isEnabled);
         void ClockEnveloppe();
         void Update(double cpuFrequency);
+
+        void SetMode(bool mode) { m_oscillator.SetMode(mode); }
 
         double GetSample();
 
