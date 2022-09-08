@@ -60,7 +60,7 @@ int main(int argc, char **argv)
     singleton.Push(LoadNewGameMessage(path.string()));
 
     auto previous_point = std::chrono::high_resolution_clock::now();
-    constexpr bool showRealFPS = false;
+    constexpr bool showRealFPS = true;
     constexpr size_t nbSamples = 120;
     std::array<float, nbSamples> timeCounter;
     size_t ptr = 0;

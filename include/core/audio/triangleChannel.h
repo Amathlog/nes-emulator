@@ -18,6 +18,21 @@ namespace NesEmulator
         void Reset();
     };
 
+    class TriangleOscillator
+    {
+    public:
+        TriangleOscillator() = default;
+        double Tick();
+
+        void SetFrequency(double freq);
+        void Reset() { m_phase = 0.0; }
+
+    private:
+        double m_phase = 0.0;
+        double m_freq = 0.0;
+        double m_phaseIncrement = 0.0f;
+    };
+
     class TriangleChannel
     {
     public:
@@ -38,10 +53,14 @@ namespace NesEmulator
 
         void SerializeTo(Utils::IWriteVisitor& visitor) const;
         void DeserializeFrom(Utils::IReadVisitor& visitor);
+
+        double GetSample();
         
     private:
         Tonic::Generator m_wave;
         TriangleRegister m_register;
+
+        TriangleOscillator m_oscillator;
 
         double m_frequency = 0.0;
         double m_enableValue = 0.0;

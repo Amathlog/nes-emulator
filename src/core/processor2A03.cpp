@@ -15,7 +15,7 @@ Processor2A03::Processor2A03()
     , m_triangleChannel(m_synth)
     , m_noiseChannel(m_synth)
     , m_circularBuffer(1000000)
-    , m_useTonic(true)
+    , m_useTonic(false)
 {
     // Based on the linear approximation
     // output = square_out + tnd_out
@@ -299,10 +299,19 @@ uint8_t Processor2A03::ReadCPU(uint16_t addr)
 void Processor2A03::SampleRequested()
 {
     //m_noiseChannel.SampleRequested();
+    constexpr double pulseCoeff = 0.00752;
+    constexpr double triangleCoeff = 0.00851;
+    constexpr double noiseCoeff = 0.00494;
+
+    constexpr double maxCoeff = 2 * pulseCoeff + triangleCoeff + noiseCoeff;
 
     if (!m_useTonic)
     {
-        double sample = (m_pulseChannel1.GetSample() + m_pulseChannel2.GetSample()) / 2.0;
+        double sample = pulseCoeff * (m_pulseChannel1.GetSample() + m_pulseChannel2.GetSample()) + 
+            triangleCoeff * m_triangleChannel.GetSample() + 
+            noiseCoeff * m_noiseChannel.GetSample();
+
+        sample /= maxCoeff;
         m_internalBuffer[m_bufferPtr++] = (float)sample;
         m_internalBuffer[m_bufferPtr++] = (float)sample;
 

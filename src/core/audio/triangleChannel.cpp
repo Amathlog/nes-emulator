@@ -3,6 +3,7 @@
 
 using NesEmulator::TriangleChannel;
 using NesEmulator::TriangleRegister;
+using NesEmulator::TriangleOscillator;
 
 constexpr const char* frequencyParameterName = "freqTriangle";
 constexpr const char* outputParameterName = "outputTriangle";
@@ -32,6 +33,34 @@ void TriangleRegister::DeserializeFrom(Utils::IReadVisitor& visitor)
     visitor.ReadValue(linearCounterLoad);
     visitor.ReadValue(timer);
     visitor.ReadValue(lengthCounterLoad);
+}
+
+////////////////////////////////////////////////////////////////////////
+// TRIANGLE OSCILLATOR
+////////////////////////////////////////////////////////////////////////
+double TriangleOscillator::Tick()
+{
+    m_phase += m_phaseIncrement;
+
+    while (m_phase > 1.0)
+        m_phase -= 1.0;
+
+    while (m_phase < 0.0)
+        m_phase += 1.0;
+
+    double ret;
+    if (m_phase <= 0.5)
+        ret = m_phase * 2.0;
+    else
+        ret = (1.0 - m_phase) * 2.0;
+
+    return (ret * 2.0) - 1.0;
+}
+
+void TriangleOscillator::SetFrequency(double freq)
+{
+    m_freq = freq;
+    m_phaseIncrement = freq / NesEmulator::Cst::SAMPLE_RATE;
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -118,7 +147,13 @@ void TriangleChannel::Update(double cpuFrequency, Tonic::Synth& synth)
         m_enableValue = newEnableValue;
         synth.setParameter(frequencyParameterName, (float)newFrequency);
         synth.setParameter(outputParameterName, (float)newEnableValue);
+        m_oscillator.SetFrequency(newFrequency);
     }
+}
+
+double TriangleChannel::GetSample()
+{
+    return m_enableValue != 0.0 ? m_oscillator.Tick() : 0.0;
 }
 
 void TriangleChannel::ReloadCounter()

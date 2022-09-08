@@ -25,6 +25,21 @@ namespace NesEmulator
         void SetNoisePeriod(uint8_t index, Mode mode);
     };
 
+    class NoiseOscillator
+    {
+    public:
+        NoiseOscillator();
+        void Reset();
+        void SetFrequency(double freq);
+
+        double Tick();
+
+        double m_elaspedTime = 0.0;
+        uint16_t m_shiftRegister = 1;
+        double m_realSampleDuration = 0.0;
+        double m_sampleDuration = 0.0;
+    };
+
     class NoiseChannel
     {
     public:
@@ -36,6 +51,8 @@ namespace NesEmulator
         void ClockEnveloppe();
         void Update(double cpuFrequency, Tonic::Synth& synth);
 
+        double GetSample();
+
         NoiseRegister& GetRegister() { return m_register; }
         Tonic::Generator& GetWave() { return m_wave; }
         Enveloppe& GetEnveloppe() { return m_enveloppe; }
@@ -45,12 +62,13 @@ namespace NesEmulator
 
         void SerializeTo(Utils::IWriteVisitor& visitor) const;
         void DeserializeFrom(Utils::IReadVisitor& visitor);
-        void SampleRequested();
         
     private:
         MyNoise m_wave;
         NoiseRegister m_register;
         Enveloppe m_enveloppe;
+
+        NoiseOscillator m_oscillator;
 
         uint8_t m_lengthCounter = 0;
         int16_t m_timer = 0;

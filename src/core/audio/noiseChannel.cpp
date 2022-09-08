@@ -4,6 +4,7 @@
 
 using NesEmulator::NoiseRegister;
 using NesEmulator::NoiseChannel;
+using NesEmulator::NoiseOscillator;
 
 //////////////////////////////////////////////////////
 // Noise Register
@@ -45,6 +46,48 @@ void NoiseRegister::SetNoisePeriod(uint8_t index, Mode mode)
     auto noisePeriodTable = mode == Mode::PAL ? Cst::APU_NOISE_PERIOD_PAL : Cst::APU_NOISE_PERIOD_NTSC;
     noisePeriod = noisePeriodTable[index & 0x0F];
     noisePeriodChanged = true;
+}
+
+//////////////////////////////////////////////////////
+// Noise Oscillator
+//////////////////////////////////////////////////////
+NoiseOscillator::NoiseOscillator()
+{
+    m_realSampleDuration = 1.0 / NesEmulator::Cst::SAMPLE_RATE;
+}
+
+void NoiseOscillator::Reset()
+{
+    m_shiftRegister = 1;
+    m_sampleDuration = 0.0;
+    m_elaspedTime = 0.0;
+}
+
+void NoiseOscillator::SetFrequency(double freq)
+{
+    if (freq == 0.0)
+    {
+        m_sampleDuration = 0.0;
+    }
+    else
+    {
+        m_sampleDuration = 1.0 / freq;
+    }
+}
+
+double NoiseOscillator::Tick()
+{
+    double value = m_shiftRegister & 0x0001 ? 1.0 : -1.0;
+    m_elaspedTime += m_realSampleDuration;
+    if (m_elaspedTime >= m_sampleDuration)
+    {
+        m_elaspedTime -= m_sampleDuration;
+        uint16_t otherFeedback = (m_shiftRegister >> 1) & 0x0001;
+        uint16_t feedback = (m_shiftRegister ^ otherFeedback) & 0x0001;
+        m_shiftRegister = (feedback << 14) | (m_shiftRegister >> 1);
+    }
+
+    return value;
 }
 
 //////////////////////////////////////////////////////
@@ -97,12 +140,13 @@ void NoiseChannel::Update(double cpuFrequency, Tonic::Synth& synth)
         m_register.noisePeriodChanged = false;
         double newFrequency = cpuFrequency / ((double)m_register.noisePeriod);
         m_wave.setFreq((float)newFrequency);
+        m_oscillator.SetFrequency(newFrequency);
     }
 }
 
-void NoiseChannel::SampleRequested()
+double NoiseChannel::GetSample()
 {
-    //m_wave.setOutput(m_currentOutput);
+    return (double)m_currentOutput * m_oscillator.Tick();
 }
 
 void NoiseChannel::Reset()
