@@ -1,6 +1,5 @@
 #include "new_exe/messageService/messageService.h"
 #include "new_exe/messageService/messages/screenMessage.h"
-#include <MyTonic.h>
 #include <new_exe/audio/nesAudioSystem.h>
 #include <new_exe/screen.h>
 #include <core/constants.h>
@@ -12,7 +11,6 @@ NesAudioSystem::NesAudioSystem(NesEmulator::Bus& bus, bool syncWithAudio, unsign
     , m_bus(bus)
     , m_syncWithAudio(syncWithAudio)
 {
-    Tonic::setSampleRate((float)NesEmulator::Cst::SAMPLE_RATE);
 }
 
 int NesAudioSystem::RenderCallback(void *outputBuffer, void* /*inputBuffer*/, unsigned int nBufferFrames,

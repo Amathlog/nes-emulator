@@ -2,7 +2,6 @@
 
 #include <cstdint>
 #include <core/utils/visitor.h>
-#include <MyTonic.h>
 
 namespace NesEmulator 
 {
@@ -36,16 +35,15 @@ namespace NesEmulator
     class TriangleChannel
     {
     public:
-        TriangleChannel(Tonic::Synth& synth);
+        TriangleChannel() = default;
         ~TriangleChannel() = default;
 
         void Reset();
         void ClockLinear(bool isEnabled);
         void ClockLength(bool isEnabled);
-        void Update(double cpuFrequency, Tonic::Synth& synth);
+        void Update(double cpuFrequency);
 
         TriangleRegister& GetRegister() { return m_register; }
-        Tonic::Generator& GetWave() { return m_wave; }
 
         void SetLinearControlFlag(uint8_t value) { m_linearControlFlag = value; }
         void ReloadCounter();
@@ -57,7 +55,6 @@ namespace NesEmulator
         double GetSample();
         
     private:
-        Tonic::Generator m_wave;
         TriangleRegister m_register;
 
         TriangleOscillator m_oscillator;

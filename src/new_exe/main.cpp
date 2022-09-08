@@ -46,15 +46,15 @@ int main(int argc, char **argv)
     }
 
     NesEmulator::Bus bus;
+    bus.GetAPU().SetEnable(enableAudioByDefault);
+
+    // Create the core message service and connect it
+    DispatchMessageServiceSingleton& singleton = DispatchMessageServiceSingleton::GetInstance();
+    CoreMessageService messageService(bus, dir.string());
+    singleton.Connect(&messageService);
 
     NesAudioSystem audioSystem(bus, syncWithAudio, 2, 256);
     audioSystem.Enable(enableAudioByDefault);
-
-    DispatchMessageServiceSingleton& singleton = DispatchMessageServiceSingleton::GetInstance();
-
-    // Create the core message service and connect it
-    CoreMessageService messageService(bus, dir.string());
-    singleton.Connect(&messageService);
 
     // Load a new game
     singleton.Push(LoadNewGameMessage(path.string()));

@@ -11,7 +11,6 @@
 #include <core/processor2C02.h>
 #include <core/processor2A03.h>
 #include <core/controller.h>
-#include <MyTonic.h>
 #include <mutex>
 
 namespace NesEmulator
@@ -53,8 +52,6 @@ namespace NesEmulator
 
         void SaveRAM(Utils::IWriteVisitor& visitor) const;
         void LoadRAM(Utils::IReadVisitor& visitor);
-
-        Tonic::Synth* GetSynth() { return m_apu.GetSynth(); }
 
         void SetMode(Mode mode);
         NesEmulator::Mode GetMode() const { return m_mode; }

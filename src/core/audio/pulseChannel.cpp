@@ -141,39 +141,12 @@ void Sweep::Clock(uint16_t& target, bool isChannel1)
 // PULSE CHANNEL
 //////////////////////////////////////////////////////////////
 
-std::string PulseChannel::GetDutyCycleParameterName()
-{
-    return std::string("dutyCyclePulse") + std::to_string(m_number);
-}
-
-std::string PulseChannel::GetFrequencyParameterName()
-{
-    return std::string("freqPulse") + std::to_string(m_number);
-}
-
-std::string PulseChannel::GetOutputParameterName()
-{
-    return std::string("outputPulse") + std::to_string(m_number);
-}
-
-std::string PulseChannel::GetEnveloppeOutputParameterName()
-{
-    return std::string("outputEnvPulse") + std::to_string(m_number);
-}
-
-PulseChannel::PulseChannel(Tonic::Synth& synth, int number)
+PulseChannel::PulseChannel(int number)
     : m_number(number)
     , m_frequency(440.0f)
-{
-    Tonic::ControlGenerator controlDutyPulse = synth.addParameter(GetDutyCycleParameterName());
-    Tonic::ControlGenerator controlFreqPulse = synth.addParameter(GetFrequencyParameterName(), 440.0f);
-    Tonic::ControlGenerator controlOutputPulse = synth.addParameter(GetOutputParameterName());
-    Tonic::ControlGenerator controlOutputEnvPulse = synth.addParameter(GetEnveloppeOutputParameterName());
+{}
 
-    m_wave = controlOutputEnvPulse * controlOutputPulse * Tonic::RectWave().freq(controlFreqPulse).pwm(controlDutyPulse);
-}
-
-void PulseChannel::Update(double cpuFrequency, Tonic::Synth& synth)
+void PulseChannel::Update(double cpuFrequency)
 {
     double newEnableValue = m_lengthCounter > 0 ? 1.0 : 0.0;
     if (m_sweep.mute || m_register.timer <= 8)
@@ -201,28 +174,24 @@ void PulseChannel::Update(double cpuFrequency, Tonic::Synth& synth)
     if (m_enveloppe.updated)
     {
         float envOutput = (float)(m_enveloppe.output) / 15.0f;
-        synth.setParameter(GetEnveloppeOutputParameterName(), envOutput);
         m_enveloppe.updated = false;
     }
 
     if (newFrequency != m_frequency)
     {
         m_frequency = newFrequency;
-        synth.setParameter(GetFrequencyParameterName(), (float)newFrequency);
         m_oscillator.SetFrequency(m_frequency);
     }
 
     if (newDutyCycle != m_dutyCycle)
     {
         m_dutyCycle = newDutyCycle;
-        synth.setParameter(GetDutyCycleParameterName(), (float)newDutyCycle);
         m_oscillator.SetDuty(newDutyCycle);
     }
 
     if (newEnableValue != m_enableValue)
     {
         m_enableValue = newEnableValue;
-        synth.setParameter(GetOutputParameterName(), (float)newEnableValue);
     }
 }
 

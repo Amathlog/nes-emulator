@@ -1,5 +1,3 @@
-#include "MyTonic.h"
-#include "Tonic/Filters.h"
 #include "core/audio/pulseChannel.h"
 #include "core/constants.h"
 #include <core/processor2A03.h>
@@ -9,43 +7,10 @@
 using NesEmulator::Processor2A03;
 
 Processor2A03::Processor2A03()
-    : m_synth()
-    , m_pulseChannel1(m_synth, 1)
-    , m_pulseChannel2(m_synth, 2)
-    , m_triangleChannel(m_synth)
-    , m_noiseChannel(m_synth)
+    : m_pulseChannel1(1)
+    , m_pulseChannel2(2)
     , m_circularBuffer(1000000)
-    , m_useTonic(false)
 {
-    // Based on the linear approximation
-    // output = square_out + tnd_out
-    // square_out = 0.00752 * (square1 + square2)
-    // tnd_out = 0.00851 * triangle + 0.00494 * noise + 0.00335 * dmc
-    // To compute the final output, we sum all the coefficients as
-    // a scale factor
-    // With this, it is close to 26% for a pulse channel 29% for triangle
-    // and 17% for noise
-    // (not implementing DMC for now)
-    constexpr float pulseCoeff = 0.00752f;
-    constexpr float triangleCoeff = 0.00851f;
-    constexpr float noiseCoeff = 0.00494f;
-    constexpr float maxCoeff = 2 * pulseCoeff + triangleCoeff + noiseCoeff;
-
-
-    auto rawOutput = (pulseCoeff * (m_pulseChannel1.GetWave() + m_pulseChannel2.GetWave())
-                            + triangleCoeff * m_triangleChannel.GetWave() + noiseCoeff * m_noiseChannel.GetWave()) / maxCoeff;
-
-    // A first-order high-pass filter at 90 Hz
-    // Another first-order high-pass filter at 440 Hz
-    // A first-order low-pass filter at 14 kHz
-
-    auto lpf = Tonic::LPF6().cutoff(14000);
-    auto hpf1 = Tonic::HPF6().cutoff(90);
-    auto hpf2 = Tonic::HPF6().cutoff(440);
-
-    auto output = hpf2.input(hpf1.input(lpf.input(rawOutput)));
-
-    m_synth.setOutputGen(output);
 }
 
 void Processor2A03::Stop()
@@ -113,13 +78,12 @@ void Processor2A03::Clock()
         double cpuFrequency = (m_mode == Mode::NTSC) ? Cst::NTSC_CPU_FREQUENCY : Cst::PAL_CPU_FREQUENCY;
 
         {
-            //std::unique_lock<std::mutex> lk(m_lock);
             m_pulseChannel1.Track();
             m_pulseChannel2.Track();
-            m_pulseChannel1.Update(cpuFrequency, m_synth);
-            m_pulseChannel2.Update(cpuFrequency, m_synth);
-            m_triangleChannel.Update(cpuFrequency, m_synth);
-            m_noiseChannel.Update(cpuFrequency, m_synth);
+            m_pulseChannel1.Update(cpuFrequency);
+            m_pulseChannel2.Update(cpuFrequency);
+            m_triangleChannel.Update(cpuFrequency);
+            m_noiseChannel.Update(cpuFrequency);
         }
     }
 
@@ -127,15 +91,8 @@ void Processor2A03::Clock()
 }
 void Processor2A03::FillSamples(float *outData, unsigned int numFrames, unsigned int numChannels)
 {
-    //std::unique_lock<std::mutex> lk(m_lock);
-    if (m_useTonic)
-    {
-        m_synth.fillBufferOfFloats(outData, numFrames, numChannels);
-    }
-    else
-    {
+    if (m_enable)
         m_circularBuffer.ReadData(outData, numFrames * numChannels * sizeof(float));
-    }
 }
 
 void Processor2A03::WriteCPU(uint16_t addr, uint8_t data)
@@ -298,14 +255,23 @@ uint8_t Processor2A03::ReadCPU(uint16_t addr)
 
 void Processor2A03::SampleRequested()
 {
-    //m_noiseChannel.SampleRequested();
+    // Based on the linear approximation
+    // output = square_out + tnd_out
+    // square_out = 0.00752 * (square1 + square2)
+    // tnd_out = 0.00851 * triangle + 0.00494 * noise + 0.00335 * dmc
+    // To compute the final output, we sum all the coefficients as
+    // a scale factor
+    // With this, it is close to 26% for a pulse channel 29% for triangle
+    // and 17% for noise
+    // (not implementing DMC for now)
+
     constexpr double pulseCoeff = 0.00752;
     constexpr double triangleCoeff = 0.00851;
     constexpr double noiseCoeff = 0.00494;
 
     constexpr double maxCoeff = 2 * pulseCoeff + triangleCoeff + noiseCoeff;
 
-    if (!m_useTonic)
+    if (m_enable)
     {
         double sample = pulseCoeff * (m_pulseChannel1.GetSample() + m_pulseChannel2.GetSample()) + 
             triangleCoeff * m_triangleChannel.GetSample() + 
@@ -365,4 +331,18 @@ void Processor2A03::DeserializeFrom(Utils::IReadVisitor& visitor)
     visitor.ReadValue(m_frameCounterRegister.flags);
     visitor.ReadValue(m_clockCounter);
     visitor.ReadValue(m_frameClockCounter);
+}
+
+void Processor2A03::SetEnable(bool enable)
+{
+    m_enable = enable;
+
+    if (enable)
+    {
+        m_circularBuffer.Reset();
+    }
+    else
+    {
+        m_circularBuffer.Stop();
+    }
 }

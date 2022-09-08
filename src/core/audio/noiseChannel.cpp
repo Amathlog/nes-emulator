@@ -1,4 +1,3 @@
-#include "MyTonic.h"
 #include "core/constants.h"
 #include <core/audio/noiseChannel.h>
 
@@ -94,11 +93,6 @@ double NoiseOscillator::Tick()
 // Noise Channel
 //////////////////////////////////////////////////////
 
-NoiseChannel::NoiseChannel(Tonic::Synth&)
-{
-    m_wave = MyNoise();
-}
-
 void NoiseChannel::Clock(bool isEnabled)
 {
     bool halt = m_register.enveloppeLoop;
@@ -117,7 +111,7 @@ void NoiseChannel::ClockEnveloppe()
     m_enveloppe.Clock(m_register.enveloppeLoop);
 }
 
-void NoiseChannel::Update(double cpuFrequency, Tonic::Synth& synth)
+void NoiseChannel::Update(double cpuFrequency)
 {
     float temp;
     if (m_lengthCounter > 0 && m_register.noisePeriod > 0)
@@ -132,14 +126,12 @@ void NoiseChannel::Update(double cpuFrequency, Tonic::Synth& synth)
     if (m_currentOutput != temp)
     {
         m_currentOutput = temp;
-        m_wave.setVolume(temp);
     }
     
     if (m_register.noisePeriodChanged && m_register.noisePeriod > 0)
     {
         m_register.noisePeriodChanged = false;
         double newFrequency = cpuFrequency / ((double)m_register.noisePeriod);
-        m_wave.setFreq((float)newFrequency);
         m_oscillator.SetFrequency(newFrequency);
     }
 }
@@ -153,7 +145,6 @@ void NoiseChannel::Reset()
 {
     m_register.Reset();
     m_enveloppe.Reset();
-    m_wave.reset();
     m_lengthCounter = 0;
     m_timer = 0;
     m_currentOutput = 0.0f;

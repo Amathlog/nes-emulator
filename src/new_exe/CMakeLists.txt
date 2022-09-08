@@ -23,19 +23,6 @@ if(WIN32)
   target_compile_options(rtaudio PRIVATE /wd4251 /wd4996 /wd4267)
 endif(WIN32)
 
-
-# Include GLUT
-# if(WIN32)
-#     set(GLUT_INCLUDE_DIR "external/glut/include")
-#     set(OPENGL_LIBRARY_DIR "${CMAKE_SOURCE_DIR}/external/glut/lib")
-#     # set(GLUT_LIBRARY "${CMAKE_SOURCE_DIR}/external/glut/lib/x64/freeglut")
-#     find_package(GLUT REQUIRED)
-#     include_directories(${GLUT_INCLUDE_DIR})
-# else(WIN32)
-#     find_package(GLUT REQUIRED)
-#     include_directories(${GLUT_INCLUDE_DIRS})
-# endif(WIN32)
-
 # Include GLFW and GLAD
 set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
@@ -84,11 +71,7 @@ file(GLOB_RECURSE NEW_EXE_SRC
     "${GLAD_DIR}/src/glad.c"
 )
 
-# file(GLOB_RECURSE NEW_EXE_INCLUDE
-    # "{NesEmulator_SOURCE_DIR}/include/new_exe/*.h"
-# )
-
 link_directories(${NesEmulator_SOURCE_DIR}/LibProject/src)
 add_executable(NesEmulatorGL ${NEW_EXE_SRC})
-target_link_libraries(NesEmulatorGL NesEmulator_Core ${OPENGL_LIBRARIES} glfw ${CMAKE_DL_LIBS} Tonic rtaudio ImGuiFE ImGui)
+target_link_libraries(NesEmulatorGL NesEmulator_Core ${OPENGL_LIBRARIES} glfw ${CMAKE_DL_LIBS} rtaudio ImGuiFE ImGui)
 set_target_properties(NesEmulatorGL PROPERTIES FOLDER ${MAIN_FOLDER})

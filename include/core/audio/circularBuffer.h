@@ -4,6 +4,7 @@
 #include <vector>
 #include <atomic>
 #include <cstring>
+#include <iostream>
 
 namespace NesEmulator
 {

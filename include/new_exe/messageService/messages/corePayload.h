@@ -17,7 +17,8 @@ namespace NesEmulatorGL
         LOAD_STATE,
         GET_MODE,
         CHANGE_MODE,
-        RESET
+        RESET,
+        CORE_ENABLE_AUDIO
     };
 
     class CorePayload : public Payload
@@ -30,9 +31,15 @@ namespace NesEmulatorGL
             , m_mode(mode)
         {}
 
+        CorePayload(CoreMessageType type, bool enable)
+            : m_type(type)
+            , m_enable(enable)
+        {}
+
         CoreMessageType m_type;
-        std::string m_data;
-        int m_saveStateNumber;
-        NesEmulator::Mode m_mode;
+        std::string m_data = "";
+        int m_saveStateNumber = 0;
+        NesEmulator::Mode m_mode = NesEmulator::Mode::NTSC;
+        bool m_enable = false;
     };
 }

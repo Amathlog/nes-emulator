@@ -1,7 +1,6 @@
 #pragma once
 
 #include "core/audio/enveloppe.h"
-#include <MyTonic.h>
 #include <core/utils/visitor.h>
 #include <cstdint>
 #include <string>
@@ -59,15 +58,14 @@ namespace NesEmulator {
     class PulseChannel
     {
     public:
-        PulseChannel(Tonic::Synth& synth, int number);
+        PulseChannel(int number);
         ~PulseChannel() = default;
 
         PulseRegister& GetRegister() { return m_register; }
         Sweep& GetSweep() { return m_sweep; }
         Enveloppe& GetEnveloppe() { return m_enveloppe; }
-        Tonic::Generator& GetWave() { return m_wave; }
 
-        void Update(double cpuFrequency, Tonic::Synth& synth);
+        void Update(double cpuFrequency);
         void Clock(bool isEnabled);
         void ClockEnveloppe();
         void Track();
@@ -82,13 +80,7 @@ namespace NesEmulator {
         void DeserializeFrom(Utils::IReadVisitor& visitor);
 
     private:
-        std::string GetDutyCycleParameterName();
-        std::string GetFrequencyParameterName();
-        std::string GetOutputParameterName();
-        std::string GetEnveloppeOutputParameterName();
-
         int m_number;
-        Tonic::Generator m_wave;
         PulseRegister m_register;
         Sweep m_sweep;
         Enveloppe m_enveloppe;

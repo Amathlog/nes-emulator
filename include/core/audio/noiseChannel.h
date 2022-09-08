@@ -5,8 +5,6 @@
 #include <core/utils/visitor.h>
 #include <core/constants.h>
 
-#include <MyTonic.h>
-
 namespace NesEmulator 
 {
     struct NoiseRegister
@@ -43,18 +41,17 @@ namespace NesEmulator
     class NoiseChannel
     {
     public:
-        NoiseChannel(Tonic::Synth& synth);
+        NoiseChannel() = default;
         ~NoiseChannel() = default;
 
         void Reset();
         void Clock(bool isEnabled);
         void ClockEnveloppe();
-        void Update(double cpuFrequency, Tonic::Synth& synth);
+        void Update(double cpuFrequency);
 
         double GetSample();
 
         NoiseRegister& GetRegister() { return m_register; }
-        Tonic::Generator& GetWave() { return m_wave; }
         Enveloppe& GetEnveloppe() { return m_enveloppe; }
 
         void ReloadCounter();
@@ -64,7 +61,6 @@ namespace NesEmulator
         void DeserializeFrom(Utils::IReadVisitor& visitor);
         
     private:
-        MyNoise m_wave;
         NoiseRegister m_register;
         Enveloppe m_enveloppe;
 

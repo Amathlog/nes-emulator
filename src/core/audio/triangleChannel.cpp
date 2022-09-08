@@ -5,9 +5,6 @@ using NesEmulator::TriangleChannel;
 using NesEmulator::TriangleRegister;
 using NesEmulator::TriangleOscillator;
 
-constexpr const char* frequencyParameterName = "freqTriangle";
-constexpr const char* outputParameterName = "outputTriangle";
-
 ////////////////////////////////////////////////////////////////////////
 // TRIANGLE REGISTER
 ////////////////////////////////////////////////////////////////////////
@@ -66,12 +63,6 @@ void TriangleOscillator::SetFrequency(double freq)
 ////////////////////////////////////////////////////////////////////////
 // TRIANGLE CHANNEL
 ////////////////////////////////////////////////////////////////////////
-TriangleChannel::TriangleChannel(Tonic::Synth& synth)
-{
-    Tonic::ControlGenerator controlFreqTriangle = synth.addParameter(frequencyParameterName);
-    Tonic::ControlGenerator controlOutputTriangle = synth.addParameter(outputParameterName);
-    m_wave = controlOutputTriangle * Tonic::TriangleWave().freq(controlFreqTriangle);
-}
 
 void TriangleChannel::Reset()
 {
@@ -137,7 +128,7 @@ void TriangleChannel::DeserializeFrom(Utils::IReadVisitor& visitor)
     visitor.ReadValue(m_linearControlFlag);
 }
 
-void TriangleChannel::Update(double cpuFrequency, Tonic::Synth& synth)
+void TriangleChannel::Update(double cpuFrequency)
 {
     double newFrequency = cpuFrequency / (32.0 * (double)(m_register.timer + 1));
     double newEnableValue = m_linearCounter > 0 && m_lengthCounter > 0;
@@ -145,8 +136,6 @@ void TriangleChannel::Update(double cpuFrequency, Tonic::Synth& synth)
     {
         m_frequency = newFrequency;
         m_enableValue = newEnableValue;
-        synth.setParameter(frequencyParameterName, (float)newFrequency);
-        synth.setParameter(outputParameterName, (float)newEnableValue);
         m_oscillator.SetFrequency(newFrequency);
     }
 }

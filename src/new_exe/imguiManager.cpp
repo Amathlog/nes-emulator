@@ -229,6 +229,7 @@ void ImguiManager::Update()
     if (m_previousSoundState != m_isSoundEnabled)
     {
         m_previousSoundState = m_isSoundEnabled;
+        DispatchMessageServiceSingleton::GetInstance().Push(CoreEnableAudioMessage(m_isSoundEnabled));
         DispatchMessageServiceSingleton::GetInstance().Push(EnableAudioMessage(m_isSoundEnabled));
     }
 

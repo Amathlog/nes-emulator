@@ -67,4 +67,11 @@ namespace NesEmulatorGL
             : CoreMessage(DefaultCoreMessageType::RESET, "")
         {}
     };
+
+    struct CoreEnableAudioMessage : CoreMessage
+    {
+        CoreEnableAudioMessage(bool enable)
+            : CoreMessage(DefaultCoreMessageType::CORE_ENABLE_AUDIO, enable)
+        {}
+    };
 }

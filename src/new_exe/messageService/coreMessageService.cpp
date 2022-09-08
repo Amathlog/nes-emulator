@@ -3,6 +3,7 @@
 #include <new_exe/messageService/coreMessageService.h>
 #include <new_exe/messageService/messages/corePayload.h>
 #include <new_exe/messageService/messages/debugPayload.h>
+#include <new_exe/messageService/messages/audioPayload.h>
 #include <core/utils/fileVisitor.h>
 #include <core/utils/vectorVisitor.h>
 #include <core/bus.h>
@@ -37,10 +38,10 @@ bool CoreMessageService::Push(const Message &message)
 {
     if (message.GetType() != DefaultMessageType::CORE)
         return true;
-    
+
     auto payload = reinterpret_cast<const CorePayload*>(message.GetPayload());
 
-    switch(payload->m_type)
+    switch (payload->m_type)
     {
     case DefaultCoreMessageType::LOAD_NEW_GAME:
         return LoadNewGame(payload->m_data);
@@ -57,6 +58,9 @@ bool CoreMessageService::Push(const Message &message)
         return true;
     case DefaultCoreMessageType::RESET:
         m_bus.Reset();
+        return true;
+    case DefaultCoreMessageType::CORE_ENABLE_AUDIO:
+        m_bus.GetAPU().SetEnable(payload->m_enable);
         return true;
     }
 
