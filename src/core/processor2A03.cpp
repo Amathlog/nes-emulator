@@ -82,6 +82,7 @@ void Processor2A03::Clock()
         m_pulseChannel2.Update(cpuFrequency);
         m_triangleChannel.Update(cpuFrequency);
         m_noiseChannel.Update(cpuFrequency);
+        m_dmcChannel.Update(cpuFrequency);
     }
 }
 void Processor2A03::FillSamples(float *outData, unsigned int numFrames, unsigned int numChannels)
@@ -183,23 +184,7 @@ void Processor2A03::WriteCPU(uint16_t addr, uint8_t data)
     else if (addr >= 0x4010 && addr <= 0x4013)
     {
         // DMC
-        switch (addr & 0x0003)
-        {
-        case 0:
-            m_dmcRegister.irqEnable = (data & 0x80) > 0;
-            m_dmcRegister.loop = (data & 0x40) > 0;
-            m_dmcRegister.frequency = (data & 0x0F);
-            break;
-        case 1:
-            m_dmcRegister.loadCounter = (data & 0x7F);
-            break;
-        case 2:
-            m_dmcRegister.sampleAddress = data;
-            break;
-        case 3:
-            m_dmcRegister.sampleLength = data;
-            break;
-        }
+        m_dmcChannel.WriteData(addr, data);
     }
     else if (addr == 0x4015)
     {
@@ -259,19 +244,20 @@ void Processor2A03::SampleRequested()
     // a scale factor
     // With this, it is close to 26% for a pulse channel 29% for triangle
     // and 17% for noise
-    // (not implementing DMC for now)
 
     constexpr double pulseCoeff = 0.00752;
     constexpr double triangleCoeff = 0.00851;
     constexpr double noiseCoeff = 0.00494;
+    constexpr double dmcCoeff = 0.00335;
 
-    constexpr double maxCoeff = 2 * pulseCoeff + triangleCoeff + noiseCoeff;
+    constexpr double maxCoeff = 2 * pulseCoeff + triangleCoeff + noiseCoeff + dmcCoeff;
 
     if (m_enable)
     {
         double sample = pulseCoeff * (m_pulseChannel1.GetSample() + m_pulseChannel2.GetSample()) + 
             triangleCoeff * m_triangleChannel.GetSample() + 
-            noiseCoeff * m_noiseChannel.GetSample();
+            noiseCoeff * m_noiseChannel.GetSample() +
+            dmcCoeff * m_dmcChannel.GetSample();
 
         sample /= maxCoeff;
         m_internalBuffer[m_bufferPtr++] = (float)sample;
@@ -291,7 +277,7 @@ void Processor2A03::Reset()
     m_pulseChannel2.Reset();
     m_triangleChannel.Reset();
     m_noiseChannel.Reset();
-    m_dmcRegister.Reset();
+    m_dmcChannel.Reset();
     m_statusRegister.flags = 0;
     m_frameCounterRegister.flags = 0;
     m_frameClockCounter = 0;
@@ -306,7 +292,7 @@ void Processor2A03::SerializeTo(Utils::IWriteVisitor& visitor) const
     m_pulseChannel2.SerializeTo(visitor);
     m_triangleChannel.SerializeTo(visitor);
     m_noiseChannel.SerializeTo(visitor);
-    m_dmcRegister.SerializeTo(visitor);
+    m_dmcChannel.SerializeTo(visitor);
 
     visitor.WriteValue(m_statusRegister.flags);
     visitor.WriteValue(m_frameCounterRegister.flags);
@@ -319,7 +305,7 @@ void Processor2A03::DeserializeFrom(Utils::IReadVisitor& visitor)
     m_pulseChannel2.DeserializeFrom(visitor);
     m_triangleChannel.DeserializeFrom(visitor);
     m_noiseChannel.DeserializeFrom(visitor);
-    m_dmcRegister.DeserializeFrom(visitor);
+    m_dmcChannel.DeserializeFrom(visitor);
 
     visitor.ReadValue(m_statusRegister.flags);
     visitor.ReadValue(m_frameCounterRegister.flags);

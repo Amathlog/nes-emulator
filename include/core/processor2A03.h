@@ -6,50 +6,11 @@
 #include <core/audio/pulseChannel.h>
 #include <core/audio/triangleChannel.h>
 #include <core/audio/noiseChannel.h>
+#include <core/audio/dmcChannel.h>
 #include <core/audio/circularBuffer.h>
 
 namespace NesEmulator
 {
-    struct DMCRegister
-    {
-        uint8_t irqEnable;
-        uint8_t loop;
-        uint8_t frequency;
-        uint8_t loadCounter;
-        uint8_t sampleAddress;
-        uint8_t sampleLength;
-
-        void Reset()
-        {
-            irqEnable = 0;
-            loop = 0;
-            frequency = 0;
-            loadCounter = 0;
-            sampleAddress = 0;
-            sampleLength = 0;
-        }
-
-        void SerializeTo(Utils::IWriteVisitor& visitor) const
-        {
-            visitor.WriteValue(irqEnable);
-            visitor.WriteValue(loop);
-            visitor.WriteValue(frequency);
-            visitor.WriteValue(loadCounter);
-            visitor.WriteValue(sampleAddress);
-            visitor.WriteValue(sampleLength);
-        }
-
-        void DeserializeFrom(Utils::IReadVisitor& visitor)
-        {
-            visitor.ReadValue(irqEnable);
-            visitor.ReadValue(loop);
-            visitor.ReadValue(frequency);
-            visitor.ReadValue(loadCounter);
-            visitor.ReadValue(sampleAddress);
-            visitor.ReadValue(sampleLength);
-        }
-    };
-
     union APUStatus
     {
         struct
@@ -109,7 +70,7 @@ namespace NesEmulator
         PulseChannel m_pulseChannel2;
         TriangleChannel m_triangleChannel;
         NoiseChannel m_noiseChannel;
-        DMCRegister m_dmcRegister;
+        DMCChannel m_dmcChannel;
         APUStatus m_statusRegister;
         FrameCounter m_frameCounterRegister;
 
