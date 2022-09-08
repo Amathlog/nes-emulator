@@ -20,6 +20,23 @@ namespace NesEmulator {
         void DeserializeFrom(Utils::IReadVisitor& visitor);
     };
 
+    class PulseOscillator
+    {
+    public:
+        PulseOscillator() = default;
+        double Tick();
+
+        void SetFrequency(double freq);
+        void SetDuty(double duty) { m_duty = duty; }
+        void Reset() { m_phase = 0.0; m_duty = 0.5; }
+
+    private:
+        double m_phase = 0.0;
+        double m_freq = 0.0;
+        double m_phaseIncrement = 0.0f;
+        double m_duty = 0.5;
+    };
+
     struct Sweep
     {
         bool enabled;
@@ -56,6 +73,8 @@ namespace NesEmulator {
         void Track();
         void Reset();
 
+        double GetSample();
+
         void ReloadCounter();
         uint8_t GetCounter() const { return m_lengthCounter; }
 
@@ -73,6 +92,8 @@ namespace NesEmulator {
         PulseRegister m_register;
         Sweep m_sweep;
         Enveloppe m_enveloppe;
+
+        PulseOscillator m_oscillator;
 
         double m_frequency = 0.0;
         double m_dutyCycle = 0.0;

@@ -14,6 +14,8 @@ Processor2A03::Processor2A03()
     , m_pulseChannel2(m_synth, 2)
     , m_triangleChannel(m_synth)
     , m_noiseChannel(m_synth)
+    , m_circularBuffer(1000000)
+    , m_useTonic(true)
 {
     // Based on the linear approximation
     // output = square_out + tnd_out
@@ -44,6 +46,11 @@ Processor2A03::Processor2A03()
     auto output = hpf2.input(hpf1.input(lpf.input(rawOutput)));
 
     m_synth.setOutputGen(output);
+}
+
+void Processor2A03::Stop()
+{
+    m_circularBuffer.Stop();
 }
 
 void Processor2A03::Clock()
@@ -121,7 +128,14 @@ void Processor2A03::Clock()
 void Processor2A03::FillSamples(float *outData, unsigned int numFrames, unsigned int numChannels)
 {
     //std::unique_lock<std::mutex> lk(m_lock);
-    m_synth.fillBufferOfFloats(outData, numFrames, numChannels);
+    if (m_useTonic)
+    {
+        m_synth.fillBufferOfFloats(outData, numFrames, numChannels);
+    }
+    else
+    {
+        m_circularBuffer.ReadData(outData, numFrames * numChannels * sizeof(float));
+    }
 }
 
 void Processor2A03::WriteCPU(uint16_t addr, uint8_t data)
@@ -284,7 +298,20 @@ uint8_t Processor2A03::ReadCPU(uint16_t addr)
 
 void Processor2A03::SampleRequested()
 {
-    m_noiseChannel.SampleRequested();
+    //m_noiseChannel.SampleRequested();
+
+    if (!m_useTonic)
+    {
+        double sample = (m_pulseChannel1.GetSample() + m_pulseChannel2.GetSample()) / 2.0;
+        m_internalBuffer[m_bufferPtr++] = (float)sample;
+        m_internalBuffer[m_bufferPtr++] = (float)sample;
+
+        if (m_bufferPtr == m_internalBuffer.max_size())
+        {
+            m_bufferPtr = 0;
+            m_circularBuffer.WriteData(m_internalBuffer.data(), m_internalBuffer.max_size() * sizeof(float));
+        }
+    }
 }
 
 void Processor2A03::Reset()
@@ -298,6 +325,9 @@ void Processor2A03::Reset()
     m_frameCounterRegister.flags = 0;
     m_clockCounter = 0;
     m_frameClockCounter = 0;
+
+    m_bufferPtr = 0;
+    m_circularBuffer.Reset();
 }
 
 void Processor2A03::SerializeTo(Utils::IWriteVisitor& visitor) const

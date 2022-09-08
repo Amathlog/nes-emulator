@@ -9,9 +9,8 @@ int audioCallback(void *outputBuffer, void *inputBuffer, unsigned int nBufferFra
     return audioSystem->RenderCallback(outputBuffer, inputBuffer, nBufferFrames, streamTime, status, userData);   
 }
 
-AudioSystem::AudioSystem(unsigned nbChannels, unsigned sampleRate, unsigned bufferFrames)
+AudioSystem::AudioSystem(unsigned nbChannels, unsigned bufferFrames)
     : m_nbChannels(nbChannels)
-    , m_sampleRate(sampleRate)
     , m_bufferFrames(bufferFrames)
     , m_messageService(*this)
 {
@@ -37,7 +36,7 @@ bool AudioSystem::Initialize()
     RtAudio::StreamOptions rtOptions;
     rtOptions.numberOfBuffers = 4;
 
-    auto res = m_dac->openStream(&rtParams, NULL, RTAUDIO_FLOAT32, m_sampleRate, &m_bufferFrames, &audioCallback, this, &rtOptions);
+    auto res = m_dac->openStream(&rtParams, NULL, RTAUDIO_FLOAT32, (unsigned)NesEmulator::Cst::SAMPLE_RATE, &m_bufferFrames, &audioCallback, this, &rtOptions);
 
     if (res != RtAudioErrorType::RTAUDIO_NO_ERROR)
     {

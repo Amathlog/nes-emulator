@@ -4,6 +4,7 @@
 #include <string>
 
 using NesEmulator::PulseChannel;
+using NesEmulator::PulseOscillator;
 using NesEmulator::Sweep;
 using NesEmulator::PulseRegister;
 
@@ -32,6 +33,31 @@ void PulseRegister::DeserializeFrom(Utils::IReadVisitor& visitor)
     visitor.ReadValue(enveloppeLoop);
     visitor.ReadValue(timer);
     visitor.ReadValue(lengthCounterReload);
+}
+
+//////////////////////////////////////////////////////////////
+// PULSE OSCILLATOR
+//////////////////////////////////////////////////////////////
+double PulseOscillator::Tick()
+{
+    if (m_duty == 0.0 || m_freq == 0.0)
+        return 0.0;
+
+    m_phase += m_phaseIncrement;
+
+    while (m_phase > 1.0)
+        m_phase -= 1.0f;
+
+    while (m_phase < 0.0)
+        m_phase += 1.0;
+
+    return m_phase <= m_duty ? -1.0 : 1.0;
+}
+
+void PulseOscillator::SetFrequency(double freq)
+{
+    m_freq = freq;
+    m_phaseIncrement = m_freq / NesEmulator::Cst::SAMPLE_RATE;
 }
 
 //////////////////////////////////////////////////////////////
@@ -183,12 +209,14 @@ void PulseChannel::Update(double cpuFrequency, Tonic::Synth& synth)
     {
         m_frequency = newFrequency;
         synth.setParameter(GetFrequencyParameterName(), (float)newFrequency);
+        m_oscillator.SetFrequency(m_frequency);
     }
 
     if (newDutyCycle != m_dutyCycle)
     {
         m_dutyCycle = newDutyCycle;
         synth.setParameter(GetDutyCycleParameterName(), (float)newDutyCycle);
+        m_oscillator.SetDuty(newDutyCycle);
     }
 
     if (newEnableValue != m_enableValue)
@@ -220,6 +248,12 @@ void PulseChannel::DeserializeFrom(Utils::IReadVisitor &visitor)
     visitor.ReadValue(m_dutyCycle);
     visitor.ReadValue(m_enableValue);
     visitor.ReadValue(m_lengthCounter);
+}
+
+double PulseChannel::GetSample()
+{
+    double currentVolume = (double)(m_enveloppe.output) / 15.0f;
+    return m_enableValue != 0.0 ? currentVolume * m_oscillator.Tick() : 0.0;
 }
 
 void PulseChannel::Clock(bool isEnabled)

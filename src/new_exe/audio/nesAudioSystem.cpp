@@ -3,15 +3,16 @@
 #include <MyTonic.h>
 #include <new_exe/audio/nesAudioSystem.h>
 #include <new_exe/screen.h>
+#include <core/constants.h>
 
 using NesEmulatorGL::NesAudioSystem;
 
-NesAudioSystem::NesAudioSystem(NesEmulator::Bus& bus, bool syncWithAudio, unsigned nbChannels, unsigned sampleRate, unsigned bufferFrames)
-    : AudioSystem(nbChannels, sampleRate, bufferFrames)
+NesAudioSystem::NesAudioSystem(NesEmulator::Bus& bus, bool syncWithAudio, unsigned nbChannels, unsigned bufferFrames)
+    : AudioSystem(nbChannels, bufferFrames)
     , m_bus(bus)
     , m_syncWithAudio(syncWithAudio)
 {
-    Tonic::setSampleRate((float)m_sampleRate);
+    Tonic::setSampleRate((float)NesEmulator::Cst::SAMPLE_RATE);
 }
 
 int NesAudioSystem::RenderCallback(void *outputBuffer, void* /*inputBuffer*/, unsigned int nBufferFrames,

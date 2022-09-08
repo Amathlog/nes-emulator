@@ -7,6 +7,7 @@
 #include <core/audio/pulseChannel.h>
 #include <core/audio/triangleChannel.h>
 #include <core/audio/noiseChannel.h>
+#include <core/audio/circularBuffer.h>
 #include <mutex>
 
 namespace NesEmulator
@@ -89,6 +90,8 @@ namespace NesEmulator
         void Clock();
         bool ShouldIRQ() { return m_IRQFlag; }
 
+        void Stop();
+
         void WriteCPU(uint16_t addr, uint8_t data);
         uint8_t ReadCPU(uint16_t addr);
 
@@ -111,6 +114,11 @@ namespace NesEmulator
         DMCRegister m_dmcRegister;
         APUStatus m_statusRegister;
         FrameCounter m_frameCounterRegister;
+
+        bool m_useTonic;
+        std::array<float, 128> m_internalBuffer;
+        size_t m_bufferPtr = 0;
+        CircularBuffer<float> m_circularBuffer;
 
         size_t m_clockCounter = 0;
         size_t m_frameClockCounter = 0;

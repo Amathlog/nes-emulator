@@ -58,7 +58,6 @@ namespace NesEmulator
 
         void SetMode(Mode mode);
         NesEmulator::Mode GetMode() const { return m_mode; }
-        void SetSampleFrequency(unsigned sampleFrequency);
 
         const Cartridge* GetCartridge() const { return m_cartridge.get(); }
 

@@ -30,11 +30,8 @@ Bus::Bus()
     SetMode(Mode::NTSC);
 
     m_enabled = true;
-}
 
-void Bus::SetSampleFrequency(unsigned int sampleFrequency)
-{
-    m_audioTimePerSystemSample = 1.0 / (double)sampleFrequency;
+    m_audioTimePerSystemSample = 1.0 / NesEmulator::Cst::SAMPLE_RATE;
 }
 
 void Bus::WriteCPU(uint16_t address, uint8_t data)

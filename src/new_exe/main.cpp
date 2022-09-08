@@ -47,10 +47,8 @@ int main(int argc, char **argv)
 
     NesEmulator::Bus bus;
 
-    NesAudioSystem audioSystem(bus, syncWithAudio, 2, 44100, 256);
+    NesAudioSystem audioSystem(bus, syncWithAudio, 2, 256);
     audioSystem.Enable(enableAudioByDefault);
-
-    bus.SetSampleFrequency(audioSystem.GetSampleRate());
 
     DispatchMessageServiceSingleton& singleton = DispatchMessageServiceSingleton::GetInstance();
 
@@ -122,6 +120,7 @@ int main(int argc, char **argv)
             }
         }
 
+        bus.GetAPU().Stop();
         audioSystem.Shutdown();
     }
 
