@@ -24,7 +24,7 @@ set(CMAKE_CXX_FLAGS_DEBUG "/ZI /Od")
 set(CMAKE_CXX_FLAGS_RELEASE "/Os")
 else(WIN32)
 set(CMAKE_CXX_FLAGS_DEBUG "-g")
-set(CMAKE_CXX_FLAGS_RELEASE "-O2")
+set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 endif(WIN32)
 
 option(BUILD_TESTS "Build the tests" OFF)

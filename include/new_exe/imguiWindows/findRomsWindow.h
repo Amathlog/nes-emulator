@@ -4,6 +4,7 @@
 #include <memory>
 #include <string>
 #include <filesystem>
+#include <vector>
 
 struct ImGuiContext;
 
