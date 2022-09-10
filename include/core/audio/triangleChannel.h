@@ -53,6 +53,8 @@ namespace NesEmulator
         void DeserializeFrom(Utils::IReadVisitor& visitor);
 
         double GetSample();
+
+        bool IsEnabled() const { return m_enableValue; }
         
     private:
         TriangleRegister m_register;

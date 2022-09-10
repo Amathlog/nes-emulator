@@ -23,8 +23,9 @@ Bus::Bus()
     for (auto& v : m_cpuRam)
         v = 0x00;
 
-    // Connect CPU to this bus
+    // Connect CPU and APU to this bus
     m_cpu.ConnectBus(this);
+    m_apu.ConnectBus(this);
 
     // Default mode
     SetMode(Mode::NTSC);

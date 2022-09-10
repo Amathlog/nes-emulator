@@ -77,7 +77,7 @@ void NoiseOscillator::SetFrequency(double freq)
 
 double NoiseOscillator::Tick()
 {
-    double value = m_shiftRegister & 0x0001 ? 0.0 : 1.0;
+    double value = m_shiftRegister & 0x0001 ? -1.0 : 1.0;
     m_elaspedTime += m_realSampleDuration;
     if (m_elaspedTime >= m_sampleDuration)
     {
@@ -118,16 +118,13 @@ void NoiseChannel::Update(double cpuFrequency)
     float temp;
     if (m_lengthCounter > 0 && m_register.noisePeriod > 0)
     {
-        temp = (float)(m_enveloppe.output) / 15.0f;
+        m_currentOutput = (float)(m_enveloppe.output) / 15.0f;
+        m_enabled = true;
     }
     else
     {
-        temp = 0.0f;
-    }
-
-    if (m_currentOutput != temp)
-    {
-        m_currentOutput = temp;
+        m_currentOutput = 0.0f;
+        m_enabled = false;
     }
     
     if (m_register.noisePeriodChanged && m_register.noisePeriod > 0)
@@ -140,7 +137,7 @@ void NoiseChannel::Update(double cpuFrequency)
 
 double NoiseChannel::GetSample()
 {
-    return (double)m_currentOutput * m_oscillator.Tick();
+    return m_enabled ? (double)m_currentOutput * m_oscillator.Tick() : 0.0;
 }
 
 void NoiseChannel::Reset()

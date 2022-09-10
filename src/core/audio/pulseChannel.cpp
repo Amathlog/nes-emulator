@@ -221,7 +221,7 @@ void PulseChannel::DeserializeFrom(Utils::IReadVisitor &visitor)
 
 double PulseChannel::GetSample()
 {
-    double currentVolume = (double)(m_enveloppe.output) / 15.0f;
+    double currentVolume = (double)(m_enveloppe.output) / 15.0;
     return m_enableValue != 0.0 ? currentVolume * m_oscillator.Tick() : 0.0;
 }
 

@@ -8,9 +8,12 @@
 #include <core/audio/noiseChannel.h>
 #include <core/audio/dmcChannel.h>
 #include <core/audio/circularBuffer.h>
+#include <filter_includes.h>
 
 namespace NesEmulator
 {
+    class Bus;
+
     union APUStatus
     {
         struct
@@ -47,7 +50,9 @@ namespace NesEmulator
         ~Processor2A03() = default;
 
         void Clock();
-        bool ShouldIRQ() { return m_IRQFlag; }
+        bool ShouldIRQ() { return m_statusRegister.frameInterrupt > 0 || m_statusRegister.dmcInterrupt > 0; }
+
+        void ConnectBus(NesEmulator::Bus* bus) { m_dmcChannel.ConnectBus(bus); }
 
         void Stop();
 
@@ -80,7 +85,10 @@ namespace NesEmulator
 
         size_t m_frameClockCounter = 0;
         Mode m_mode; // NTSC or PAL
-        bool m_IRQFlag = false;
+
+        FO_HPF m_highPassFilter1;
+        FO_HPF m_highPassFilter2;
+        FO_LPF m_lowPassFilter;
 
         bool m_enable;
     };

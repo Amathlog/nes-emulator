@@ -64,6 +64,7 @@ if(WIN32)
 endif(WIN32)
 
 include_directories(${NesEmulator_SOURCE_DIR}/include)
+include_directories("${NesEmulator_SOURCE_DIR}/external/DSP-Cpp-filters/lib")
 
 file(GLOB_RECURSE NEW_EXE_SRC
     "${NesEmulator_SOURCE_DIR}/src/new_exe/*.cpp"

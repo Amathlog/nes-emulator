@@ -73,6 +73,8 @@ namespace NesEmulator {
 
         double GetSample();
 
+        bool IsEnabled() const { return m_enableValue; }
+
         void ReloadCounter();
         uint8_t GetCounter() const { return m_lengthCounter; }
 

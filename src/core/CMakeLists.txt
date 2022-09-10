@@ -1,6 +1,7 @@
 add_compile_definitions(_SILENCE_CXX17_STRSTREAM_DEPRECATION_WARNING)
 
 include_directories(${NesEmulator_SOURCE_DIR}/include)
+include_directories("${NesEmulator_SOURCE_DIR}/external/DSP-Cpp-filters/lib")
 
 file(GLOB_RECURSE CORELIB_SRC
     ${NesEmulator_SOURCE_DIR}/include/core/*.h

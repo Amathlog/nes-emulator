@@ -16,3 +16,6 @@
 [submodule "external/rtaudio"]
 	path = external/rtaudio
 	url = https://github.com/thestk/rtaudio.git
+[submodule "external/DSP-Cpp-filters"]
+	path = external/DSP-Cpp-filters
+	url = https://github.com/dimtass/DSP-Cpp-filters.git

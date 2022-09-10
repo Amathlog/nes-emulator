@@ -55,6 +55,8 @@ namespace NesEmulator
 
         double GetSample();
 
+        bool IsEnabled() const { return m_enabled; }
+
         NoiseRegister& GetRegister() { return m_register; }
         Enveloppe& GetEnveloppe() { return m_enveloppe; }
 
@@ -73,5 +75,6 @@ namespace NesEmulator
         uint8_t m_lengthCounter = 0;
         int16_t m_timer = 0;
         float m_currentOutput = 0.0f;
+        bool m_enabled = false;
     };
 }
