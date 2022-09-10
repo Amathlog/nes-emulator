@@ -1,45 +1,34 @@
 # NES emulator
 
-Little pet project to try and code a NES emulator. The end goal is to make it available via C++ and also Python, to link it with a ML setup.
+Little pet project to try and code a NES emulator.
 
 This project is cross-platform and should work on Windows and Linux.
 
 Based on the wonderful tutorial from OneLoneCoder: https://github.com/OneLoneCoder/olcNES
 
+Close to completeness. Already possible to play some games from start to finish, with sound.
+
 **-- DISCLAMER --**
 
-There is no rom included in this project. You need to dump your original games to use them with this emulator.
-
-## Dependencies (Old exe, linux only)
-- qt (old exe)
-- googletest
-- sfml
+There is no rom included in this project, except some test roms. You need to dump your original games to use them with this emulator.
 
 ## Dependencies (New exe, linux/windows)
 - ImGui
 - glfw
 - OpenGL
-- sfml
 - googletest
-- Tonic
 - RTAudio
 
 ## Implemented features
 - Full support for offical opcodes for the 6502 CPU (and some illegal opcodes)
 - Keyboard support
-- NTSC/PAL roms only
+- NTSC roms only (PAL is not yet supported)
 - Some mappers (list bellow)
 - Basic debugging with "gotos" and disassembly
 - Can play from start to finish some games.
-- Basic load/save state (in memory only)
+- Basic load/save state
 - Rom loading in UI
-- Basic sound
-
-## TODO
-- Support sound fully
-- More mappers
-- Better UI
-- ...
+- Sound fully functional (except DMC interrupt)
 
 ## Full interface
 <img src="images/debug.png">
@@ -55,18 +44,7 @@ There is no rom included in this project. You need to dump your original games t
 | 40              | SMB: The Lost Levels| <img src="images/smb_lost_levels.gif" width="300" height="300" />  |
 | 66              | Duck Hunt + SMB     | <img src="images/duckhunt.gif" width="300" height="300" />  |
 
-## Compiling on Ubuntu (Old exe)
-```
-git clone --recursive https://github.com/Amathlog/nes-emulator.git
-apt-get install qt5-default cmake build-essentials clang
-cd nes-emulator
-mkdir build
-cd build
-cmake ..
-make
-```
-
-## Compiling on Ubuntu (New exe)
+## Compiling on Ubuntu
 ```
 git clone --recursive https://github.com/Amathlog/nes-emulator.git
 apt-get install cmake build-essentials clang
