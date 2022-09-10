@@ -1,4 +1,6 @@
 #include <core/audio/dmcChannel.h>
+#include <core/bus.h>
+#include <core/constants.h>
 
 using NesEmulator::DMCRegister;
 using NesEmulator::DMCChannel;
@@ -30,11 +32,7 @@ void DMCRegister::DeserializeFrom(Utils::IReadVisitor& visitor)
 void DMCChannel::Reset()
 {
     m_register.Reset();
-}
-
-void DMCChannel::Clock()
-{
-    // TODO
+    m_currentRate = 0;
 }
 
 double DMCChannel::GetSample()
@@ -47,12 +45,13 @@ void DMCChannel::Update(double cpuFrequency)
     // TODO
 }
 
-void DMCChannel::WriteData(uint16_t address, uint8_t data)
+void DMCChannel::WriteData(uint16_t address, uint8_t data, const Mode& mode)
 {
     if (address == 0x4010)
     {
         m_register.flags.reg = data;
         // TODO
+        m_currentRate = (mode == Mode::NTSC ? NesEmulator::Cst::APU_DMC_RATE_NTSC : NesEmulator::Cst::APU_DMC_RATE_PAL)[m_register.flags.rate];
     }
     else if (address == 0x4011)
     {
@@ -74,9 +73,11 @@ void DMCChannel::WriteData(uint16_t address, uint8_t data)
 void DMCChannel::SerializeTo(Utils::IWriteVisitor& visitor) const
 {
     m_register.SerializeTo(visitor);
+    visitor.WriteValue(m_currentRate);
 }
 
 void DMCChannel::DeserializeFrom(Utils::IReadVisitor& visitor)
 {
     m_register.DeserializeFrom(visitor);
+    visitor.ReadValue(m_currentRate);
 }

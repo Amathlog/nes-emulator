@@ -103,6 +103,20 @@ namespace Cst
         188, 236, 354, 472, 708, 944, 1890, 3778
     };
 
+    // Values are originally in CPU cycles, change them to APU cycles
+    // so divide them by 2
+    constexpr std::array<int16_t, 16> APU_DMC_RATE_NTSC =
+    {
+        428 / 2, 380 / 2, 340 / 2, 320 / 2, 286 / 2, 254 / 2, 226 / 2, 214 / 2,
+        190 / 2, 160 / 2, 142 / 2, 128 / 2, 106 / 2,  84 / 2,  72 / 2,  54 / 2
+    };
+
+    constexpr std::array<int16_t, 16> APU_DMC_RATE_PAL =
+    {
+        398 / 2, 354 / 2, 316 / 2, 298 / 2, 276 / 2, 236 / 2, 210 / 2, 198 / 2,
+        176 / 2, 148 / 2, 132 / 2, 118 / 2, 98 / 2,  78 / 2,  66 / 2,  50 / 2
+    };
+
     constexpr double SAMPLE_RATE = 44100.0;
 }
 }

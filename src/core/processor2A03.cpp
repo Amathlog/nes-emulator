@@ -184,7 +184,7 @@ void Processor2A03::WriteCPU(uint16_t addr, uint8_t data)
     else if (addr >= 0x4010 && addr <= 0x4013)
     {
         // DMC
-        m_dmcChannel.WriteData(addr, data);
+        m_dmcChannel.WriteData(addr, data, m_mode);
     }
     else if (addr == 0x4015)
     {
